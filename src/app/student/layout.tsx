@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GraduationCap, LayoutDashboard, Briefcase, Calendar, Users, MessageSquare, LogOut, Menu, FolderKanban } from "lucide-react";
+import { GraduationCap, LayoutDashboard, Briefcase, Calendar, Users, MessageSquare, LogOut, Menu, FolderKanban, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -28,6 +28,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     { name: "Jobs", href: "/student/jobs", icon: Briefcase },
     { name: "Events", href: "/student/events", icon: Calendar },
     { name: "Network", href: "/student/network", icon: Users },
+    { name: "Mentorship", href: "/student/mentorship", icon: UserCheck },
     { name: "Projects", href: "/student/projects", icon: FolderKanban },
     { name: "Messages", href: "/student/messages", icon: MessageSquare },
   ];
