@@ -53,6 +53,21 @@ export default function AlumniProfilePage() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Parse skills if it's a string
+        let parsedSkills = data.user.skills || [];
+        if (typeof parsedSkills === 'string') {
+          try {
+            parsedSkills = JSON.parse(parsedSkills);
+          } catch (e) {
+            parsedSkills = [];
+          }
+        }
+        // Ensure it's always an array
+        if (!Array.isArray(parsedSkills)) {
+          parsedSkills = [];
+        }
+        
         setProfileData({
           name: data.user.name || "",
           email: data.user.email || "",
@@ -63,7 +78,7 @@ export default function AlumniProfilePage() {
           currentPosition: data.user.currentPosition || "",
           location: data.user.location || "",
           bio: data.user.bio || "",
-          skills: data.user.skills || [],
+          skills: parsedSkills,
           linkedin: data.user.linkedin || "",
           github: data.user.github || "",
           profileImageUrl: data.user.profileImageUrl || "",
@@ -425,7 +440,7 @@ export default function AlumniProfilePage() {
                 </div>
               </div>
 
-              {profileData.skills.length > 0 && (
+              {Array.isArray(profileData.skills) && profileData.skills.length > 0 && (
                 <div className="space-y-2">
                   <Label>Skills</Label>
                   <div className="flex flex-wrap gap-2">
