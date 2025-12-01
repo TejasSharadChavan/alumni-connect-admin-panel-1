@@ -1,9 +1,15 @@
 import { db } from '@/db';
 import { users, posts, connections, jobs, events, applications, mentorshipRequests, rsvps, comments, postReactions, chats, chatMembers, messages, activityLog, notifications } from '@/db/schema';
 import bcrypt from 'bcrypt';
+import { sql } from 'drizzle-orm';
 
 async function clearAllTables() {
     console.log('🗑️  Clearing all existing data...');
+    
+    // Disable foreign key checks
+    await db.run(sql`PRAGMA foreign_keys = OFF`);
+    
+    // Delete in any order since FK checks are off
     await db.delete(notifications);
     await db.delete(activityLog);
     await db.delete(messages);
@@ -19,6 +25,10 @@ async function clearAllTables() {
     await db.delete(connections);
     await db.delete(posts);
     await db.delete(users);
+    
+    // Re-enable foreign key checks
+    await db.run(sql`PRAGMA foreign_keys = ON`);
+    
     console.log('✅ All tables cleared');
 }
 
@@ -26,15 +36,20 @@ async function seedUsers() {
     console.log('👥 Seeding users...');
     const passwordHash = await bcrypt.hash('Password@123', 10);
     
-    const sampleUsers = [
-        // 5 ADMIN USERS
+    // Insert admins first (so they get IDs 1-5)
+    const adminUsers = [
         { name: 'Dr. Rajesh Kumar', email: 'dean@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Administration', headline: 'Dean of Student Affairs | TSEC', bio: 'Overseeing student welfare and campus activities with 20+ years of experience.', skills: JSON.stringify(['Leadership', 'Educational Administration']), profileImageUrl: 'https://i.pravatar.cc/150?img=12', linkedinUrl: 'https://linkedin.com/in/rajeshkumar', phone: '+91-9876543210', createdAt: new Date('2022-06-01').toISOString(), updatedAt: new Date().toISOString() },
         { name: 'Prof. Anjali Deshmukh', email: 'hod.comp@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Computer Engineering', headline: 'Head of Department - Computer Engineering', bio: 'Leading CS dept with focus on industry collaboration. 50+ research papers.', skills: JSON.stringify(['Research', 'Computer Science', 'ML']), profileImageUrl: 'https://i.pravatar.cc/150?img=45', linkedinUrl: 'https://linkedin.com/in/anjalideshmukh', phone: '+91-9876543211', createdAt: new Date('2022-07-15').toISOString(), updatedAt: new Date().toISOString() },
         { name: 'Mr. Vikram Sharma', email: 'registrar@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Administration', headline: 'Chief Academic Officer', bio: 'Managing academic operations and quality education delivery.', skills: JSON.stringify(['Academic Management', 'Quality Assurance']), profileImageUrl: 'https://i.pravatar.cc/150?img=33', linkedinUrl: 'https://linkedin.com/in/vikramsharma', phone: '+91-9876543212', createdAt: new Date('2022-08-20').toISOString(), updatedAt: new Date().toISOString() },
         { name: 'Dr. Priya Iyer', email: 'hod.electronics@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Electronics Engineering', headline: 'HOD Electronics | VLSI Researcher', bio: 'Expert in VLSI design and embedded systems research.', skills: JSON.stringify(['VLSI Design', 'Embedded Systems', 'Research']), profileImageUrl: 'https://i.pravatar.cc/150?img=48', linkedinUrl: 'https://linkedin.com/in/priyaiyer', phone: '+91-9876543213', createdAt: new Date('2022-09-10').toISOString(), updatedAt: new Date().toISOString() },
         { name: 'Mr. Arjun Patel', email: 'placement.head@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Administration', headline: 'Head of Training & Placement', bio: 'Successfully placed 500+ students in top companies.', skills: JSON.stringify(['Placement Management', 'Career Counseling']), profileImageUrl: 'https://i.pravatar.cc/150?img=52', linkedinUrl: 'https://linkedin.com/in/arjunpatel', phone: '+91-9876543214', createdAt: new Date('2023-01-15').toISOString(), updatedAt: new Date().toISOString() },
-        
-        // 15 FACULTY MEMBERS
+    ];
+    
+    await db.insert(users).values(adminUsers);
+    console.log(`✅ Seeded ${adminUsers.length} admin users`);
+    
+    // Insert 15 faculty members (IDs 6-20)
+    const facultyUsers = [
         { name: 'Dr. Meera Joshi', email: 'prof.joshi@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Associate Professor | Networks Expert', bio: 'Teaching computer networks for 12 years. Published 30+ papers.', skills: JSON.stringify(['Computer Networks', 'IoT', 'Research']), profileImageUrl: 'https://i.pravatar.cc/150?img=47', linkedinUrl: 'https://linkedin.com/in/meerajoshi', phone: '+91-9876543220', approvedBy: 1, approvedAt: new Date('2023-01-20').toISOString(), createdAt: new Date('2023-01-15').toISOString(), updatedAt: new Date().toISOString() },
         { name: 'Prof. Sanjay Nair', email: 'sanjay.nair@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Assistant Professor | AI/ML Specialist', bio: 'Passionate about AI and ML. 8 years teaching experience.', skills: JSON.stringify(['Machine Learning', 'Python', 'Deep Learning']), profileImageUrl: 'https://i.pravatar.cc/150?img=56', linkedinUrl: 'https://linkedin.com/in/sanjaynair', phone: '+91-9876543221', approvedBy: 1, approvedAt: new Date('2023-02-15').toISOString(), createdAt: new Date('2023-02-10').toISOString(), updatedAt: new Date().toISOString() },
         { name: 'Dr. Kavita Reddy', email: 'kavita.reddy@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Professor | Database & Cloud', bio: 'Expert in database systems and cloud tech. 15 years experience.', skills: JSON.stringify(['Database Management', 'Cloud Computing', 'AWS']), profileImageUrl: 'https://i.pravatar.cc/150?img=38', phone: '+91-9876543222', approvedBy: 1, approvedAt: new Date('2023-03-10').toISOString(), createdAt: new Date('2023-03-05').toISOString(), updatedAt: new Date().toISOString() },
@@ -50,53 +65,61 @@ async function seedUsers() {
         { name: 'Prof. Nikhil Joshi', email: 'nikhil.joshi@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Information Technology', headline: 'Associate Professor | Cybersecurity', bio: 'Certified ethical hacker. Teaching info security for 9 years.', skills: JSON.stringify(['Cybersecurity', 'Ethical Hacking', 'Network Security']), profileImageUrl: 'https://i.pravatar.cc/150?img=57', linkedinUrl: 'https://linkedin.com/in/nikhiljoshi', phone: '+91-9876543232', approvedBy: 1, approvedAt: new Date('2024-02-20').toISOString(), createdAt: new Date('2024-02-15').toISOString(), updatedAt: new Date().toISOString() },
         { name: 'Dr. Swati Patel', email: 'swati.patel@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Information Technology', headline: 'Assistant Professor | Software Engineering', bio: 'Previously Scrum Master in IT industry. Agile expert.', skills: JSON.stringify(['Software Engineering', 'Agile', 'Scrum']), profileImageUrl: 'https://i.pravatar.cc/150?img=46', phone: '+91-9876543233', approvedBy: 1, approvedAt: new Date('2024-03-15').toISOString(), createdAt: new Date('2024-03-10').toISOString(), updatedAt: new Date().toISOString() },
         { name: 'Mr. Rohan Verma', email: 'rohan.verma@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Information Technology', headline: 'Assistant Professor | Mobile Dev', bio: 'Teaching mobile app development. Industry experience in startups.', skills: JSON.stringify(['Android Development', 'Flutter', 'Mobile UI/UX']), profileImageUrl: 'https://i.pravatar.cc/150?img=55', linkedinUrl: 'https://linkedin.com/in/rohanverma', phone: '+91-9876543234', approvedBy: 1, approvedAt: new Date('2024-04-10').toISOString(), createdAt: new Date('2024-04-05').toISOString(), updatedAt: new Date().toISOString() },
-
-        // 30 STUDENTS - Mix of branches and cohorts
-        ...Array.from({ length: 30 }, (_, i) => ({
-            name: ['Aarav Sharma', 'Diya Patel', 'Arjun Reddy', 'Ananya Singh', 'Vivaan Gupta', 'Isha Mehta', 'Kabir Joshi', 'Myra Nair', 'Reyansh Kumar', 'Saanvi Desai', 'Advait Chopra', 'Navya Iyer', 'Dhruv Verma', 'Aadhya Sharma', 'Vihaan Patel', 'Aditya Reddy', 'Priya Nair', 'Rohan Deshmukh', 'Sneha Mehta', 'Karan Joshi', 'Tanvi Sharma', 'Ishaan Kumar', 'Riya Patel', 'Aryan Singh', 'Anaya Gupta', 'Aakash Rao', 'Nisha Kulkarni', 'Sameer Jain', 'Pooja Reddy', 'Kshitij Deshmukh'][i],
-            email: ['aarav.sharma', 'diya.patel', 'arjun.reddy', 'ananya.singh', 'vivaan.gupta', 'isha.mehta', 'kabir.joshi', 'myra.nair', 'reyansh.kumar', 'saanvi.desai', 'advait.chopra', 'navya.iyer', 'dhruv.verma', 'aadhya.sharma', 'vihaan.patel', 'aditya.reddy', 'priya.nair', 'rohan.deshmukh', 'sneha.mehta', 'karan.joshi', 'tanvi.sharma', 'ishaan.kumar', 'riya.patel', 'aryan.singh', 'anaya.gupta', 'aakash.rao', 'nisha.kulkarni', 'sameer.jain', 'pooja.reddy', 'kshitij.deshmukh'][i] + '@terna.ac.in',
-            passwordHash,
-            role: 'student',
-            status: 'active',
-            branch: i < 20 ? 'Computer Engineering' : 'Information Technology',
-            cohort: i < 15 ? '2024-2025' : i < 25 ? '2023-2024' : '2022-2023',
-            headline: `${i < 15 ? 'First' : i < 25 ? 'Second' : 'Third'} Year Student | ${['Python Enthusiast', 'UI/UX Learner', 'Android Dev', 'Data Science', 'Competitive Programmer', 'Web Dev', 'Cybersecurity', 'AI/ML Aspirant', 'Full Stack', 'Cloud Computing', 'Game Dev', 'IoT', 'Blockchain', 'Backend', 'Flutter'][i % 15]}`,
-            bio: `Passionate about technology and learning. ${['Learning Python', 'Building websites', 'Mobile apps', 'Data analysis', 'Problem solving', 'Web development', 'Security', 'Machine learning', 'Full stack', 'Cloud tech', 'Game development', 'IoT projects', 'Blockchain', 'APIs', 'Flutter'][i % 15]}.`,
-            skills: JSON.stringify([['Python', 'C++', 'Data Structures'], ['JavaScript', 'React', 'HTML/CSS'], ['Java', 'Android', 'Firebase'], ['Python', 'Machine Learning', 'TensorFlow'], ['AWS', 'Docker', 'Kubernetes']][i % 5]),
-            profileImageUrl: `https://i.pravatar.cc/150?img=${11 + i}`,
-            linkedinUrl: i % 3 === 0 ? `https://linkedin.com/in/user${i}` : undefined,
-            githubUrl: i % 2 === 0 ? `https://github.com/user${i}` : undefined,
-            resumeUrl: i % 4 === 0 ? `https://drive.google.com/file/d/sample-${i}/view` : undefined,
-            phone: `+91-912345${String(6701 + i).padStart(4, '0')}`,
-            createdAt: new Date(`2024-07-${15 + (i % 15)}`).toISOString(),
-            updatedAt: new Date().toISOString()
-        })),
-
-        // 25 ALUMNI - Working at top companies
-        ...Array.from({ length: 25 }, (_, i) => ({
-            name: ['Rahul Agarwal', 'Meera Krishnan', 'Vikrant Deshpande', 'Anjali Patil', 'Sandeep Malhotra', 'Divya Srinivasan', 'Varun Kapoor', 'Shreya Bhatt', 'Aditya Bose', 'Prateek Jain', 'Neha Rao', 'Karthik Menon', 'Swati Kulkarni', 'Rohan Ghosh', 'Anjana Nair', 'Sidharth Patel', 'Kavita Singh', 'Nikhil Shah', 'Ritu Deshmukh', 'Amit Verma', 'Deepika Iyer', 'Gaurav Chopra', 'Nidhi Agarwal', 'Vivek Reddy', 'Simran Joshi'][i],
-            email: ['rahul.agarwal@gmail.com', 'meera.k@microsoft.com', 'vikrant@razorpay.com', 'anjali.patil@swiggy.com', 'sandeep@google.com', 'divya.s@microsoft.com', 'varun@cred.club', 'shreya@zomato.com', 'aditya@tcs.com', 'prateek@amazon.com', 'neha@flipkart.com', 'karthik@paytm.com', 'swati@phonepe.com', 'rohan@netflix.com', 'anjana@uber.com', 'sidharth@freshworks.com', 'kavita@cisco.com', 'nikhil@wipro.com', 'ritu@infosys.com', 'amit@accenture.com', 'deepika@adobe.com', 'gaurav@oracle.com', 'nidhi@salesforce.com', 'vivek@shopify.com', 'simran@linkedin.com'][i],
-            passwordHash,
-            role: 'alumni',
-            status: 'active',
-            branch: i < 18 ? 'Computer Engineering' : i < 22 ? 'Information Technology' : 'Electronics Engineering',
-            yearOfPassing: 2020 + (i % 4),
-            headline: `${['Software Engineer', 'Product Manager', 'Backend Engineer', 'Data Scientist', 'Senior Engineer', 'Tech Lead', 'Engineering Manager', 'Solutions Architect', 'DevOps Engineer', 'ML Engineer'][i % 10]} at ${['Google', 'Microsoft', 'Amazon', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS', 'Flipkart', 'Paytm'][i % 10]}`,
-            bio: `Working at ${['Google', 'Microsoft', 'Amazon', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS', 'Flipkart', 'Paytm'][i % 10]}. ${i + 1}+ years experience. Passionate about mentoring.`,
-            skills: JSON.stringify([['Java', 'Python', 'AWS'], ['Product Management', 'Agile'], ['Node.js', 'Microservices', 'System Design'], ['Python', 'ML', 'TensorFlow'], ['React', 'TypeScript', 'Next.js']][i % 5]),
-            profileImageUrl: `https://i.pravatar.cc/150?img=${61 + i}`,
-            linkedinUrl: `https://linkedin.com/in/alumni${i}`,
-            githubUrl: i % 2 === 0 ? `https://github.com/alumni${i}` : undefined,
-            phone: `+91-988765${String(4321 + i).padStart(4, '0')}`,
-            approvedBy: 1,
-            approvedAt: new Date(`2024-0${6 + (i % 4)}-${10 + (i % 15)}`).toISOString(),
-            createdAt: new Date(`2024-0${6 + (i % 4)}-0${5 + (i % 5)}`).toISOString(),
-            updatedAt: new Date().toISOString()
-        })),
     ];
-
-    await db.insert(users).values(sampleUsers);
-    console.log(`✅ Seeded ${sampleUsers.length} users (5 admin, 15 faculty, 30 students, 25 alumni)`);
+    
+    await db.insert(users).values(facultyUsers);
+    console.log(`✅ Seeded ${facultyUsers.length} faculty users`);
+    
+    // Insert 30 students (IDs 21-50)
+    const studentUsers = Array.from({ length: 30 }, (_, i) => ({
+        name: ['Aarav Sharma', 'Diya Patel', 'Arjun Reddy', 'Ananya Singh', 'Vivaan Gupta', 'Isha Mehta', 'Kabir Joshi', 'Myra Nair', 'Reyansh Kumar', 'Saanvi Desai', 'Advait Chopra', 'Navya Iyer', 'Dhruv Verma', 'Aadhya Sharma', 'Vihaan Patel', 'Aditya Reddy', 'Priya Nair', 'Rohan Deshmukh', 'Sneha Mehta', 'Karan Joshi', 'Tanvi Sharma', 'Ishaan Kumar', 'Riya Patel', 'Aryan Singh', 'Anaya Gupta', 'Aakash Rao', 'Nisha Kulkarni', 'Sameer Jain', 'Pooja Reddy', 'Kshitij Deshmukh'][i],
+        email: ['aarav.sharma', 'diya.patel', 'arjun.reddy', 'ananya.singh', 'vivaan.gupta', 'isha.mehta', 'kabir.joshi', 'myra.nair', 'reyansh.kumar', 'saanvi.desai', 'advait.chopra', 'navya.iyer', 'dhruv.verma', 'aadhya.sharma', 'vihaan.patel', 'aditya.reddy', 'priya.nair', 'rohan.deshmukh', 'sneha.mehta', 'karan.joshi', 'tanvi.sharma', 'ishaan.kumar', 'riya.patel', 'aryan.singh', 'anaya.gupta', 'aakash.rao', 'nisha.kulkarni', 'sameer.jain', 'pooja.reddy', 'kshitij.deshmukh'][i] + '@terna.ac.in',
+        passwordHash,
+        role: 'student',
+        status: 'active',
+        branch: i < 20 ? 'Computer Engineering' : 'Information Technology',
+        cohort: i < 15 ? '2024-2025' : i < 25 ? '2023-2024' : '2022-2023',
+        headline: `${i < 15 ? 'First' : i < 25 ? 'Second' : 'Third'} Year Student | ${['Python Enthusiast', 'UI/UX Learner', 'Android Dev', 'Data Science', 'Competitive Programmer', 'Web Dev', 'Cybersecurity', 'AI/ML Aspirant', 'Full Stack', 'Cloud Computing', 'Game Dev', 'IoT', 'Blockchain', 'Backend', 'Flutter'][i % 15]}`,
+        bio: `Passionate about technology and learning. ${['Learning Python', 'Building websites', 'Mobile apps', 'Data analysis', 'Problem solving', 'Web development', 'Security', 'Machine learning', 'Full stack', 'Cloud tech', 'Game development', 'IoT projects', 'Blockchain', 'APIs', 'Flutter'][i % 15]}.`,
+        skills: JSON.stringify([['Python', 'C++', 'Data Structures'], ['JavaScript', 'React', 'HTML/CSS'], ['Java', 'Android', 'Firebase'], ['Python', 'Machine Learning', 'TensorFlow'], ['AWS', 'Docker', 'Kubernetes']][i % 5]),
+        profileImageUrl: `https://i.pravatar.cc/150?img=${11 + i}`,
+        linkedinUrl: i % 3 === 0 ? `https://linkedin.com/in/user${i}` : undefined,
+        githubUrl: i % 2 === 0 ? `https://github.com/user${i}` : undefined,
+        resumeUrl: i % 4 === 0 ? `https://drive.google.com/file/d/sample-${i}/view` : undefined,
+        phone: `+91-912345${String(6701 + i).padStart(4, '0')}`,
+        createdAt: new Date(`2024-07-${15 + (i % 15)}`).toISOString(),
+        updatedAt: new Date().toISOString()
+    }));
+    
+    await db.insert(users).values(studentUsers);
+    console.log(`✅ Seeded ${studentUsers.length} student users`);
+    
+    // Insert 25 alumni (IDs 51-75)
+    const alumniUsers = Array.from({ length: 25 }, (_, i) => ({
+        name: ['Rahul Agarwal', 'Meera Krishnan', 'Vikrant Deshpande', 'Anjali Patil', 'Sandeep Malhotra', 'Divya Srinivasan', 'Varun Kapoor', 'Shreya Bhatt', 'Aditya Bose', 'Prateek Jain', 'Neha Rao', 'Karthik Menon', 'Swati Kulkarni', 'Rohan Ghosh', 'Anjana Nair', 'Sidharth Patel', 'Kavita Singh', 'Nikhil Shah', 'Ritu Deshmukh', 'Amit Verma', 'Deepika Iyer', 'Gaurav Chopra', 'Nidhi Agarwal', 'Vivek Reddy', 'Simran Joshi'][i],
+        email: ['rahul.agarwal@gmail.com', 'meera.k@microsoft.com', 'vikrant@razorpay.com', 'anjali.patil@swiggy.com', 'sandeep@google.com', 'divya.s@microsoft.com', 'varun@cred.club', 'shreya@zomato.com', 'aditya@tcs.com', 'prateek@amazon.com', 'neha@flipkart.com', 'karthik@paytm.com', 'swati@phonepe.com', 'rohan@netflix.com', 'anjana@uber.com', 'sidharth@freshworks.com', 'kavita@cisco.com', 'nikhil@wipro.com', 'ritu@infosys.com', 'amit@accenture.com', 'deepika@adobe.com', 'gaurav@oracle.com', 'nidhi@salesforce.com', 'vivek@shopify.com', 'simran@linkedin.com'][i],
+        passwordHash,
+        role: 'alumni',
+        status: 'active',
+        branch: i < 18 ? 'Computer Engineering' : i < 22 ? 'Information Technology' : 'Electronics Engineering',
+        yearOfPassing: 2020 + (i % 4),
+        headline: `${['Software Engineer', 'Product Manager', 'Backend Engineer', 'Data Scientist', 'Senior Engineer', 'Tech Lead', 'Engineering Manager', 'Solutions Architect', 'DevOps Engineer', 'ML Engineer'][i % 10]} at ${['Google', 'Microsoft', 'Amazon', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS', 'Flipkart', 'Paytm'][i % 10]}`,
+        bio: `Working at ${['Google', 'Microsoft', 'Amazon', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS', 'Flipkart', 'Paytm'][i % 10]}. ${i + 1}+ years experience. Passionate about mentoring.`,
+        skills: JSON.stringify([['Java', 'Python', 'AWS'], ['Product Management', 'Agile'], ['Node.js', 'Microservices', 'System Design'], ['Python', 'ML', 'TensorFlow'], ['React', 'TypeScript', 'Next.js']][i % 5]),
+        profileImageUrl: `https://i.pravatar.cc/150?img=${61 + i}`,
+        linkedinUrl: `https://linkedin.com/in/alumni${i}`,
+        githubUrl: i % 2 === 0 ? `https://github.com/alumni${i}` : undefined,
+        phone: `+91-988765${String(4321 + i).padStart(4, '0')}`,
+        approvedBy: 1,
+        approvedAt: new Date(`2024-0${6 + (i % 4)}-${10 + (i % 15)}`).toISOString(),
+        createdAt: new Date(`2024-0${6 + (i % 4)}-0${5 + (i % 5)}`).toISOString(),
+        updatedAt: new Date().toISOString()
+    }));
+    
+    await db.insert(users).values(alumniUsers);
+    console.log(`✅ Seeded ${alumniUsers.length} alumni users`);
+    
+    console.log(`✅ Total users seeded: ${adminUsers.length + facultyUsers.length + studentUsers.length + alumniUsers.length} (5 admin, 15 faculty, 30 students, 25 alumni)`);
 }
 
 async function seedPosts() {
