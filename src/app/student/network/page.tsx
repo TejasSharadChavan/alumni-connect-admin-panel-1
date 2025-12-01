@@ -78,8 +78,23 @@ export default function StudentNetworkPage() {
             (c: any) =>
               (c.requesterId === user.id || c.responderId === user.id)
           );
+          
+          // Parse skills if it's a string
+          let parsedSkills = user.skills;
+          if (typeof user.skills === 'string') {
+            try {
+              parsedSkills = JSON.parse(user.skills);
+            } catch (e) {
+              parsedSkills = [];
+            }
+          }
+          if (!Array.isArray(parsedSkills)) {
+            parsedSkills = [];
+          }
+          
           return {
             ...user,
+            skills: parsedSkills,
             connectionStatus: connection
               ? connection.status === "accepted"
                 ? "accepted"
@@ -105,7 +120,22 @@ export default function StudentNetworkPage() {
       }
 
       if (suggestionsData.suggestions) {
-        setSuggestions(suggestionsData.suggestions);
+        // Parse skills for suggestions too
+        const suggestionsWithParsedSkills = suggestionsData.suggestions.map((user: User) => {
+          let parsedSkills = user.skills;
+          if (typeof user.skills === 'string') {
+            try {
+              parsedSkills = JSON.parse(user.skills);
+            } catch (e) {
+              parsedSkills = [];
+            }
+          }
+          if (!Array.isArray(parsedSkills)) {
+            parsedSkills = [];
+          }
+          return { ...user, skills: parsedSkills };
+        });
+        setSuggestions(suggestionsWithParsedSkills);
       }
     } catch (error) {
       console.error("Error fetching network data:", error);
@@ -125,9 +155,9 @@ export default function StudentNetworkPage() {
           user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           user.headline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           user.bio?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.skills?.some((s) =>
+          (Array.isArray(user.skills) && user.skills.some((s) =>
             s.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+          ))
       );
     }
 

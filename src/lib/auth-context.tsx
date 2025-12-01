@@ -51,7 +51,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        // Parse skills if they're a JSON string
+        let parsedSkills = data.user.skills;
+        if (typeof data.user.skills === 'string') {
+          try {
+            parsedSkills = JSON.parse(data.user.skills);
+          } catch (e) {
+            parsedSkills = [];
+          }
+        }
+        if (!Array.isArray(parsedSkills)) {
+          parsedSkills = [];
+        }
+        setUser({ ...data.user, skills: parsedSkills });
       } else {
         localStorage.removeItem('auth_token');
         setUser(null);
@@ -77,7 +89,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         localStorage.setItem('auth_token', data.token);
-        setUser(data.user);
+        // Parse skills if they're a JSON string
+        let parsedSkills = data.user.skills;
+        if (typeof data.user.skills === 'string') {
+          try {
+            parsedSkills = JSON.parse(data.user.skills);
+          } catch (e) {
+            parsedSkills = [];
+          }
+        }
+        if (!Array.isArray(parsedSkills)) {
+          parsedSkills = [];
+        }
+        setUser({ ...data.user, skills: parsedSkills });
         toast.success('Login successful!');
         
         // Redirect based on role

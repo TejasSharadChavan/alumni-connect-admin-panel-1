@@ -60,8 +60,22 @@ export default function StudentJobsPage() {
 
       const data = await response.json();
       if (response.ok) {
-        // Only show approved jobs
-        const approvedJobs = data.jobs?.filter((j: any) => j.status === "approved") || [];
+        // Only show approved jobs and parse skills
+        const approvedJobs = data.jobs?.filter((j: any) => j.status === "approved").map((job: any) => {
+          // Parse skills if it's a string
+          let parsedSkills = job.skills;
+          if (typeof job.skills === 'string') {
+            try {
+              parsedSkills = JSON.parse(job.skills);
+            } catch (e) {
+              parsedSkills = [];
+            }
+          }
+          if (!Array.isArray(parsedSkills)) {
+            parsedSkills = [];
+          }
+          return { ...job, skills: parsedSkills };
+        }) || [];
         setJobs(approvedJobs);
       } else {
         toast.error("Failed to load jobs");

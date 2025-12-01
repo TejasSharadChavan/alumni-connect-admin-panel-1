@@ -37,6 +37,19 @@ export default function StudentProfilePage() {
 
   useEffect(() => {
     if (user) {
+      // Parse skills if they're a JSON string
+      let parsedSkills = user.skills;
+      if (typeof user.skills === 'string') {
+        try {
+          parsedSkills = JSON.parse(user.skills);
+        } catch (e) {
+          parsedSkills = [];
+        }
+      }
+      if (!Array.isArray(parsedSkills)) {
+        parsedSkills = [];
+      }
+      
       setFormData({
         name: user.name || "",
         email: user.email || "",
@@ -47,7 +60,7 @@ export default function StudentProfilePage() {
         phone: "",
         linkedinUrl: user.linkedinUrl || "",
         githubUrl: user.githubUrl || "",
-        skills: user.skills || [],
+        skills: parsedSkills,
       });
     }
   }, [user]);

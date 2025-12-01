@@ -53,7 +53,22 @@ export default function FacultyStudentsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setStudents(data.users || []);
+        // Parse skills if they're JSON strings
+        const studentsWithParsedSkills = (data.users || []).map((student: any) => {
+          let parsedSkills = student.skills;
+          if (typeof student.skills === 'string') {
+            try {
+              parsedSkills = JSON.parse(student.skills);
+            } catch (e) {
+              parsedSkills = [];
+            }
+          }
+          if (!Array.isArray(parsedSkills)) {
+            parsedSkills = [];
+          }
+          return { ...student, skills: parsedSkills };
+        });
+        setStudents(studentsWithParsedSkills);
       }
     } catch (error) {
       console.error("Failed to fetch students:", error);
