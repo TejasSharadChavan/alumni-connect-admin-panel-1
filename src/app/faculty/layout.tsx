@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GraduationCap, LayoutDashboard, Users, Calendar, FileText, MessageSquare, LogOut, Menu, BarChart3 } from "lucide-react";
+import { GraduationCap, LayoutDashboard, Users, Calendar, FileText, MessageSquare, LogOut, Menu, BarChart3, FileCheck, UserCircle, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -27,8 +27,9 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
     { name: "Dashboard", href: "/faculty", icon: LayoutDashboard },
     { name: "Students", href: "/faculty/students", icon: Users },
     { name: "Events", href: "/faculty/events", icon: Calendar },
+    { name: "Mentorship", href: "/faculty/mentorship", icon: GraduationCap },
+    { name: "Approvals", href: "/faculty/approvals", icon: FileCheck },
     { name: "Reports", href: "/faculty/reports", icon: BarChart3 },
-    { name: "Approvals", href: "/faculty/approvals", icon: FileText },
     { name: "Messages", href: "/faculty/messages", icon: MessageSquare },
   ];
 
@@ -84,7 +85,16 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link href="/faculty/profile">Profile</Link>
+                    <Link href="/faculty/profile">
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/faculty/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive">
