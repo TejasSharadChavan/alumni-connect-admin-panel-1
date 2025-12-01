@@ -118,7 +118,8 @@ export default function LoginPage() {
                   💡 <strong>Demo Credentials (Password: Password@123):</strong><br />
                   Student: aarav.sharma@terna.ac.in<br />
                   Admin: dean@terna.ac.in<br />
-                  Faculty: prof.kapoor@terna.ac.in
+                  Faculty: prof.joshi@terna.ac.in<br />
+                  Alumni: rahul.agarwal@gmail.com
                 </p>
               </div>
             </CardFooter>
