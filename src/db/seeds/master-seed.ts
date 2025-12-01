@@ -6,10 +6,8 @@ import { sql } from 'drizzle-orm';
 async function clearAllTables() {
     console.log('🗑️  Clearing all existing data...');
     
-    // Disable foreign key checks
     await db.run(sql`PRAGMA foreign_keys = OFF`);
     
-    // Delete in any order since FK checks are off
     await db.delete(notifications);
     await db.delete(activityLog);
     await db.delete(messages);
@@ -26,7 +24,6 @@ async function clearAllTables() {
     await db.delete(posts);
     await db.delete(users);
     
-    // Re-enable foreign key checks
     await db.run(sql`PRAGMA foreign_keys = ON`);
     
     console.log('✅ All tables cleared');
@@ -36,208 +33,226 @@ async function seedUsers() {
     console.log('👥 Seeding users...');
     const passwordHash = await bcrypt.hash('Password@123', 10);
     
-    // Insert admins first (so they get IDs 1-5)
+    // 2 Admins
     const adminUsers = [
-        { name: 'Dr. Rajesh Kumar', email: 'dean@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Administration', headline: 'Dean of Student Affairs | TSEC', bio: 'Overseeing student welfare and campus activities with 20+ years of experience.', skills: JSON.stringify(['Leadership', 'Educational Administration']), profileImageUrl: 'https://i.pravatar.cc/150?img=12', linkedinUrl: 'https://linkedin.com/in/rajeshkumar', phone: '+91-9876543210', createdAt: new Date('2022-06-01').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Prof. Anjali Deshmukh', email: 'hod.comp@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Computer Engineering', headline: 'Head of Department - Computer Engineering', bio: 'Leading CS dept with focus on industry collaboration. 50+ research papers.', skills: JSON.stringify(['Research', 'Computer Science', 'ML']), profileImageUrl: 'https://i.pravatar.cc/150?img=45', linkedinUrl: 'https://linkedin.com/in/anjalideshmukh', phone: '+91-9876543211', createdAt: new Date('2022-07-15').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Mr. Vikram Sharma', email: 'registrar@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Administration', headline: 'Chief Academic Officer', bio: 'Managing academic operations and quality education delivery.', skills: JSON.stringify(['Academic Management', 'Quality Assurance']), profileImageUrl: 'https://i.pravatar.cc/150?img=33', linkedinUrl: 'https://linkedin.com/in/vikramsharma', phone: '+91-9876543212', createdAt: new Date('2022-08-20').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Dr. Priya Iyer', email: 'hod.electronics@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Electronics Engineering', headline: 'HOD Electronics | VLSI Researcher', bio: 'Expert in VLSI design and embedded systems research.', skills: JSON.stringify(['VLSI Design', 'Embedded Systems', 'Research']), profileImageUrl: 'https://i.pravatar.cc/150?img=48', linkedinUrl: 'https://linkedin.com/in/priyaiyer', phone: '+91-9876543213', createdAt: new Date('2022-09-10').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Mr. Arjun Patel', email: 'placement.head@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Administration', headline: 'Head of Training & Placement', bio: 'Successfully placed 500+ students in top companies.', skills: JSON.stringify(['Placement Management', 'Career Counseling']), profileImageUrl: 'https://i.pravatar.cc/150?img=52', linkedinUrl: 'https://linkedin.com/in/arjunpatel', phone: '+91-9876543214', createdAt: new Date('2023-01-15').toISOString(), updatedAt: new Date().toISOString() },
+        { name: 'Dr. Rajesh Kumar', email: 'dean@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Administration', headline: 'Dean of Student Affairs | TSEC', bio: 'Overseeing student welfare and campus activities.', skills: JSON.stringify(['Leadership', 'Educational Administration']), profileImageUrl: 'https://i.pravatar.cc/150?img=12', linkedinUrl: 'https://linkedin.com/in/rajeshkumar', phone: '+91-9876543210', createdAt: new Date('2022-06-01').toISOString(), updatedAt: new Date().toISOString() },
+        { name: 'Prof. Anjali Deshmukh', email: 'hod.comp@terna.ac.in', passwordHash, role: 'admin', status: 'active', department: 'Computer Engineering', headline: 'Head of Department - Computer Engineering', bio: 'Leading CS dept with focus on industry collaboration.', skills: JSON.stringify(['Research', 'Computer Science', 'ML']), profileImageUrl: 'https://i.pravatar.cc/150?img=45', linkedinUrl: 'https://linkedin.com/in/anjalideshmukh', phone: '+91-9876543211', createdAt: new Date('2022-07-15').toISOString(), updatedAt: new Date().toISOString() },
     ];
     
-    await db.insert(users).values(adminUsers);
-    console.log(`✅ Seeded ${adminUsers.length} admin users`);
+    const insertedAdmins = await db.insert(users).values(adminUsers).returning();
+    console.log(`✅ Seeded ${insertedAdmins.length} admin users`);
     
-    // Insert 15 faculty members (IDs 6-20)
+    const firstAdminId = insertedAdmins[0].id;
+    
+    // 5 Faculty
     const facultyUsers = [
-        { name: 'Dr. Meera Joshi', email: 'prof.joshi@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Associate Professor | Networks Expert', bio: 'Teaching computer networks for 12 years. Published 30+ papers.', skills: JSON.stringify(['Computer Networks', 'IoT', 'Research']), profileImageUrl: 'https://i.pravatar.cc/150?img=47', linkedinUrl: 'https://linkedin.com/in/meerajoshi', phone: '+91-9876543220', approvedBy: 1, approvedAt: new Date('2023-01-20').toISOString(), createdAt: new Date('2023-01-15').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Prof. Sanjay Nair', email: 'sanjay.nair@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Assistant Professor | AI/ML Specialist', bio: 'Passionate about AI and ML. 8 years teaching experience.', skills: JSON.stringify(['Machine Learning', 'Python', 'Deep Learning']), profileImageUrl: 'https://i.pravatar.cc/150?img=56', linkedinUrl: 'https://linkedin.com/in/sanjaynair', phone: '+91-9876543221', approvedBy: 1, approvedAt: new Date('2023-02-15').toISOString(), createdAt: new Date('2023-02-10').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Dr. Kavita Reddy', email: 'kavita.reddy@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Professor | Database & Cloud', bio: 'Expert in database systems and cloud tech. 15 years experience.', skills: JSON.stringify(['Database Management', 'Cloud Computing', 'AWS']), profileImageUrl: 'https://i.pravatar.cc/150?img=38', phone: '+91-9876543222', approvedBy: 1, approvedAt: new Date('2023-03-10').toISOString(), createdAt: new Date('2023-03-05').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Mr. Rahul Chopra', email: 'rahul.chopra@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Assistant Professor | Web Dev & UI/UX', bio: 'Teaching web technologies. Previously full-stack developer in industry.', skills: JSON.stringify(['Web Development', 'React', 'UI/UX Design']), profileImageUrl: 'https://i.pravatar.cc/150?img=60', linkedinUrl: 'https://linkedin.com/in/rahulchopra', phone: '+91-9876543223', approvedBy: 1, approvedAt: new Date('2023-04-20').toISOString(), createdAt: new Date('2023-04-15').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Dr. Sneha Verma', email: 'prof.verma@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Electronics Engineering', headline: 'Associate Professor | VLSI Design', bio: 'Specialized in VLSI design. Leading chip design research lab.', skills: JSON.stringify(['VLSI Design', 'Digital Electronics', 'Verilog']), profileImageUrl: 'https://i.pravatar.cc/150?img=49', phone: '+91-9876543224', approvedBy: 1, approvedAt: new Date('2023-05-10').toISOString(), createdAt: new Date('2023-05-05').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Prof. Aditya Gupta', email: 'aditya.gupta@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Electronics Engineering', headline: 'Assistant Professor | Embedded & IoT', bio: 'Teaching embedded systems and IoT. Arduino workshop conductor.', skills: JSON.stringify(['Embedded Systems', 'IoT', 'Arduino']), profileImageUrl: 'https://i.pravatar.cc/150?img=54', linkedinUrl: 'https://linkedin.com/in/adityagupta', phone: '+91-9876543225', approvedBy: 1, approvedAt: new Date('2023-06-15').toISOString(), createdAt: new Date('2023-06-10').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Dr. Pooja Mehta', email: 'pooja.mehta@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Electronics Engineering', headline: 'Professor | Signal Processing', bio: 'Expert in DSP and communications. Published research on 5G.', skills: JSON.stringify(['Signal Processing', 'Communications', '5G']), profileImageUrl: 'https://i.pravatar.cc/150?img=44', linkedinUrl: 'https://linkedin.com/in/poojamehta', phone: '+91-9876543226', approvedBy: 1, approvedAt: new Date('2023-07-20').toISOString(), createdAt: new Date('2023-07-15').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Mr. Karthik Singh', email: 'karthik.singh@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Mechanical Engineering', headline: 'Assistant Professor | CAD/CAM', bio: 'Teaching CAD/CAM. Previously in automotive industry.', skills: JSON.stringify(['CAD/CAM', 'SolidWorks', 'AutoCAD']), profileImageUrl: 'https://i.pravatar.cc/150?img=58', linkedinUrl: 'https://linkedin.com/in/karthiksingh', phone: '+91-9876543227', approvedBy: 1, approvedAt: new Date('2023-08-10').toISOString(), createdAt: new Date('2023-08-05').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Dr. Lakshmi Nair', email: 'prof.lakshmi@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Mechanical Engineering', headline: 'Associate Professor | Thermal Engineering', bio: 'Specialized in thermal engineering and renewable energy.', skills: JSON.stringify(['Thermal Engineering', 'Renewable Energy', 'ANSYS']), profileImageUrl: 'https://i.pravatar.cc/150?img=41', phone: '+91-9876543228', approvedBy: 1, approvedAt: new Date('2023-09-15').toISOString(), createdAt: new Date('2023-09-10').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Prof. Amit Desai', email: 'amit.desai@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Mechanical Engineering', headline: 'Assistant Professor | Robotics', bio: 'Teaching robotics and automation. Industry 4.0 expert.', skills: JSON.stringify(['Robotics', 'Automation', 'MATLAB']), profileImageUrl: 'https://i.pravatar.cc/150?img=59', linkedinUrl: 'https://linkedin.com/in/amitdesai', phone: '+91-9876543229', approvedBy: 1, approvedAt: new Date('2023-10-20').toISOString(), createdAt: new Date('2023-10-15').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Dr. Ravi Kumar', email: 'ravi.kumar@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Civil Engineering', headline: 'Professor | Structural Engineering', bio: 'Expert in structural analysis. 40+ research papers published.', skills: JSON.stringify(['Structural Engineering', 'STAAD Pro', 'Research']), profileImageUrl: 'https://i.pravatar.cc/150?img=53', linkedinUrl: 'https://linkedin.com/in/ravikumar', phone: '+91-9876543230', approvedBy: 1, approvedAt: new Date('2023-11-10').toISOString(), createdAt: new Date('2023-11-05').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Mrs. Divya Sharma', email: 'divya.sharma@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Civil Engineering', headline: 'Assistant Professor | Environmental', bio: 'Teaching environmental engineering and sustainable construction.', skills: JSON.stringify(['Environmental Engineering', 'Water Resources']), profileImageUrl: 'https://i.pravatar.cc/150?img=43', linkedinUrl: 'https://linkedin.com/in/divyasharma', phone: '+91-9876543231', approvedBy: 1, approvedAt: new Date('2024-01-15').toISOString(), createdAt: new Date('2024-01-10').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Prof. Nikhil Joshi', email: 'nikhil.joshi@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Information Technology', headline: 'Associate Professor | Cybersecurity', bio: 'Certified ethical hacker. Teaching info security for 9 years.', skills: JSON.stringify(['Cybersecurity', 'Ethical Hacking', 'Network Security']), profileImageUrl: 'https://i.pravatar.cc/150?img=57', linkedinUrl: 'https://linkedin.com/in/nikhiljoshi', phone: '+91-9876543232', approvedBy: 1, approvedAt: new Date('2024-02-20').toISOString(), createdAt: new Date('2024-02-15').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Dr. Swati Patel', email: 'swati.patel@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Information Technology', headline: 'Assistant Professor | Software Engineering', bio: 'Previously Scrum Master in IT industry. Agile expert.', skills: JSON.stringify(['Software Engineering', 'Agile', 'Scrum']), profileImageUrl: 'https://i.pravatar.cc/150?img=46', phone: '+91-9876543233', approvedBy: 1, approvedAt: new Date('2024-03-15').toISOString(), createdAt: new Date('2024-03-10').toISOString(), updatedAt: new Date().toISOString() },
-        { name: 'Mr. Rohan Verma', email: 'rohan.verma@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Information Technology', headline: 'Assistant Professor | Mobile Dev', bio: 'Teaching mobile app development. Industry experience in startups.', skills: JSON.stringify(['Android Development', 'Flutter', 'Mobile UI/UX']), profileImageUrl: 'https://i.pravatar.cc/150?img=55', linkedinUrl: 'https://linkedin.com/in/rohanverma', phone: '+91-9876543234', approvedBy: 1, approvedAt: new Date('2024-04-10').toISOString(), createdAt: new Date('2024-04-05').toISOString(), updatedAt: new Date().toISOString() },
+        { name: 'Dr. Meera Joshi', email: 'prof.joshi@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Associate Professor | Networks Expert', bio: 'Teaching computer networks for 12 years.', skills: JSON.stringify(['Computer Networks', 'IoT', 'Research']), profileImageUrl: 'https://i.pravatar.cc/150?img=47', phone: '+91-9876543220', approvedBy: firstAdminId, approvedAt: new Date('2023-01-20').toISOString(), createdAt: new Date('2023-01-15').toISOString(), updatedAt: new Date().toISOString() },
+        { name: 'Prof. Sanjay Nair', email: 'sanjay.nair@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Assistant Professor | AI/ML Specialist', bio: 'Passionate about AI and ML. 8 years teaching experience.', skills: JSON.stringify(['Machine Learning', 'Python', 'Deep Learning']), profileImageUrl: 'https://i.pravatar.cc/150?img=56', linkedinUrl: 'https://linkedin.com/in/sanjaynair', phone: '+91-9876543221', approvedBy: firstAdminId, approvedAt: new Date('2023-02-15').toISOString(), createdAt: new Date('2023-02-10').toISOString(), updatedAt: new Date().toISOString() },
+        { name: 'Dr. Kavita Reddy', email: 'kavita.reddy@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Professor | Database & Cloud', bio: 'Expert in database systems and cloud tech.', skills: JSON.stringify(['Database Management', 'Cloud Computing', 'AWS']), profileImageUrl: 'https://i.pravatar.cc/150?img=38', phone: '+91-9876543222', approvedBy: firstAdminId, approvedAt: new Date('2023-03-10').toISOString(), createdAt: new Date('2023-03-05').toISOString(), updatedAt: new Date().toISOString() },
+        { name: 'Mr. Rahul Chopra', email: 'rahul.chopra@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Computer Engineering', headline: 'Assistant Professor | Web Dev & UI/UX', bio: 'Teaching web technologies. Previously full-stack developer.', skills: JSON.stringify(['Web Development', 'React', 'UI/UX Design']), profileImageUrl: 'https://i.pravatar.cc/150?img=60', linkedinUrl: 'https://linkedin.com/in/rahulchopra', phone: '+91-9876543223', approvedBy: firstAdminId, approvedAt: new Date('2023-04-20').toISOString(), createdAt: new Date('2023-04-15').toISOString(), updatedAt: new Date().toISOString() },
+        { name: 'Dr. Sneha Verma', email: 'prof.verma@terna.ac.in', passwordHash, role: 'faculty', status: 'active', department: 'Electronics Engineering', headline: 'Associate Professor | VLSI Design', bio: 'Specialized in VLSI design. Leading chip design research lab.', skills: JSON.stringify(['VLSI Design', 'Digital Electronics', 'Verilog']), profileImageUrl: 'https://i.pravatar.cc/150?img=49', phone: '+91-9876543224', approvedBy: firstAdminId, approvedAt: new Date('2023-05-10').toISOString(), createdAt: new Date('2023-05-05').toISOString(), updatedAt: new Date().toISOString() },
     ];
     
-    await db.insert(users).values(facultyUsers);
+    const insertedFaculty = await db.insert(users).values(facultyUsers).returning();
     console.log(`✅ Seeded ${facultyUsers.length} faculty users`);
     
-    // Insert 30 students (IDs 21-50)
-    const studentUsers = Array.from({ length: 30 }, (_, i) => ({
-        name: ['Aarav Sharma', 'Diya Patel', 'Arjun Reddy', 'Ananya Singh', 'Vivaan Gupta', 'Isha Mehta', 'Kabir Joshi', 'Myra Nair', 'Reyansh Kumar', 'Saanvi Desai', 'Advait Chopra', 'Navya Iyer', 'Dhruv Verma', 'Aadhya Sharma', 'Vihaan Patel', 'Aditya Reddy', 'Priya Nair', 'Rohan Deshmukh', 'Sneha Mehta', 'Karan Joshi', 'Tanvi Sharma', 'Ishaan Kumar', 'Riya Patel', 'Aryan Singh', 'Anaya Gupta', 'Aakash Rao', 'Nisha Kulkarni', 'Sameer Jain', 'Pooja Reddy', 'Kshitij Deshmukh'][i],
-        email: ['aarav.sharma', 'diya.patel', 'arjun.reddy', 'ananya.singh', 'vivaan.gupta', 'isha.mehta', 'kabir.joshi', 'myra.nair', 'reyansh.kumar', 'saanvi.desai', 'advait.chopra', 'navya.iyer', 'dhruv.verma', 'aadhya.sharma', 'vihaan.patel', 'aditya.reddy', 'priya.nair', 'rohan.deshmukh', 'sneha.mehta', 'karan.joshi', 'tanvi.sharma', 'ishaan.kumar', 'riya.patel', 'aryan.singh', 'anaya.gupta', 'aakash.rao', 'nisha.kulkarni', 'sameer.jain', 'pooja.reddy', 'kshitij.deshmukh'][i] + '@terna.ac.in',
+    // 10 Students
+    const studentUsers = Array.from({ length: 10 }, (_, i) => ({
+        name: ['Aarav Sharma', 'Diya Patel', 'Arjun Reddy', 'Ananya Singh', 'Vivaan Gupta', 'Isha Mehta', 'Kabir Joshi', 'Myra Nair', 'Reyansh Kumar', 'Saanvi Desai'][i],
+        email: ['aarav.sharma', 'diya.patel', 'arjun.reddy', 'ananya.singh', 'vivaan.gupta', 'isha.mehta', 'kabir.joshi', 'myra.nair', 'reyansh.kumar', 'saanvi.desai'][i] + '@terna.ac.in',
         passwordHash,
         role: 'student',
         status: 'active',
-        branch: i < 20 ? 'Computer Engineering' : 'Information Technology',
-        cohort: i < 15 ? '2024-2025' : i < 25 ? '2023-2024' : '2022-2023',
-        headline: `${i < 15 ? 'First' : i < 25 ? 'Second' : 'Third'} Year Student | ${['Python Enthusiast', 'UI/UX Learner', 'Android Dev', 'Data Science', 'Competitive Programmer', 'Web Dev', 'Cybersecurity', 'AI/ML Aspirant', 'Full Stack', 'Cloud Computing', 'Game Dev', 'IoT', 'Blockchain', 'Backend', 'Flutter'][i % 15]}`,
-        bio: `Passionate about technology and learning. ${['Learning Python', 'Building websites', 'Mobile apps', 'Data analysis', 'Problem solving', 'Web development', 'Security', 'Machine learning', 'Full stack', 'Cloud tech', 'Game development', 'IoT projects', 'Blockchain', 'APIs', 'Flutter'][i % 15]}.`,
-        skills: JSON.stringify([['Python', 'C++', 'Data Structures'], ['JavaScript', 'React', 'HTML/CSS'], ['Java', 'Android', 'Firebase'], ['Python', 'Machine Learning', 'TensorFlow'], ['AWS', 'Docker', 'Kubernetes']][i % 5]),
+        branch: i < 7 ? 'Computer Engineering' : 'Information Technology',
+        cohort: i < 5 ? '2024-2025' : '2023-2024',
+        headline: `${i < 5 ? 'First' : 'Second'} Year Student | ${['Python Enthusiast', 'UI/UX Learner', 'Android Dev', 'Data Science', 'Competitive Programmer', 'Web Dev', 'Cybersecurity', 'AI/ML Aspirant', 'Full Stack', 'Cloud Computing'][i]}`,
+        bio: `Passionate about technology and learning. ${['Learning Python', 'Building websites', 'Mobile apps', 'Data analysis', 'Problem solving', 'Web development', 'Security', 'Machine learning', 'Full stack', 'Cloud tech'][i]}.`,
+        skills: JSON.stringify([['Python', 'C++'], ['JavaScript', 'React'], ['Java', 'Android'], ['Python', 'ML'], ['AWS', 'Docker']][i % 5]),
         profileImageUrl: `https://i.pravatar.cc/150?img=${11 + i}`,
         linkedinUrl: i % 3 === 0 ? `https://linkedin.com/in/user${i}` : undefined,
         githubUrl: i % 2 === 0 ? `https://github.com/user${i}` : undefined,
-        resumeUrl: i % 4 === 0 ? `https://drive.google.com/file/d/sample-${i}/view` : undefined,
         phone: `+91-912345${String(6701 + i).padStart(4, '0')}`,
-        createdAt: new Date(`2024-07-${15 + (i % 15)}`).toISOString(),
+        createdAt: new Date(`2024-07-${15 + i}`).toISOString(),
         updatedAt: new Date().toISOString()
     }));
     
-    await db.insert(users).values(studentUsers);
+    const insertedStudents = await db.insert(users).values(studentUsers).returning();
     console.log(`✅ Seeded ${studentUsers.length} student users`);
     
-    // Insert 25 alumni (IDs 51-75)
-    const alumniUsers = Array.from({ length: 25 }, (_, i) => ({
-        name: ['Rahul Agarwal', 'Meera Krishnan', 'Vikrant Deshpande', 'Anjali Patil', 'Sandeep Malhotra', 'Divya Srinivasan', 'Varun Kapoor', 'Shreya Bhatt', 'Aditya Bose', 'Prateek Jain', 'Neha Rao', 'Karthik Menon', 'Swati Kulkarni', 'Rohan Ghosh', 'Anjana Nair', 'Sidharth Patel', 'Kavita Singh', 'Nikhil Shah', 'Ritu Deshmukh', 'Amit Verma', 'Deepika Iyer', 'Gaurav Chopra', 'Nidhi Agarwal', 'Vivek Reddy', 'Simran Joshi'][i],
-        email: ['rahul.agarwal@gmail.com', 'meera.k@microsoft.com', 'vikrant@razorpay.com', 'anjali.patil@swiggy.com', 'sandeep@google.com', 'divya.s@microsoft.com', 'varun@cred.club', 'shreya@zomato.com', 'aditya@tcs.com', 'prateek@amazon.com', 'neha@flipkart.com', 'karthik@paytm.com', 'swati@phonepe.com', 'rohan@netflix.com', 'anjana@uber.com', 'sidharth@freshworks.com', 'kavita@cisco.com', 'nikhil@wipro.com', 'ritu@infosys.com', 'amit@accenture.com', 'deepika@adobe.com', 'gaurav@oracle.com', 'nidhi@salesforce.com', 'vivek@shopify.com', 'simran@linkedin.com'][i],
+    // 8 Alumni
+    const alumniUsers = Array.from({ length: 8 }, (_, i) => ({
+        name: ['Rahul Agarwal', 'Meera Krishnan', 'Vikrant Deshpande', 'Anjali Patil', 'Sandeep Malhotra', 'Divya Srinivasan', 'Varun Kapoor', 'Shreya Bhatt'][i],
+        email: ['rahul.agarwal@gmail.com', 'meera.k@microsoft.com', 'vikrant@razorpay.com', 'anjali.patil@swiggy.com', 'sandeep@google.com', 'divya.s@microsoft.com', 'varun@cred.club', 'shreya@zomato.com'][i],
         passwordHash,
         role: 'alumni',
         status: 'active',
-        branch: i < 18 ? 'Computer Engineering' : i < 22 ? 'Information Technology' : 'Electronics Engineering',
-        yearOfPassing: 2020 + (i % 4),
-        headline: `${['Software Engineer', 'Product Manager', 'Backend Engineer', 'Data Scientist', 'Senior Engineer', 'Tech Lead', 'Engineering Manager', 'Solutions Architect', 'DevOps Engineer', 'ML Engineer'][i % 10]} at ${['Google', 'Microsoft', 'Amazon', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS', 'Flipkart', 'Paytm'][i % 10]}`,
-        bio: `Working at ${['Google', 'Microsoft', 'Amazon', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS', 'Flipkart', 'Paytm'][i % 10]}. ${i + 1}+ years experience. Passionate about mentoring.`,
-        skills: JSON.stringify([['Java', 'Python', 'AWS'], ['Product Management', 'Agile'], ['Node.js', 'Microservices', 'System Design'], ['Python', 'ML', 'TensorFlow'], ['React', 'TypeScript', 'Next.js']][i % 5]),
+        branch: 'Computer Engineering',
+        yearOfPassing: 2020 + (i % 3),
+        headline: `${['Software Engineer', 'Product Manager', 'Backend Engineer', 'Data Scientist', 'Senior Engineer', 'Tech Lead', 'Engineering Manager', 'Solutions Architect'][i]} at ${['Google', 'Microsoft', 'Amazon', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS'][i]}`,
+        bio: `Working at ${['Google', 'Microsoft', 'Amazon', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS'][i]}. ${i + 2}+ years experience.`,
+        skills: JSON.stringify([['Java', 'Python', 'AWS'], ['Product Management', 'Agile'], ['Node.js', 'System Design'], ['Python', 'ML', 'TensorFlow']][i % 4]),
         profileImageUrl: `https://i.pravatar.cc/150?img=${61 + i}`,
         linkedinUrl: `https://linkedin.com/in/alumni${i}`,
         githubUrl: i % 2 === 0 ? `https://github.com/alumni${i}` : undefined,
         phone: `+91-988765${String(4321 + i).padStart(4, '0')}`,
-        approvedBy: 1,
-        approvedAt: new Date(`2024-0${6 + (i % 4)}-${10 + (i % 15)}`).toISOString(),
+        approvedBy: firstAdminId,
+        approvedAt: new Date(`2024-0${6 + (i % 4)}-${10 + i}`).toISOString(),
         createdAt: new Date(`2024-0${6 + (i % 4)}-0${5 + (i % 5)}`).toISOString(),
         updatedAt: new Date().toISOString()
     }));
     
-    await db.insert(users).values(alumniUsers);
+    const insertedAlumni = await db.insert(users).values(alumniUsers).returning();
     console.log(`✅ Seeded ${alumniUsers.length} alumni users`);
     
-    console.log(`✅ Total users seeded: ${adminUsers.length + facultyUsers.length + studentUsers.length + alumniUsers.length} (5 admin, 15 faculty, 30 students, 25 alumni)`);
+    console.log(`✅ Total users: ${adminUsers.length + facultyUsers.length + studentUsers.length + alumniUsers.length} (2 admin, 5 faculty, 10 students, 8 alumni)`);
+    
+    // Collect all user IDs
+    const allUserIds = [
+        ...insertedAdmins.map(u => u.id),
+        ...insertedFaculty.map(u => u.id),
+        ...insertedStudents.map(u => u.id),
+        ...insertedAlumni.map(u => u.id)
+    ];
+    
+    return {
+        firstAdminId,
+        firstFacultyId: insertedFaculty[0].id,
+        studentIds: insertedStudents.map(u => u.id),
+        alumniIds: insertedAlumni.map(u => u.id),
+        allUserIds
+    };
 }
 
-async function seedPosts() {
+async function seedPosts(adminId: number, allUserIds: number[]) {
     console.log('📝 Seeding posts...');
-    const samplePosts = Array.from({ length: 60 }, (_, i) => ({
-        authorId: 21 + (i % 40), // Mix of students and alumni
+    
+    // Use students and alumni for posts (skip admins and faculty)
+    const postAuthorIds = allUserIds.slice(7); // Skip 2 admins + 5 faculty
+    
+    const samplePosts = Array.from({ length: 25 }, (_, i) => ({
+        authorId: postAuthorIds[i % postAuthorIds.length],
         content: [
-            'Just started learning React! Any good resources? #ReactJS #WebDev',
-            '🎉 Excited to share - selected for Google internship! #GoogleInternship',
-            'Working on ML project for disease prediction. Tips on imbalanced datasets? #MachineLearning',
-            'Looking for Flutter project teammates! DM if interested 📱 #ProjectCollab',
-            'Question about JWT vs session-based auth for Node.js backend? #WebDevelopment',
-            'Our team won first place at Smart India Hackathon! 🏆 #Hackathon',
-            'Attending Web3 conference next week! #Blockchain #Web3',
-            'Struggling with Dynamic Programming. Any good resources? #DSA',
-            'Just completed TCS internship! Great learning experience. #Internship',
-            'Reflecting on my journey from college to tech. Happy to mentor! #CareerAdvice',
-            'We\'re hiring Full Stack Developers! DM for referrals. #JobOpportunity',
-            'Published my first research paper on ML! 🎓 #Research #MachineLearning',
-            'Startup advice: Market validation > Perfect product. #Startup',
-            'AutoCAD and SolidWorks are must-haves for mechanical engineers! #MechEngineering',
-            'Workshop on Modern Web Development next month! #Workshop',
-            'Congratulations on securing placements! Keep going everyone. #Placements',
-            'Looking for AI/ML research project students. Apply now! #Research',
-            'Created my first Chrome extension! Feedback appreciated. #ChromeExtension',
-            'How do seniors stay updated with rapidly changing tech? #TechNews',
-            'Completed AWS Solutions Architect certification! 🎉 #AWS'
-        ][i % 20],
-        imageUrl: i % 5 === 0 ? `https://images.unsplash.com/photo-${['1573164713988-8665fc963095', '1556761175-4b46a572b786', '1532012197267-da84d127e765', '1556761175-b413da4baf72', '1523050854058-8df90110c9f1'][i % 5]}?w=800` : undefined,
+            'Just started learning React! Any good resources? #ReactJS',
+            '🎉 Selected for Google internship! #GoogleInternship',
+            'Working on ML project. Tips on datasets? #MachineLearning',
+            'Looking for Flutter teammates! #ProjectCollab',
+            'JWT vs session auth for Node.js? #WebDevelopment',
+            'Won first place at Hackathon! 🏆 #Hackathon',
+            'Attending Web3 conference next week! #Blockchain',
+            'Struggling with Dynamic Programming. Help? #DSA',
+            'Completed TCS internship! Great experience. #Internship',
+            'Happy to mentor students! #CareerAdvice',
+            'We\'re hiring Full Stack Developers! #JobOpportunity',
+            'Published my first research paper! 🎓 #Research',
+            'Startup advice: Market validation matters. #Startup',
+            'AutoCAD is essential! #MechEngineering',
+            'Workshop on Web Development next month! #Workshop',
+            'Congrats on placements! #Placements',
+            'Looking for AI/ML research students. #Research',
+            'Created my first Chrome extension! #ChromeExtension',
+            'How to stay updated with tech? #TechNews',
+            'Completed AWS certification! 🎉 #AWS',
+            'Building e-commerce with MERN. #WebDev',
+            'Data Science bootcamp review. #DataScience',
+            'Best practices for API design? #Backend',
+            'Mobile development with Flutter. #Mobile',
+            'Networking tips for students. #Career'
+        ][i],
+        imageUrl: i % 5 === 0 ? 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800' : undefined,
         category: ['question', 'achievement', 'project', 'discussion', 'announcement'][i % 5],
         branch: i % 3 === 0 ? 'Computer Engineering' : i % 3 === 1 ? 'Information Technology' : undefined,
         visibility: 'public',
         status: 'approved',
-        approvedBy: 1,
-        approvedAt: new Date(`2024-${String((i % 6) + 2).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
-        createdAt: new Date(`2024-${String((i % 6) + 2).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T09:30:00Z`).toISOString(),
-        updatedAt: new Date(`2024-${String((i % 6) + 2).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T09:30:00Z`).toISOString()
+        approvedBy: adminId,
+        approvedAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+        createdAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T09:30:00Z`).toISOString(),
+        updatedAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T09:30:00Z`).toISOString()
     }));
     
-    await db.insert(posts).values(samplePosts);
+    const insertedPosts = await db.insert(posts).values(samplePosts).returning();
     console.log(`✅ Seeded ${samplePosts.length} posts`);
+    
+    return insertedPosts.map(p => p.id);
 }
 
-async function seedConnections() {
+async function seedComments(postIds: number[], allUserIds: number[]) {
+    console.log('💬 Seeding comments...');
+    const commentTexts = ['Great post!', 'Very helpful!', 'Thanks for sharing!', 'Interesting perspective.', 'Can you share more?'];
+    const sampleComments = Array.from({ length: 30 }, (_, i) => ({
+        postId: postIds[i % postIds.length],
+        authorId: allUserIds[7 + (i % (allUserIds.length - 7))], // Skip admins and faculty
+        content: commentTexts[i % 5],
+        createdAt: new Date(`2024-${String((i % 5) + 8).padStart(2, '0')}-${String((i % 25) + 2).padStart(2, '0')}T10:00:00Z`).toISOString()
+    }));
+    
+    await db.insert(comments).values(sampleComments);
+    console.log(`✅ Seeded ${sampleComments.length} comments`);
+}
+
+async function seedPostReactions(postIds: number[], allUserIds: number[]) {
+    console.log('👍 Seeding post reactions...');
+    const sampleReactions = Array.from({ length: 30 }, (_, i) => ({
+        postId: postIds[i % postIds.length],
+        userId: allUserIds[7 + (i % (allUserIds.length - 7))],
+        reactionType: ['like', 'heart', 'celebrate'][i % 3],
+        createdAt: new Date(`2024-${String((i % 5) + 8).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T11:00:00Z`).toISOString()
+    }));
+    
+    await db.insert(postReactions).values(sampleReactions);
+    console.log(`✅ Seeded ${sampleReactions.length} post reactions`);
+}
+
+async function seedConnections(studentIds: number[], alumniIds: number[]) {
     console.log('🤝 Seeding connections...');
-    const sampleConnections = Array.from({ length: 80 }, (_, i) => ({
-        requesterId: 21 + (i % 30),
-        responderId: 21 + ((i + 3) % 50),
-        status: i % 10 === 0 ? 'pending' : i % 15 === 0 ? 'rejected' : 'accepted',
-        message: i % 3 === 0 ? `Hi! Let's connect and collaborate!` : undefined,
-        createdAt: new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T10:30:00Z`).toISOString(),
-        respondedAt: i % 10 !== 0 ? new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-${String((i % 25) + 2).padStart(2, '0')}T14:20:00Z`).toISOString() : undefined
+    const allIds = [...studentIds, ...alumniIds];
+    const sampleConnections = Array.from({ length: 20 }, (_, i) => ({
+        requesterId: allIds[i % Math.min(10, allIds.length)],
+        responderId: allIds[(i + 3) % allIds.length],
+        status: i % 8 === 0 ? 'pending' : 'accepted',
+        message: i % 3 === 0 ? `Hi! Let's connect!` : undefined,
+        createdAt: new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+        respondedAt: i % 8 !== 0 ? new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-${String((i % 25) + 2).padStart(2, '0')}T14:00:00Z`).toISOString() : undefined
     }));
     
     await db.insert(connections).values(sampleConnections);
     console.log(`✅ Seeded ${sampleConnections.length} connections`);
 }
 
-async function seedJobs() {
+async function seedJobs(adminId: number, alumniIds: number[]) {
     console.log('💼 Seeding jobs...');
-    const companies = ['Amazon', 'Google', 'Microsoft', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS', 'Flipkart', 'Paytm', 'PhonePe', 'Freshworks', 'Uber', 'Netflix', 'Infosys'];
-    const titles = ['Software Engineer', 'Data Scientist', 'Frontend Developer', 'Backend Developer', 'DevOps Engineer', 'Product Manager', 'Mobile Developer', 'QA Engineer', 'ML Engineer', 'Full Stack Developer'];
+    const companies = ['Amazon', 'Google', 'Microsoft', 'Razorpay', 'Swiggy', 'CRED', 'Zomato', 'TCS'];
+    const titles = ['Software Engineer', 'Data Scientist', 'Frontend Developer', 'Backend Developer', 'DevOps Engineer'];
     
-    const sampleJobs = Array.from({ length: 45 }, (_, i) => ({
-        postedById: 51 + (i % 25), // Alumni posting jobs
-        title: `${titles[i % 10]}${i < 30 ? '' : i < 40 ? ' Intern' : ' (Part-time)'}`,
-        company: companies[i % 15],
-        description: `Join our team as ${titles[i % 10]}. Work on exciting projects with cutting-edge technologies. ${i < 30 ? 'Full-time position with great benefits.' : i < 40 ? 'Summer internship program.' : 'Flexible part-time opportunity.'}`,
-        location: ['Bangalore', 'Mumbai', 'Pune', 'Hyderabad', 'Chennai', 'Delhi NCR', 'Remote'][i % 7],
-        jobType: i < 30 ? 'full-time' : i < 40 ? 'internship' : 'part-time',
-        salary: i < 30 ? `₹${10 + (i % 20)}-${18 + (i % 20)} LPA` : `₹${15 + (i % 10)},000-${25 + (i % 10)},000/month`,
-        skills: JSON.stringify([['Python', 'Java', 'AWS'], ['React', 'TypeScript', 'Next.js'], ['Node.js', 'MongoDB', 'Express'], ['Machine Learning', 'TensorFlow', 'Python'], ['Docker', 'Kubernetes', 'CI/CD'], ['Product Management', 'Agile'], ['React Native', 'Mobile Development']][i % 7]),
-        status: i % 10 === 0 ? 'pending' : 'approved',
-        branch: i % 3 === 0 ? 'Computer Engineering' : i % 3 === 1 ? 'Information Technology' : undefined,
-        approvedBy: i % 10 !== 0 ? 1 : undefined,
-        approvedAt: i % 10 !== 0 ? new Date(`2024-11-${String((i % 25) + 1).padStart(2, '0')}T10:00:00Z`).toISOString() : undefined,
+    const sampleJobs = Array.from({ length: 20 }, (_, i) => ({
+        postedById: alumniIds[i % alumniIds.length],
+        title: `${titles[i % 5]}${i < 15 ? '' : ' Intern'}`,
+        company: companies[i % 8],
+        description: `Join our team as ${titles[i % 5]}. Work on exciting projects with cutting-edge technologies.`,
+        location: ['Bangalore', 'Mumbai', 'Pune', 'Hyderabad', 'Remote'][i % 5],
+        jobType: i < 15 ? 'full-time' : 'internship',
+        salary: i < 15 ? `₹${10 + (i % 10)}-${18 + (i % 10)} LPA` : `₹${15 + (i % 5)},000/month`,
+        skills: JSON.stringify([['Python', 'Java', 'AWS'], ['React', 'TypeScript'], ['Node.js', 'MongoDB'], ['ML', 'TensorFlow'], ['Docker', 'Kubernetes']][i % 5]),
+        status: 'approved',
+        branch: i % 3 === 0 ? 'Computer Engineering' : undefined,
+        approvedBy: adminId,
+        approvedAt: new Date(`2024-11-${String((i % 25) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
         createdAt: new Date(`2024-11-${String((i % 25) + 1).padStart(2, '0')}T09:00:00Z`).toISOString(),
         expiresAt: new Date(`2025-01-${String((i % 28) + 1).padStart(2, '0')}T23:59:59Z`).toISOString()
     }));
     
-    await db.insert(jobs).values(sampleJobs);
+    const insertedJobs = await db.insert(jobs).values(sampleJobs).returning();
     console.log(`✅ Seeded ${sampleJobs.length} jobs`);
+    
+    return insertedJobs.map(j => j.id);
 }
 
-async function seedEvents() {
-    console.log('🎉 Seeding events...');
-    const eventTypes = ['Technical Workshop', 'Hackathon', 'Alumni Meetup', 'Placement Drive', 'Cultural Fest', 'Tech Talk', 'Career Fair', 'Sports Day'];
-    
-    const sampleEvents = Array.from({ length: 35 }, (_, i) => ({
-        organizerId: 6 + (i % 15), // Faculty organizing
-        title: `${eventTypes[i % 8]} ${2025}`,
-        description: `Join us for an exciting ${eventTypes[i % 8].toLowerCase()}. Great opportunity to learn, network, and have fun!`,
-        location: ['Main Auditorium', 'Computer Lab', 'Sports Ground', 'Seminar Hall', 'College Campus', 'Online'][i % 6],
-        startDate: new Date(`2025-0${(i % 2) + 1}-${String((i % 28) + 1).padStart(2, '0')}T${10 + (i % 8)}:00:00Z`).toISOString(),
-        endDate: new Date(`2025-0${(i % 2) + 1}-${String((i % 28) + 1).padStart(2, '0')}T${14 + (i % 6)}:00:00Z`).toISOString(),
-        category: ['technical', 'social', 'academic', 'sports'][i % 4],
-        branch: i % 3 === 0 ? 'Computer Engineering' : i % 3 === 1 ? 'Information Technology' : undefined,
-        isPaid: i % 5 === 0,
-        price: i % 5 === 0 ? '500' : '0',
-        maxAttendees: 50 + (i * 10),
-        imageUrl: `https://images.unsplash.com/photo-${['1540575467063-178a50c2df87', '1523580846011-d3a5bc25702b', '1511578314322-4e6ae25ba3af', '1475721027785-f74eccf877e2'][i % 4]}?w=800`,
-        status: 'approved',
-        approvedBy: 1,
-        approvedAt: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T09:00:00Z`).toISOString(),
-        createdAt: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T09:00:00Z`).toISOString()
-    }));
-    
-    await db.insert(events).values(sampleEvents);
-    console.log(`✅ Seeded ${sampleEvents.length} events`);
-}
-
-async function seedApplications() {
+async function seedApplications(jobIds: number[], studentIds: number[]) {
     console.log('📄 Seeding job applications...');
-    const sampleApplications = Array.from({ length: 50 }, (_, i) => ({
-        jobId: 1 + (i % 30),
-        applicantId: 21 + (i % 30), // Students applying
-        status: ['applied', 'screening', 'interview', 'rejected', 'accepted'][i % 5],
-        coverLetter: `I am very interested in this position and believe my skills would be a great fit.`,
+    const sampleApplications = Array.from({ length: 20 }, (_, i) => ({
+        jobId: jobIds[i % jobIds.length],
+        applicantId: studentIds[i % studentIds.length],
+        status: ['applied', 'screening', 'interview', 'accepted'][i % 4],
+        coverLetter: `I am interested in this position.`,
         appliedAt: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 25) + 5).padStart(2, '0')}T10:00:00Z`).toISOString(),
         updatedAt: new Date().toISOString()
     }));
@@ -246,31 +261,42 @@ async function seedApplications() {
     console.log(`✅ Seeded ${sampleApplications.length} job applications`);
 }
 
-async function seedMentorshipRequests() {
-    console.log('🎓 Seeding mentorship requests...');
-    const topics = ['Web Development', 'Machine Learning', 'System Design', 'Career Planning', 'Data Science', 'Mobile Development'];
+async function seedEvents(adminId: number, facultyIds: number[]) {
+    console.log('🎉 Seeding events...');
+    const eventTypes = ['Technical Workshop', 'Hackathon', 'Alumni Meetup', 'Placement Drive', 'Tech Talk'];
     
-    const sampleRequests = Array.from({ length: 35 }, (_, i) => ({
-        studentId: 21 + (i % 30), // Students
-        mentorId: 51 + (i % 20), // Alumni
-        topic: topics[i % 6],
-        message: `Hi! I would love to learn from your experience in ${topics[i % 6].toLowerCase()}.`,
-        preferredTime: `${['Morning', 'Afternoon', 'Evening'][i % 3]} on ${['Weekdays', 'Weekends'][i % 2]}`,
-        status: ['pending', 'accepted', 'rejected', 'completed'][i % 4],
-        createdAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
-        respondedAt: i % 4 !== 0 ? new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 3).padStart(2, '0')}T14:00:00Z`).toISOString() : undefined
+    const facultyId = facultyIds[0]; // Use first faculty member
+    const sampleEvents = Array.from({ length: 20 }, (_, i) => ({
+        organizerId: facultyIds[i % facultyIds.length],
+        title: `${eventTypes[i % 5]} 2025`,
+        description: `Join us for an exciting ${eventTypes[i % 5].toLowerCase()}. Great opportunity to learn!`,
+        location: ['Main Auditorium', 'Computer Lab', 'Seminar Hall', 'Online'][i % 4],
+        startDate: new Date(`2025-0${(i % 2) + 1}-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+        endDate: new Date(`2025-0${(i % 2) + 1}-${String((i % 28) + 1).padStart(2, '0')}T14:00:00Z`).toISOString(),
+        category: ['technical', 'social', 'academic'][i % 3],
+        branch: i % 3 === 0 ? 'Computer Engineering' : undefined,
+        isPaid: i % 5 === 0,
+        price: i % 5 === 0 ? '500' : '0',
+        maxAttendees: 50 + (i * 5),
+        imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+        status: 'approved',
+        approvedBy: adminId,
+        approvedAt: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T09:00:00Z`).toISOString(),
+        createdAt: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T09:00:00Z`).toISOString()
     }));
     
-    await db.insert(mentorshipRequests).values(sampleRequests);
-    console.log(`✅ Seeded ${sampleRequests.length} mentorship requests`);
+    const insertedEvents = await db.insert(events).values(sampleEvents).returning();
+    console.log(`✅ Seeded ${sampleEvents.length} events`);
+    
+    return insertedEvents.map(e => e.id);
 }
 
-async function seedRsvps() {
+async function seedRsvps(eventIds: number[], allUserIds: number[]) {
     console.log('✅ Seeding RSVPs...');
-    const sampleRsvps = Array.from({ length: 70 }, (_, i) => ({
-        eventId: 1 + (i % 35),
-        userId: 21 + (i % 50),
-        status: ['registered', 'attended', 'cancelled'][i % 3],
+    const sampleRsvps = Array.from({ length: 25 }, (_, i) => ({
+        eventId: eventIds[i % eventIds.length],
+        userId: allUserIds[7 + (i % (allUserIds.length - 7))],
+        status: ['registered', 'attended'][i % 2],
         paymentStatus: i % 5 === 0 ? 'completed' : 'na',
         rsvpedAt: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 25) + 3).padStart(2, '0')}T10:00:00Z`).toISOString()
     }));
@@ -279,126 +305,95 @@ async function seedRsvps() {
     console.log(`✅ Seeded ${sampleRsvps.length} RSVPs`);
 }
 
-async function seedComments() {
-    console.log('💬 Seeding comments...');
-    const commentTexts = [
-        'Great post! Thanks for sharing.',
-        'I had the same question. Looking forward to answers!',
-        'Congratulations! Well deserved.',
-        'This is really helpful. Thank you!',
-        'Completely agree with this perspective.',
-        'Can you share more details about this?',
-        'Inspiring journey! Thanks for mentoring us.',
-        'Count me in! Let\'s collaborate.',
-        'This is exactly what I needed to hear today.',
-        'Bookmarking this for future reference!'
-    ];
+async function seedMentorshipRequests(studentIds: number[], alumniIds: number[]) {
+    console.log('🎓 Seeding mentorship requests...');
+    const topics = ['Web Development', 'Machine Learning', 'System Design', 'Career Planning'];
     
-    const sampleComments = Array.from({ length: 80 }, (_, i) => ({
-        postId: 1 + (i % 60),
-        authorId: 21 + (i % 50),
-        content: commentTexts[i % 10],
-        createdAt: new Date(`2024-${String((i % 6) + 3).padStart(2, '0')}-${String((i % 25) + 2).padStart(2, '0')}T${10 + (i % 10)}:${30 + (i % 30)}:00Z`).toISOString()
+    const sampleRequests = Array.from({ length: 15 }, (_, i) => ({
+        studentId: studentIds[i % studentIds.length],
+        mentorId: alumniIds[i % alumniIds.length],
+        topic: topics[i % 4],
+        message: `Hi! I would love to learn from your experience in ${topics[i % 4].toLowerCase()}.`,
+        preferredTime: `${['Morning', 'Afternoon', 'Evening'][i % 3]}`,
+        status: ['pending', 'accepted', 'completed'][i % 3],
+        createdAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+        respondedAt: i % 3 !== 0 ? new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 3).padStart(2, '0')}T14:00:00Z`).toISOString() : undefined
     }));
     
-    await db.insert(comments).values(sampleComments);
-    console.log(`✅ Seeded ${sampleComments.length} comments`);
+    await db.insert(mentorshipRequests).values(sampleRequests);
+    console.log(`✅ Seeded ${sampleRequests.length} mentorship requests`);
 }
 
-async function seedPostReactions() {
-    console.log('👍 Seeding post reactions...');
-    const sampleReactions = Array.from({ length: 120 }, (_, i) => ({
-        postId: 1 + (i % 60),
-        userId: 21 + (i % 50),
-        reactionType: ['like', 'heart', 'celebrate'][i % 3],
-        createdAt: new Date(`2024-${String((i % 6) + 3).padStart(2, '0')}-${String((i % 25) + 1).padStart(2, '0')}T${11 + (i % 10)}:00:00Z`).toISOString()
-    }));
+async function seedChatsAndMessages(allUserIds: number[]) {
+    console.log('💬 Seeding chats and messages...');
     
-    await db.insert(postReactions).values(sampleReactions);
-    console.log(`✅ Seeded ${sampleReactions.length} post reactions`);
-}
-
-async function seedChats() {
-    console.log('💬 Seeding chats...');
-    const sampleChats = Array.from({ length: 25 }, (_, i) => ({
-        chatType: i % 5 === 0 ? 'group' : 'direct',
-        name: i % 5 === 0 ? `Study Group ${i + 1}` : undefined,
-        createdBy: 21 + (i % 30),
+    const activeUserIds = allUserIds.slice(7); // Skip admins and faculty
+    
+    const sampleChats = Array.from({ length: 10 }, (_, i) => ({
+        chatType: i % 4 === 0 ? 'group' : 'direct',
+        name: i % 4 === 0 ? `Study Group ${i + 1}` : undefined,
+        createdBy: activeUserIds[i % activeUserIds.length],
         createdAt: new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-01T10:00:00Z`).toISOString()
     }));
     
-    await db.insert(chats).values(sampleChats);
+    const insertedChats = await db.insert(chats).values(sampleChats).returning();
     console.log(`✅ Seeded ${sampleChats.length} chats`);
-}
-
-async function seedChatMembers() {
-    console.log('👥 Seeding chat members...');
-    const sampleMembers = Array.from({ length: 60 }, (_, i) => ({
-        chatId: 1 + (i % 25),
-        userId: 21 + (i % 40),
+    
+    const chatIds = insertedChats.map(c => c.id);
+    
+    const sampleMembers = Array.from({ length: 20 }, (_, i) => ({
+        chatId: chatIds[i % chatIds.length],
+        userId: activeUserIds[i % activeUserIds.length],
         joinedAt: new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-01T10:00:00Z`).toISOString(),
-        lastReadAt: i % 3 !== 0 ? new Date(`2024-12-${String((i % 20) + 1).padStart(2, '0')}T${10 + (i % 12)}:00:00Z`).toISOString() : undefined
+        lastReadAt: i % 3 !== 0 ? new Date(`2024-12-${String((i % 15) + 1).padStart(2, '0')}T10:00:00Z`).toISOString() : undefined
     }));
     
     await db.insert(chatMembers).values(sampleMembers);
     console.log(`✅ Seeded ${sampleMembers.length} chat members`);
-}
-
-async function seedMessages() {
-    console.log('💌 Seeding messages...');
-    const messageTexts = [
-        'Hey! How are you doing?',
-        'Did you complete the assignment?',
-        'Let\'s meet for coffee tomorrow',
-        'Thanks for the help with the project!',
-        'Are you attending the workshop?',
-        'Check out this cool resource',
-        'What time works for you?',
-        'Great work on your presentation!',
-        'Can you share your notes?',
-        'See you at the event!'
-    ];
     
-    const sampleMessages = Array.from({ length: 100 }, (_, i) => ({
-        chatId: 1 + (i % 25),
-        senderId: 21 + (i % 40),
-        content: messageTexts[i % 10],
+    const messageTexts = ['Hey! How are you?', 'Did you complete the assignment?', 'Thanks for the help!', 'See you at the event!', 'Great work!'];
+    const sampleMessages = Array.from({ length: 30 }, (_, i) => ({
+        chatId: chatIds[i % chatIds.length],
+        senderId: activeUserIds[i % activeUserIds.length],
+        content: messageTexts[i % 5],
         messageType: 'text',
-        createdAt: new Date(`2024-12-${String((i % 20) + 1).padStart(2, '0')}T${9 + (i % 12)}:${(i * 5) % 60}:00Z`).toISOString()
+        createdAt: new Date(`2024-12-${String((i % 15) + 1).padStart(2, '0')}T${String(9 + (i % 12)).padStart(2, '0')}:00:00Z`).toISOString()
     }));
     
     await db.insert(messages).values(sampleMessages);
     console.log(`✅ Seeded ${sampleMessages.length} messages`);
 }
 
-async function seedActivityLog() {
+async function seedActivityLog(allUserIds: number[]) {
     console.log('📊 Seeding activity logs...');
-    const activities = ['login', 'post_created', 'connection_made', 'job_applied', 'event_rsvp', 'comment_added', 'profile_updated'];
+    const activities = ['login', 'post_created', 'connection_made', 'job_applied', 'event_rsvp'];
     
-    const sampleLogs = Array.from({ length: 80 }, (_, i) => ({
-        userId: 21 + (i % 50),
+    const activeUserIds = allUserIds.slice(7);
+    const sampleLogs = Array.from({ length: 25 }, (_, i) => ({
+        userId: activeUserIds[i % activeUserIds.length],
         role: i % 2 === 0 ? 'student' : 'alumni',
-        action: activities[i % 7],
-        metadata: JSON.stringify({ action: activities[i % 7], timestamp: Date.now() }),
-        timestamp: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T${10 + (i % 12)}:00:00Z`).toISOString()
+        action: activities[i % 5],
+        metadata: JSON.stringify({ action: activities[i % 5], timestamp: Date.now() }),
+        timestamp: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`).toISOString()
     }));
     
     await db.insert(activityLog).values(sampleLogs);
     console.log(`✅ Seeded ${sampleLogs.length} activity logs`);
 }
 
-async function seedNotifications() {
+async function seedNotifications(allUserIds: number[]) {
     console.log('🔔 Seeding notifications...');
-    const notifTypes = ['connection', 'job', 'event', 'mentorship', 'message', 'post'];
+    const notifTypes = ['connection', 'job', 'event', 'mentorship', 'message'];
     
-    const sampleNotifications = Array.from({ length: 60 }, (_, i) => ({
-        userId: 21 + (i % 50),
-        type: notifTypes[i % 6],
-        title: `${['New connection request', 'Job application update', 'Event tomorrow', 'Mentorship request', 'New message', 'New comment on your post'][i % 6]}`,
-        message: `${['Someone wants to connect with you', 'Your application status has been updated', 'Don\'t forget the event tomorrow', 'New mentorship request received', 'You have a new message', 'New comment on your post'][i % 6]}`,
-        relatedId: String(1 + (i % 20)),
-        isRead: i % 4 !== 0,
-        createdAt: new Date(`2024-12-${String((i % 27) + 1).padStart(2, '0')}T${10 + (i % 10)}:00:00Z`).toISOString()
+    const activeUserIds = allUserIds.slice(7);
+    const sampleNotifications = Array.from({ length: 25 }, (_, i) => ({
+        userId: activeUserIds[i % activeUserIds.length],
+        type: notifTypes[i % 5],
+        title: `${['New connection request', 'Job application update', 'Event tomorrow', 'Mentorship request', 'New message'][i % 5]}`,
+        message: `${['Someone wants to connect', 'Application status updated', 'Event reminder', 'New mentorship request', 'You have a message'][i % 5]}`,
+        relatedId: String(1 + (i % 10)),
+        isRead: i % 3 !== 0,
+        createdAt: new Date(`2024-12-${String((i % 15) + 1).padStart(2, '0')}T10:00:00Z`).toISOString()
     }));
     
     await db.insert(notifications).values(sampleNotifications);
@@ -407,32 +402,40 @@ async function seedNotifications() {
 
 async function main() {
     try {
-        console.log('🚀 Starting comprehensive database seeding...\n');
+        console.log('🚀 Starting safe database seeding (20-30 records per table)...\n');
         
         await clearAllTables();
-        await seedUsers();
-        await seedPosts();
-        await seedConnections();
-        await seedJobs();
-        await seedEvents();
-        await seedApplications();
-        await seedMentorshipRequests();
-        await seedRsvps();
-        await seedComments();
-        await seedPostReactions();
-        await seedChats();
-        await seedChatMembers();
-        await seedMessages();
-        await seedActivityLog();
-        await seedNotifications();
+        const userIds = await seedUsers();
+        const facultyIds = [userIds.firstFacultyId, userIds.firstFacultyId + 1, userIds.firstFacultyId + 2, userIds.firstFacultyId + 3, userIds.firstFacultyId + 4];
+        const postIds = await seedPosts(userIds.firstAdminId, userIds.allUserIds);
+        await seedComments(postIds, userIds.allUserIds);
+        await seedPostReactions(postIds, userIds.allUserIds);
+        await seedConnections(userIds.studentIds, userIds.alumniIds);
+        const jobIds = await seedJobs(userIds.firstAdminId, userIds.alumniIds);
+        await seedApplications(jobIds, userIds.studentIds);
+        const eventIds = await seedEvents(userIds.firstAdminId, facultyIds);
+        await seedRsvps(eventIds, userIds.allUserIds);
+        await seedMentorshipRequests(userIds.studentIds, userIds.alumniIds);
+        await seedChatsAndMessages(userIds.allUserIds);
+        await seedActivityLog(userIds.allUserIds);
+        await seedNotifications(userIds.allUserIds);
         
         console.log('\n✨ Database seeding completed successfully!');
-        console.log('📊 Total records: 900+');
-        console.log('👥 Users: 75 | 📝 Posts: 60 | 🤝 Connections: 80');
-        console.log('💼 Jobs: 45 | 🎉 Events: 35 | 📄 Applications: 50');
-        console.log('🎓 Mentorship: 35 | ✅ RSVPs: 70 | 💬 Comments: 80');
-        console.log('👍 Reactions: 120 | 💬 Chats: 25 | 👥 Members: 60');
-        console.log('💌 Messages: 100 | 📊 Activity Logs: 80 | 🔔 Notifications: 60');
+        console.log('📊 Safe Data Summary:');
+        console.log('   - 25 Users (2 admin, 5 faculty, 10 students, 8 alumni)');
+        console.log('   - 25 Posts with realistic content');
+        console.log('   - 30 Comments on posts');
+        console.log('   - 30 Post reactions');
+        console.log('   - 20 Connections between users');
+        console.log('   - 20 Job listings (15 full-time, 5 internships)');
+        console.log('   - 20 Job applications');
+        console.log('   - 20 Events');
+        console.log('   - 25 Event RSVPs');
+        console.log('   - 15 Mentorship requests');
+        console.log('   - 10 Chats with 20 members and 30 messages');
+        console.log('   - 25 Activity logs');
+        console.log('   - 25 Notifications');
+        console.log('\n✅ Total: ~290 records - Safe and efficient!');
     } catch (error) {
         console.error('❌ Seeding failed:', error);
         throw error;
