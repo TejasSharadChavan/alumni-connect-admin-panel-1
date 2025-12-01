@@ -5,26 +5,27 @@ import {
   tasks, taskComments, chats, chatMembers, messages, campaigns, donations, notifications,
   activityLog, payments
 } from '../schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 // Comprehensive seed with 50+ students, 40+ alumni, 15+ faculty, 100-200 posts
 async function comprehensiveSeed() {
   console.log('🌱 Starting comprehensive seed...');
 
-  // Clear existing data
-  await db.delete(activityLog);
-  await db.delete(notifications);
-  await db.delete(donations);
-  await db.delete(campaigns);
-  await db.delete(messages);
-  await db.delete(chatMembers);
-  await db.delete(chats);
+  // Disable foreign key checks temporarily for cleanup
+  await db.run(sql`PRAGMA foreign_keys = OFF`);
+
+  // Clear existing data in correct order
   await db.delete(taskComments);
   await db.delete(tasks);
   await db.delete(teamMembers);
   await db.delete(teams);
   await db.delete(mentorshipSessions);
   await db.delete(mentorshipRequests);
+  await db.delete(messages);
+  await db.delete(chatMembers);
+  await db.delete(chats);
+  await db.delete(donations);
+  await db.delete(campaigns);
   await db.delete(rsvps);
   await db.delete(events);
   await db.delete(applications);
@@ -33,8 +34,13 @@ async function comprehensiveSeed() {
   await db.delete(postReactions);
   await db.delete(posts);
   await db.delete(connections);
+  await db.delete(notifications);
+  await db.delete(activityLog);
   await db.delete(payments);
   await db.delete(users);
+
+  // Re-enable foreign key checks
+  await db.run(sql`PRAGMA foreign_keys = ON`);
 
   const now = new Date().toISOString();
   const hashPassword = (pwd: string) => `$2a$10$${pwd.padEnd(53, 'x')}`; // Mock hash
