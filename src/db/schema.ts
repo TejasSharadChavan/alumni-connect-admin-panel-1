@@ -16,10 +16,13 @@ export const users = sqliteTable('users', {
   bio: text('bio'),
   skills: text('skills', { mode: 'json' }), // JSON array
   profileImageUrl: text('profile_image_url'),
+  coverImageUrl: text('cover_image_url'),
   resumeUrl: text('resume_url'),
   linkedinUrl: text('linkedin_url'),
   githubUrl: text('github_url'),
   phone: text('phone'),
+  onlineStatus: integer('online_status', { mode: 'boolean' }).default(false),
+  lastSeen: text('last_seen'),
   approvedBy: integer('approved_by').references(() => users.id),
   approvedAt: text('approved_at'),
   createdAt: text('created_at').notNull(),
@@ -82,6 +85,9 @@ export const posts = sqliteTable('posts', {
   authorId: integer('author_id').notNull().references(() => users.id),
   content: text('content').notNull(),
   imageUrl: text('image_url'),
+  imageUrls: text('image_urls', { mode: 'json' }), // JSON array for multiple images
+  tags: text('tags', { mode: 'json' }), // JSON array for hashtags
+  sharesCount: integer('shares_count').default(0),
   category: text('category').notNull(), // 'announcement', 'achievement', 'question', 'discussion', 'project'
   branch: text('branch'),
   visibility: text('visibility').notNull().default('public'), // 'public', 'connections', 'private'
@@ -262,6 +268,7 @@ export const chatMembers = sqliteTable('chat_members', {
   userId: integer('user_id').notNull().references(() => users.id),
   joinedAt: text('joined_at').notNull(),
   lastReadAt: text('last_read_at'),
+  isTyping: integer('is_typing', { mode: 'boolean' }).default(false),
 });
 
 export const messages = sqliteTable('messages', {
@@ -271,6 +278,9 @@ export const messages = sqliteTable('messages', {
   content: text('content').notNull(),
   messageType: text('message_type').notNull().default('text'), // 'text', 'image', 'file'
   fileUrl: text('file_url'),
+  mediaUrl: text('media_url'),
+  isRead: integer('is_read', { mode: 'boolean' }).default(false),
+  readAt: text('read_at'),
   createdAt: text('created_at').notNull(),
   editedAt: text('edited_at'),
 });
