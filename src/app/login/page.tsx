@@ -115,9 +115,10 @@ export default function LoginPage() {
 
               <div className="text-center">
                 <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
-                  💡 <strong>Demo Credentials:</strong><br />
-                  Admin: admin@terna.ac.in / Admin@123<br />
-                  Student: priya.sharma@terna.ac.in / Student@123
+                  💡 <strong>Demo Credentials (Password: Password@123):</strong><br />
+                  Student: aarav.sharma@terna.ac.in<br />
+                  Admin: dean@terna.ac.in<br />
+                  Faculty: prof.kapoor@terna.ac.in
                 </p>
               </div>
             </CardFooter>
