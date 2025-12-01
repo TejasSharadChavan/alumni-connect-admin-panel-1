@@ -78,13 +78,19 @@ export default function AlumniDashboard() {
       const jobsData = await jobsRes.json();
       const myJobs = jobsData.jobs?.filter((j: any) => j.postedById === user.id) || [];
 
-      const totalDonations = 0;
+      // Fetch real donation stats
+      const donationsRes = await fetch("/api/donations/stats", { headers });
+      let userTotalDonations = 0;
+      if (donationsRes.ok) {
+        const donationsData = await donationsRes.json();
+        userTotalDonations = donationsData.userStats?.totalDonations || 0;
+      }
 
       setStats({
         networkGrowth,
         mentees: activeMentorships.filter((m: any) => m.status === "accepted").length,
         jobsPosted: myJobs.length,
-        totalDonations,
+        totalDonations: userTotalDonations,
       });
 
       const pendingRequests = mentorshipData.requests?.filter((r: any) => 
@@ -123,9 +129,9 @@ export default function AlumniDashboard() {
         });
       });
 
-      if (totalDonations > 0) {
+      if (userTotalDonations > 0) {
         activities.push({
-          text: `Donated ₹${totalDonations.toLocaleString()} to college funds`,
+          text: `Donated ₹${userTotalDonations.toLocaleString()} to college funds`,
           time: "Recently",
           icon: Heart,
           type: "donation",
@@ -294,10 +300,10 @@ export default function AlumniDashboard() {
       bgColor: "bg-green-50 dark:bg-green-950",
     },
     {
-      title: "View Jobs",
-      description: "Browse posted opportunities",
+      title: "Make Donation",
+      description: "Support college initiatives",
       icon: Heart,
-      href: "/alumni/jobs",
+      href: "/alumni/donations",
       color: "text-red-600",
       bgColor: "bg-red-50 dark:bg-red-950",
     },

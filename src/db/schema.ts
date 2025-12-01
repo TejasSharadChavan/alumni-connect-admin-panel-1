@@ -305,7 +305,7 @@ export const campaigns = sqliteTable('campaigns', {
 
 export const donations = sqliteTable('donations', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  campaignId: integer('campaign_id').notNull().references(() => campaigns.id),
+  campaignId: integer('campaign_id').references(() => campaigns.id),
   donorId: integer('donor_id').notNull().references(() => users.id),
   amount: integer('amount').notNull(),
   message: text('message'),
