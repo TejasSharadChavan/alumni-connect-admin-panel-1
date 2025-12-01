@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { MessageSquare, Send, Search, Users, Plus } from "lucide-react";
+import { NewChatDialog } from "@/components/chat/new-chat-dialog";
+import { MessageSquare, Send, Search, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -174,10 +175,7 @@ export default function AlumniMessagesPage() {
                 Connect with your network
               </p>
             </div>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
+            <NewChatDialog onChatCreated={fetchChats} />
           </div>
         </motion.div>
 

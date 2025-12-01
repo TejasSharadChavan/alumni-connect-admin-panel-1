@@ -9,9 +9,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Users, Search, Filter, UserPlus, Check, X, Linkedin, Github, Mail, MapPin } from "lucide-react";
+import { Users, Search, Filter, UserPlus, Check, X, Linkedin, Github, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface User {
   id: number;
@@ -32,6 +33,7 @@ interface User {
 }
 
 export default function StudentNetworkPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [connections, setConnections] = useState<User[]>([]);
@@ -55,14 +57,14 @@ export default function StudentNetworkPage() {
   const fetchNetworkData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("auth_token");
+      const token = localStorage.getItem("bearer_token");
       const headers = { Authorization: `Bearer ${token}` };
 
       // Fetch all users
       const usersRes = await fetch("/api/users", { headers });
       const usersData = await usersRes.json();
 
-      // Fetch connections
+      // Fetch connections - API returns array directly, not wrapped
       const connectionsRes = await fetch("/api/connections", { headers });
       const connectionsData = await connectionsRes.json();
 
@@ -71,12 +73,15 @@ export default function StudentNetworkPage() {
       const suggestionsData = await suggestionsRes.json();
 
       if (usersData.users) {
-        // Map connection status to users
-        const allConnections = connectionsData.connections || [];
+        // connectionsData is already an array, not { connections: [] }
+        const allConnections = Array.isArray(connectionsData) ? connectionsData : [];
+        
         const usersWithStatus = usersData.users.map((user: User) => {
           const connection = allConnections.find(
-            (c: any) =>
-              (c.requesterId === user.id || c.responderId === user.id)
+            (c: any) => {
+              const otherUserId = c.connectedUser?.id;
+              return otherUserId === user.id;
+            }
           );
           
           // Parse skills if it's a string
@@ -180,8 +185,8 @@ export default function StudentNetworkPage() {
   const handleConnect = async (userId: number) => {
     try {
       setConnectingUserId(userId);
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch("/api/connections/request", {
+      const token = localStorage.getItem("bearer_token");
+      const response = await fetch("/api/connections", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -207,7 +212,7 @@ export default function StudentNetworkPage() {
 
   const handleAcceptConnection = async (connectionId: number) => {
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = localStorage.getItem("bearer_token");
       const response = await fetch(`/api/connections/${connectionId}/accept`, {
         method: "POST",
         headers: {
@@ -231,7 +236,7 @@ export default function StudentNetworkPage() {
 
   const handleRejectConnection = async (connectionId: number) => {
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = localStorage.getItem("bearer_token");
       const response = await fetch(`/api/connections/${connectionId}/reject`, {
         method: "POST",
         headers: {
@@ -253,7 +258,33 @@ export default function StudentNetworkPage() {
     }
   };
 
-  const UserCard = ({ user, showActions = true }: { user: User; showActions?: boolean }) => (
+  const handleStartChat = async (userId: number) => {
+    try {
+      const token = localStorage.getItem("bearer_token");
+      const response = await fetch("/api/chats", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success("Opening chat...");
+        router.push("/student/messages");
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "Failed to create chat");
+      }
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      toast.error("Failed to create chat");
+    }
+  };
+
+  const UserCard = ({ user, showActions = true, showMessageButton = false }: { user: User; showActions?: boolean; showMessageButton?: boolean }) => (
     <Card className="h-full hover:shadow-lg transition-shadow">
       <CardHeader>
         <div className="flex items-start gap-4">
@@ -355,6 +386,17 @@ export default function StudentNetworkPage() {
               </Button>
             )}
           </>
+        )}
+
+        {showMessageButton && (
+          <Button
+            className="w-full"
+            variant="outline"
+            onClick={() => handleStartChat(user.id)}
+          >
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Message
+          </Button>
         )}
       </CardContent>
     </Card>
@@ -576,7 +618,7 @@ export default function StudentNetworkPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
                   >
-                    <UserCard user={user} showActions={false} />
+                    <UserCard user={user} showActions={false} showMessageButton={true} />
                   </motion.div>
                 ))}
               </div>
