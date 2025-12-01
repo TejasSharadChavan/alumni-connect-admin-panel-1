@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { RoleLayout } from "@/components/layout/role-layout";
+import { ImageUpload } from "@/components/profile/image-upload";
 import { User, Mail, MapPin, Briefcase, Award, Link2, Github, Linkedin, Save, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ export default function StudentProfilePage() {
     linkedinUrl: "",
     githubUrl: "",
     skills: [] as string[],
+    profileImageUrl: "",
   });
   
   const [newSkill, setNewSkill] = useState("");
@@ -61,6 +63,7 @@ export default function StudentProfilePage() {
         linkedinUrl: user.linkedinUrl || "",
         githubUrl: user.githubUrl || "",
         skills: parsedSkills,
+        profileImageUrl: user.profileImageUrl || "",
       });
     }
   }, [user]);
@@ -89,6 +92,13 @@ export default function StudentProfilePage() {
     }));
   };
 
+  const handleImageUpdate = (imageUrl: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      profileImageUrl: imageUrl,
+    }));
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -105,6 +115,7 @@ export default function StudentProfilePage() {
           linkedinUrl: formData.linkedinUrl,
           githubUrl: formData.githubUrl,
           skills: formData.skills,
+          profileImageUrl: formData.profileImageUrl,
         }),
       });
 
@@ -138,6 +149,7 @@ export default function StudentProfilePage() {
         linkedinUrl: user.linkedinUrl || "",
         githubUrl: user.githubUrl || "",
         skills: user.skills || [],
+        profileImageUrl: user.profileImageUrl || "",
       });
     }
     setIsEditing(false);
@@ -150,6 +162,7 @@ export default function StudentProfilePage() {
     if (formData.skills.length > 0) score += 10 * Math.min(formData.skills.length, 3);
     if (formData.linkedinUrl) score += 10;
     if (formData.githubUrl) score += 10;
+    if (formData.profileImageUrl) score += 15;
     return Math.min(100, score);
   };
 
@@ -227,6 +240,31 @@ export default function StudentProfilePage() {
           </Card>
         </motion.div>
 
+        {/* Profile Picture Upload */}
+        {isEditing && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Picture</CardTitle>
+                <CardDescription>
+                  Upload a professional photo to make your profile stand out
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ImageUpload
+                  currentImageUrl={formData.profileImageUrl}
+                  userName={formData.name}
+                  onImageUpdate={handleImageUpdate}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Profile Picture & Basic Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -242,21 +280,27 @@ export default function StudentProfilePage() {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Profile Picture */}
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-3xl">
-                  {formData.name.split(" ").map((n) => n[0]).join("")}
+              {!isEditing && (
+                <div className="flex items-center gap-6">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-3xl overflow-hidden">
+                    {formData.profileImageUrl ? (
+                      <img src={formData.profileImageUrl} alt={formData.name} className="w-full h-full object-cover" />
+                    ) : (
+                      formData.name.split(" ").map((n) => n[0]).join("")
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">{formData.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.branch && <span className="capitalize">{formData.branch}</span>}
+                      {formData.cohort && <span> • {formData.cohort}</span>}
+                    </p>
+                    <Badge variant="secondary" className="mt-2 capitalize">
+                      {user?.role}
+                    </Badge>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold">{formData.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {formData.branch && <span className="capitalize">{formData.branch}</span>}
-                    {formData.cohort && <span> • {formData.cohort}</span>}
-                  </p>
-                  <Badge variant="secondary" className="mt-2 capitalize">
-                    {user?.role}
-                  </Badge>
-                </div>
-              </div>
+              )}
 
               {/* Read-only fields */}
               <div className="grid gap-4 md:grid-cols-2">
