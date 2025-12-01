@@ -6,6 +6,7 @@ import {
   activityLog, payments
 } from '../schema';
 import { eq, sql } from 'drizzle-orm';
+import bcrypt from 'bcrypt';
 
 // Comprehensive seed with 50+ students, 40+ alumni, 15+ faculty, 100-200 posts
 async function comprehensiveSeed() {
@@ -43,7 +44,10 @@ async function comprehensiveSeed() {
   await db.run(sql`PRAGMA foreign_keys = ON`);
 
   const now = new Date().toISOString();
-  const hashPassword = (pwd: string) => `$2a$10$${pwd.padEnd(53, 'x')}`; // Mock hash
+  
+  // CRITICAL FIX: Use real bcrypt hashing
+  console.log('🔐 Generating secure password hashes...');
+  const passwordHash = await bcrypt.hash('Password@123', 10);
 
   // 1. SEED USERS (50+ students, 40+ alumni, 15+ faculty, 2 admin)
   console.log('👥 Seeding users...');
@@ -52,9 +56,9 @@ async function comprehensiveSeed() {
     {
       name: 'Dr. Rajesh Kumar',
       email: 'dean@terna.ac.in',
-      passwordHash: hashPassword('Password@123'),
+      passwordHash,
       role: 'admin',
-      status: 'approved',
+      status: 'active',
       department: 'Administration',
       headline: 'Dean - Terna Engineering College',
       bio: 'Leading educational excellence for over 20 years',
@@ -66,9 +70,9 @@ async function comprehensiveSeed() {
     {
       name: 'Prof. Anjali Sharma',
       email: 'admin@terna.ac.in',
-      passwordHash: hashPassword('Password@123'),
+      passwordHash,
       role: 'admin',
-      status: 'approved',
+      status: 'active',
       department: 'Administration',
       headline: 'Academic Director',
       bio: 'Passionate about student success and institutional growth',
@@ -104,9 +108,9 @@ async function comprehensiveSeed() {
     facultyData.map((f, i) => ({
       name: f.name,
       email: `${f.name.toLowerCase().replace(/[.\s]/g, '')}@terna.ac.in`,
-      passwordHash: hashPassword('Password@123'),
+      passwordHash,
       role: 'faculty',
-      status: 'approved',
+      status: 'active',
       department: f.dept,
       headline: `${f.name.startsWith('Dr.') ? 'Professor' : 'Assistant Professor'} - ${f.expertise}`,
       bio: `Experienced educator specializing in ${f.expertise}. Committed to student mentorship and research.`,
@@ -150,9 +154,9 @@ async function comprehensiveSeed() {
       return {
         name,
         email: `${name.toLowerCase().replace(/\s/g, '.')}@terna.student.ac.in`,
-        passwordHash: hashPassword('Password@123'),
+        passwordHash,
         role: 'student',
-        status: 'approved',
+        status: 'active',
         branch,
         cohort,
         yearOfPassing,
@@ -199,9 +203,9 @@ async function comprehensiveSeed() {
       return {
         name,
         email: `${name.toLowerCase().replace(/\s/g, '.')}@gmail.com`,
-        passwordHash: hashPassword('Password@123'),
+        passwordHash,
         role: 'alumni',
-        status: 'approved',
+        status: 'active',
         branch,
         yearOfPassing,
         headline: `${position} @ ${company}`,
