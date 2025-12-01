@@ -65,7 +65,7 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
 
   const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
       
       const response = await fetch("/api/notifications?limit=5", {
@@ -83,7 +83,7 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
 
   const handleMarkAsRead = async (notificationId: number) => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       const response = await fetch(`/api/notifications/${notificationId}/read`, {
@@ -149,7 +149,9 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
     faculty: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/faculty" },
       { icon: FileText, label: "Feed", href: "/feed" },
+      { icon: Users, label: "Network", href: "/faculty/network" },
       { icon: Users, label: "Students", href: "/faculty/students" },
+      { icon: FileText, label: "Approvals", href: "/faculty/approvals" },
       { icon: Calendar, label: "Events", href: "/faculty/events" },
       { icon: GraduationCap, label: "Mentorship", href: "/faculty/mentorship" },
       { icon: MessageSquare, label: "Messages", href: "/faculty/messages" },

@@ -253,6 +253,26 @@ export const taskComments = sqliteTable('task_comments', {
   createdAt: text('created_at').notNull(),
 });
 
+// Project Submissions
+export const projectSubmissions = sqliteTable('project_submissions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  teamId: integer('team_id').notNull().references(() => teams.id),
+  submittedBy: integer('submitted_by').notNull().references(() => users.id),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  repositoryUrl: text('repository_url'),
+  demoUrl: text('demo_url'),
+  documentUrl: text('document_url'),
+  technologies: text('technologies', { mode: 'json' }), // JSON array
+  status: text('status').notNull().default('pending'), // 'pending', 'approved', 'rejected', 'revision_requested'
+  reviewedBy: integer('reviewed_by').references(() => users.id),
+  reviewedAt: text('reviewed_at'),
+  reviewComments: text('review_comments'),
+  grade: text('grade'),
+  submittedAt: text('submitted_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
 // Messaging
 export const chats = sqliteTable('chats', {
   id: integer('id').primaryKey({ autoIncrement: true }),
