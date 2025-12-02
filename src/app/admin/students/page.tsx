@@ -19,10 +19,25 @@ interface Student {
   email: string;
   branch: string;
   cohort: string;
-  skills: string[];
+  skills: string | string[];
   status: string;
   profileImageUrl?: string;
 }
+
+// Helper function to parse skills
+const parseSkills = (skills: string | string[] | null | undefined): string[] => {
+  if (!skills) return [];
+  if (Array.isArray(skills)) return skills;
+  if (typeof skills === 'string') {
+    try {
+      const parsed = JSON.parse(skills);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 export default function StudentsManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -71,7 +86,7 @@ export default function StudentsManagementPage() {
     total: students.length,
     active: students.filter((s) => s.status === "active").length,
     branches: branches.length,
-    avgSkills: students.length > 0 ? Math.round(students.reduce((acc, s) => acc + (s.skills?.length || 0), 0) / students.length) : 0,
+    avgSkills: students.length > 0 ? Math.round(students.reduce((acc, s) => acc + parseSkills(s.skills).length, 0) / students.length) : 0,
   };
 
   return (
@@ -198,44 +213,47 @@ export default function StudentsManagementPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">{student.name}</TableCell>
-                        <TableCell className="text-sm">{student.email}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{student.branch || "N/A"}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{student.cohort || "N/A"}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {student.skills?.slice(0, 3).map((skill, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {(student.skills?.length || 0) > 3 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{student.skills.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={student.status === "active" ? "default" : "secondary"}
-                          >
-                            {student.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button size="sm" variant="outline" asChild>
-                            <Link href={`/admin/students/${student.id}`}>
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredStudents.map((student) => {
+                      const studentSkills = parseSkills(student.skills);
+                      return (
+                        <TableRow key={student.id}>
+                          <TableCell className="font-medium">{student.name}</TableCell>
+                          <TableCell className="text-sm">{student.email}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{student.branch || "N/A"}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">{student.cohort || "N/A"}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1 max-w-xs">
+                              {studentSkills.slice(0, 3).map((skill, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                              {studentSkills.length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{studentSkills.length - 3}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={student.status === "active" ? "default" : "secondary"}
+                            >
+                              {student.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button size="sm" variant="outline" asChild>
+                              <Link href={`/admin/students/${student.id}`}>
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
