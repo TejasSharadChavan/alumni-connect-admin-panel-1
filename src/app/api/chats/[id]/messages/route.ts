@@ -5,7 +5,7 @@ import { eq, and, desc } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -26,7 +26,8 @@ export async function GET(
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const chatId = parseInt(params.id);
+    const { id } = await params;
+    const chatId = parseInt(id);
 
     // Verify user is a member of this chat
     const [membership] = await db
@@ -87,7 +88,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -108,7 +109,8 @@ export async function POST(
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    const chatId = parseInt(params.id);
+    const { id } = await params;
+    const chatId = parseInt(id);
 
     // Verify user is a member of this chat
     const [membership] = await db

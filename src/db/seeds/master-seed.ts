@@ -348,35 +348,48 @@ async function seedMentorshipRequests(studentIds: number[], alumniIds: number[])
 async function seedMentorshipSessions(studentIds: number[], alumniIds: number[]) {
     console.log('👨‍🏫 Seeding mentorship sessions...');
     
-    // Create 12 completed sessions
-    const sessionInserts = Array.from({ length: 12 }, (_, i) => ({
-        requestId: i + 1, // Assumes first 12 mentorship requests exist
-        scheduledAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 5).padStart(2, '0')}T15:00:00Z`).toISOString(),
-        duration: [30, 45, 60, 90][i % 4],
-        notes: [
-          'Discussed career path in software engineering. Shared resources for system design.',
-          'Reviewed resume and provided feedback. Discussed interview preparation strategies.',
-          'Went through machine learning concepts. Recommended courses and projects.',
-          'Career guidance session. Discussed transition from student to professional.',
-          'Technical mock interview. Covered DSA problems and approach.',
-          'Project review session. Provided architecture feedback.',
-          'Discussed work-life balance and professional growth.',
-          'Resume building workshop. Highlighted key achievements.',
-          'Soft skills development. Communication and teamwork tips.',
-          'Industry trends discussion. Emerging technologies overview.',
-          'Startup career advice. Risk vs stability considerations.',
-          'Higher education guidance. Masters vs work experience.'
-        ][i],
-        studentRating: [4, 5, 5, 4, 5, 5, 4, 5, 4, 5, 5, 4][i],
-        mentorRating: [5, 4, 5, 5, 4, 5, 5, 4, 5, 4, 5, 5][i],
-        studentFeedback: 'Extremely helpful! Thank you for your time and guidance.',
-        mentorFeedback: 'Great student with clear goals. Pleasure to mentor!',
-        status: 'completed',
-        completedAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 5).padStart(2, '0')}T16:30:00Z`).toISOString(),
-    }));
-    
-    await db.insert(mentorshipSessions).values(sessionInserts);
-    console.log(`✅ Seeded ${sessionInserts.length} mentorship sessions\n`);
+    try {
+        // Create 12 completed sessions one at a time to avoid batch insert issues
+        const sessionData = [
+          { requestId: 1, duration: 30, notes: 'Discussed career path in software engineering. Shared resources for system design.', studentRating: 4, mentorRating: 5 },
+          { requestId: 2, duration: 45, notes: 'Reviewed resume and provided feedback. Discussed interview preparation strategies.', studentRating: 5, mentorRating: 4 },
+          { requestId: 3, duration: 60, notes: 'Went through machine learning concepts. Recommended courses and projects.', studentRating: 5, mentorRating: 5 },
+          { requestId: 4, duration: 90, notes: 'Career guidance session. Discussed transition from student to professional.', studentRating: 4, mentorRating: 5 },
+          { requestId: 5, duration: 30, notes: 'Technical mock interview. Covered DSA problems and approach.', studentRating: 5, mentorRating: 4 },
+          { requestId: 6, duration: 45, notes: 'Project review session. Provided architecture feedback.', studentRating: 5, mentorRating: 5 },
+          { requestId: 7, duration: 60, notes: 'Discussed work-life balance and professional growth.', studentRating: 4, mentorRating: 5 },
+          { requestId: 8, duration: 90, notes: 'Resume building workshop. Highlighted key achievements.', studentRating: 5, mentorRating: 4 },
+          { requestId: 9, duration: 30, notes: 'Soft skills development. Communication and teamwork tips.', studentRating: 4, mentorRating: 5 },
+          { requestId: 10, duration: 45, notes: 'Industry trends discussion. Emerging technologies overview.', studentRating: 5, mentorRating: 4 },
+          { requestId: 11, duration: 60, notes: 'Startup career advice. Risk vs stability considerations.', studentRating: 5, mentorRating: 5 },
+          { requestId: 12, duration: 90, notes: 'Higher education guidance. Masters vs work experience.', studentRating: 4, mentorRating: 5 },
+        ];
+        
+        let insertedCount = 0;
+        for (const session of sessionData) {
+            const scheduledDate = new Date(`2024-${String((session.requestId % 6) + 7).padStart(2, '0')}-${String((session.requestId % 25) + 5).padStart(2, '0')}T15:00:00Z`);
+            const completedDate = new Date(scheduledDate.getTime() + session.duration * 60000 + 30 * 60000); // Add duration + 30 min
+            
+            await db.insert(mentorshipSessions).values({
+                requestId: session.requestId,
+                scheduledAt: scheduledDate.toISOString(),
+                duration: session.duration,
+                notes: session.notes,
+                studentRating: session.studentRating,
+                mentorRating: session.mentorRating,
+                studentFeedback: 'Extremely helpful! Thank you for your time and guidance.',
+                mentorFeedback: 'Great student with clear goals. Pleasure to mentor!',
+                status: 'completed',
+                completedAt: completedDate.toISOString(),
+            });
+            insertedCount++;
+        }
+        
+        console.log(`✅ Seeded ${insertedCount} mentorship sessions\n`);
+    } catch (error) {
+        console.error('Error seeding mentorship sessions:', error);
+        console.log('⚠️  Skipping mentorship sessions seeding...\n');
+    }
 }
 
 async function seedCampaigns(adminId: number, facultyIds: number[]) {
