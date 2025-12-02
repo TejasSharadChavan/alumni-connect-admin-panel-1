@@ -1,5 +1,10 @@
 import { db } from '@/db';
-import { users, posts, connections, jobs, events, applications, mentorshipRequests, rsvps, comments, postReactions, chats, chatMembers, messages, activityLog, notifications } from '@/db/schema';
+import { 
+  users, posts, connections, jobs, events, applications, mentorshipRequests, mentorshipSessions,
+  rsvps, comments, postReactions, chats, chatMembers, messages, activityLog, notifications,
+  campaigns, donations, payments, files, mlModels, teams, teamMembers, projectSubmissions,
+  tasks, taskComments, taskAttachments, messageReactions, userSkills, skillEndorsements
+} from '@/db/schema';
 import bcrypt from 'bcrypt';
 import { sql } from 'drizzle-orm';
 
@@ -8,6 +13,21 @@ async function clearAllTables() {
     
     await db.run(sql`PRAGMA foreign_keys = OFF`);
     
+    // Clear in dependency order
+    await db.delete(skillEndorsements);
+    await db.delete(userSkills);
+    await db.delete(messageReactions);
+    await db.delete(taskAttachments);
+    await db.delete(taskComments);
+    await db.delete(tasks);
+    await db.delete(teamMembers);
+    await db.delete(projectSubmissions);
+    await db.delete(teams);
+    await db.delete(mlModels);
+    await db.delete(files);
+    await db.delete(payments);
+    await db.delete(donations);
+    await db.delete(campaigns);
     await db.delete(notifications);
     await db.delete(activityLog);
     await db.delete(messages);
@@ -16,6 +36,7 @@ async function clearAllTables() {
     await db.delete(postReactions);
     await db.delete(comments);
     await db.delete(rsvps);
+    await db.delete(mentorshipSessions);
     await db.delete(mentorshipRequests);
     await db.delete(applications);
     await db.delete(jobs);
@@ -26,7 +47,7 @@ async function clearAllTables() {
     
     await db.run(sql`PRAGMA foreign_keys = ON`);
     
-    console.log('✅ All tables cleared');
+    console.log('✅ All tables cleared\n');
 }
 
 async function seedUsers() {
@@ -324,6 +345,366 @@ async function seedMentorshipRequests(studentIds: number[], alumniIds: number[])
     console.log(`✅ Seeded ${sampleRequests.length} mentorship requests`);
 }
 
+async function seedMentorshipSessions(studentIds: number[], alumniIds: number[]) {
+    console.log('👨‍🏫 Seeding mentorship sessions...');
+    
+    // Create 12 completed sessions
+    const sessionInserts = Array.from({ length: 12 }, (_, i) => ({
+        requestId: i + 1, // Assumes first 12 mentorship requests exist
+        scheduledAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 5).padStart(2, '0')}T15:00:00Z`).toISOString(),
+        duration: [30, 45, 60, 90][i % 4],
+        notes: [
+          'Discussed career path in software engineering. Shared resources for system design.',
+          'Reviewed resume and provided feedback. Discussed interview preparation strategies.',
+          'Went through machine learning concepts. Recommended courses and projects.',
+          'Career guidance session. Discussed transition from student to professional.',
+          'Technical mock interview. Covered DSA problems and approach.',
+          'Project review session. Provided architecture feedback.',
+          'Discussed work-life balance and professional growth.',
+          'Resume building workshop. Highlighted key achievements.',
+          'Soft skills development. Communication and teamwork tips.',
+          'Industry trends discussion. Emerging technologies overview.',
+          'Startup career advice. Risk vs stability considerations.',
+          'Higher education guidance. Masters vs work experience.'
+        ][i],
+        studentRating: [4, 5, 5, 4, 5, 5, 4, 5, 4, 5, 5, 4][i],
+        mentorRating: [5, 4, 5, 5, 4, 5, 5, 4, 5, 4, 5, 5][i],
+        studentFeedback: 'Extremely helpful! Thank you for your time and guidance.',
+        mentorFeedback: 'Great student with clear goals. Pleasure to mentor!',
+        status: 'completed',
+        completedAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 25) + 5).padStart(2, '0')}T16:30:00Z`).toISOString(),
+    }));
+    
+    await db.insert(mentorshipSessions).values(sessionInserts);
+    console.log(`✅ Seeded ${sessionInserts.length} mentorship sessions\n`);
+}
+
+async function seedCampaigns(adminId: number, facultyIds: number[]) {
+    console.log('💰 Seeding fundraising campaigns...');
+    
+    const campaignInserts = Array.from({ length: 10 }, (_, i) => ({
+        creatorId: i < 3 ? adminId : facultyIds[i % facultyIds.length],
+        title: [
+          'New Computer Lab Infrastructure',
+          'Student Scholarship Fund 2025',
+          'Library Digital Transformation',
+          'Sports Complex Upgrade',
+          'Innovation & Research Center',
+          'Green Campus Initiative',
+          'Emergency Student Relief Fund',
+          'Alumni Networking Platform',
+          'Skill Development Programs',
+          'Campus WiFi Upgrade Project'
+        ][i],
+        description: `Help us ${['build', 'establish', 'create', 'upgrade', 'launch'][i % 5]} this important initiative for student welfare and campus improvement.`,
+        goalAmount: [500000, 300000, 700000, 400000, 1000000, 250000, 200000, 350000, 450000, 300000][i],
+        currentAmount: [250000, 180000, 500000, 150000, 600000, 100000, 150000, 200000, 300000, 180000][i],
+        category: ['infrastructure', 'scholarship', 'infrastructure', 'education', 'education', 'infrastructure', 'emergency', 'education', 'education', 'infrastructure'][i],
+        imageUrl: `https://images.unsplash.com/photo-${1540000000000 + i * 50000000}?w=800`,
+        status: i < 8 ? 'active' : 'completed',
+        approvedBy: adminId,
+        approvedAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-01T10:00:00Z`).toISOString(),
+        startDate: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-01T00:00:00Z`).toISOString(),
+        endDate: new Date(`2025-0${(i % 5) + 2}-${String((i % 28) + 1).padStart(2, '0')}T23:59:59Z`).toISOString(),
+        createdAt: new Date(`2024-${String((i % 6) + 6).padStart(2, '0')}-25T10:00:00Z`).toISOString(),
+    }));
+    
+    const insertedCampaigns = await db.insert(campaigns).values(campaignInserts).returning();
+    console.log(`✅ Seeded ${insertedCampaigns.length} campaigns\n`);
+    
+    return insertedCampaigns.map(c => c.id);
+}
+
+async function seedDonations(campaignIds: number[], alumniIds: number[], studentIds: number[]) {
+    console.log('💵 Seeding donations...');
+    
+    const donorIds = [...alumniIds, ...studentIds.slice(0, 3)]; // Alumni + few students
+    const donationInserts = Array.from({ length: 35 }, (_, i) => ({
+        campaignId: campaignIds[i % campaignIds.length],
+        donorId: donorIds[i % donorIds.length],
+        amount: [5000, 10000, 15000, 20000, 25000, 50000, 100000, 2000, 3000][i % 9],
+        message: i % 3 === 0 ? 'Happy to contribute to this noble cause!' : null,
+        isAnonymous: i % 7 === 0,
+        paymentStatus: i < 32 ? 'completed' : 'pending',
+        transactionId: i < 32 ? `txn_${Date.now() + i}_${Math.random().toString(36).substr(2, 9)}` : null,
+        createdAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T${String(9 + (i % 12)).padStart(2, '0')}:30:00Z`).toISOString(),
+    }));
+    
+    await db.insert(donations).values(donationInserts);
+    console.log(`✅ Seeded ${donationInserts.length} donations\n`);
+    
+    return donationInserts.filter(d => d.paymentStatus === 'completed');
+}
+
+async function seedPayments(donationData: any[], alumniIds: number[]) {
+    console.log('💳 Seeding payment records...');
+    
+    const paymentInserts = donationData.slice(0, 30).map((donation, i) => ({
+        userId: donation.donorId,
+        relatedType: 'donation' as const,
+        relatedId: String(i + 1),
+        amount: donation.amount,
+        currency: 'INR',
+        status: 'completed' as const,
+        gateway: ['razorpay', 'stripe'][i % 2],
+        transactionId: donation.transactionId,
+        gatewayResponse: JSON.stringify({
+          orderId: `order_${Math.random().toString(36).substr(2, 9)}`,
+          paymentId: donation.transactionId,
+          signature: `sig_${Math.random().toString(36).substr(2, 16)}`
+        }),
+        receiptUrl: `https://receipts.example.com/${donation.transactionId}.pdf`,
+        createdAt: donation.createdAt,
+        updatedAt: donation.createdAt,
+    }));
+    
+    await db.insert(payments).values(paymentInserts);
+    console.log(`✅ Seeded ${paymentInserts.length} payment records\n`);
+}
+
+async function seedFiles(allUserIds: number[]) {
+    console.log('📁 Seeding file records...');
+    
+    const fileInserts = Array.from({ length: 40 }, (_, i) => ({
+        ownerId: allUserIds[7 + (i % (allUserIds.length - 7))],
+        fileName: `file_${Date.now() + i}_${Math.random().toString(36).substr(2, 8)}.${['jpg', 'png', 'pdf', 'docx'][i % 4]}`,
+        originalName: ['profile_photo.jpg', 'resume.pdf', 'project_screenshot.png', 'assignment.docx'][i % 4],
+        fileType: ['image', 'document', 'image', 'document'][i % 4],
+        mimeType: ['image/jpeg', 'application/pdf', 'image/png', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'][i % 4],
+        fileSize: [245678, 512000, 1024000, 156789][i % 4],
+        url: `https://storage.example.com/uploads/file_${i}.${['jpg', 'png', 'pdf', 'docx'][i % 4]}`,
+        storagePath: `/uploads/2024/${String((i % 12) + 1).padStart(2, '0')}/file_${i}.${['jpg', 'png', 'pdf', 'docx'][i % 4]}`,
+        thumbnailUrl: i % 4 < 2 ? `https://storage.example.com/thumbnails/file_${i}_thumb.jpg` : null,
+        thumbnailPath: i % 4 < 2 ? `/thumbnails/file_${i}_thumb.jpg` : null,
+        relatedType: ['post', 'message', 'profile', 'resume', 'task'][i % 5],
+        relatedId: String((i % 20) + 1),
+        metadata: JSON.stringify(i % 4 < 2 ? { width: 1920, height: 1080, format: 'JPEG' } : { pages: 5, size: '512KB' }),
+        uploadedAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+    }));
+    
+    const insertedFiles = await db.insert(files).values(fileInserts).returning();
+    console.log(`✅ Seeded ${insertedFiles.length} file records\n`);
+    
+    return insertedFiles.map(f => f.id);
+}
+
+async function seedMLModels(adminId: number) {
+    console.log('🤖 Seeding ML model records...');
+    
+    const mlModelInserts = Array.from({ length: 8 }, (_, i) => ({
+        modelName: [
+          'profile_similarity_matcher',
+          'sentiment_analyzer_v1',
+          'topic_model_lda',
+          'engagement_scorer',
+          'skill_recommender',
+          'student_success_predictor',
+          'alumni_matcher_tfidf',
+          'response_time_predictor'
+        ][i],
+        modelType: ['similarity', 'classification', 'clustering', 'regression', 'similarity', 'classification', 'similarity', 'regression'][i],
+        version: `1.${i}.0`,
+        algorithm: ['tfidf_cosine', 'logistic_regression', 'lda', 'random_forest', 'word2vec', 'xgboost', 'tfidf_knn', 'linear_regression'][i],
+        filePath: `/ml_models/${['profile_matcher', 'sentiment', 'topics', 'engagement', 'skills', 'success', 'alumni', 'response'][i]}_model_v1_${i}.pkl`,
+        parameters: JSON.stringify({
+          max_features: i < 4 ? 1000 : 500,
+          n_estimators: i === 3 || i === 5 ? 100 : null,
+          n_neighbors: i === 6 ? 10 : null,
+          learning_rate: i === 5 ? 0.1 : null,
+        }),
+        metrics: JSON.stringify({
+          accuracy: [0.87, 0.82, null, null, 0.85, 0.79, 0.88, null][i],
+          precision: [0.86, 0.81, null, null, 0.84, 0.78, 0.87, null][i],
+          recall: [0.88, 0.83, null, null, 0.86, 0.80, 0.89, null][i],
+          f1_score: [0.87, 0.82, null, null, 0.85, 0.79, 0.88, null][i],
+          coherence_score: [null, null, 0.65, null, null, null, null, null][i],
+          rmse: [null, null, null, 0.23, null, null, null, 0.18][i],
+        }),
+        trainingDataCount: [500, 1200, 800, 1500, 600, 900, 500, 1100][i],
+        features: JSON.stringify([
+          ['skills', 'bio', 'headline', 'experience', 'branch'],
+          ['text_content', 'sentiment_words', 'length'],
+          ['post_content', 'tags', 'comments'],
+          ['activity_count', 'response_time', 'session_length'],
+          ['user_skills', 'job_skills', 'profile_data'],
+          ['gpa', 'attendance', 'activity_score', 'skills_count'],
+          ['alumni_profile', 'student_profile', 'skills_overlap'],
+          ['message_count', 'avg_length', 'time_of_day']
+        ][i]),
+        status: 'active',
+        trainedBy: adminId,
+        trainedAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-15T10:00:00Z`).toISOString(),
+        lastUsedAt: new Date(`2024-12-${String((i % 20) + 1).padStart(2, '0')}T15:30:00Z`).toISOString(),
+        description: `ML model for ${['profile matching', 'sentiment analysis', 'topic modeling', 'engagement scoring', 'skill recommendation', 'success prediction', 'alumni matching', 'response prediction'][i]} using classical ML techniques.`,
+    }));
+    
+    await db.insert(mlModels).values(mlModelInserts);
+    console.log(`✅ Seeded ${mlModelInserts.length} ML model records\n`);
+}
+
+async function seedUserSkills(allUserIds: number[]) {
+    console.log('🎯 Seeding user skills...');
+    
+    const skills = ['JavaScript', 'Python', 'React', 'Node.js', 'Machine Learning', 'SQL', 'Java', 'C++', 'AWS', 'Docker'];
+    const skillInserts = [];
+    
+    const activeUserIds = allUserIds.slice(7); // Skip admins and faculty
+    
+    for (const userId of activeUserIds) {
+        const numSkills = 3 + Math.floor(Math.random() * 5); // 3-7 skills per user
+        const userSkills = skills.sort(() => 0.5 - Math.random()).slice(0, numSkills);
+        
+        for (const skill of userSkills) {
+            skillInserts.push({
+                userId,
+                skillName: skill,
+                proficiencyLevel: ['beginner', 'intermediate', 'advanced', 'expert'][Math.floor(Math.random() * 4)],
+                yearsOfExperience: Math.floor(Math.random() * 6),
+                endorsements: Math.floor(Math.random() * 15),
+                addedAt: new Date(`2024-${String((skillInserts.length % 6) + 7).padStart(2, '0')}-${String((skillInserts.length % 28) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+            });
+        }
+    }
+    
+    const insertedSkills = await db.insert(userSkills).values(skillInserts).returning();
+    console.log(`✅ Seeded ${insertedSkills.length} user skills\n`);
+    
+    return insertedSkills.map(s => s.id);
+}
+
+async function seedSkillEndorsements(skillIds: number[], allUserIds: number[]) {
+    console.log('👍 Seeding skill endorsements...');
+    
+    const endorsementInserts = Array.from({ length: 50 }, (_, i) => ({
+        skillId: skillIds[i % skillIds.length],
+        endorsedBy: allUserIds[7 + (i % (allUserIds.length - 7))],
+        endorsedAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+    }));
+    
+    await db.insert(skillEndorsements).values(endorsementInserts);
+    console.log(`✅ Seeded ${endorsementInserts.length} skill endorsements\n`);
+}
+
+async function seedTeamsAndProjects(studentIds: number[], facultyIds: number[]) {
+    console.log('👥 Seeding teams and projects...');
+    
+    const teamInserts = Array.from({ length: 12 }, (_, i) => ({
+        name: `Team ${['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta', 'Iota', 'Kappa', 'Lambda', 'Mu'][i]}`,
+        description: `Collaborative team working on ${['AI', 'Web', 'Mobile', 'IoT', 'Blockchain', 'Cloud', 'Data Science', 'AR/VR', 'Security', 'Game', 'Robotics', 'ML'][i]} project`,
+        projectName: [
+          'AI-Powered Chatbot',
+          'E-Commerce Platform',
+          'Mobile Fitness Tracker',
+          'Smart Home Automation',
+          'Decentralized Voting System',
+          'Cloud File Manager',
+          'Stock Price Predictor',
+          'AR Museum Guide',
+          'Cybersecurity Dashboard',
+          'Multiplayer Game Engine',
+          'Autonomous Drone System',
+          'Real-time Translator'
+        ][i],
+        creatorId: studentIds[i % studentIds.length],
+        status: ['active', 'completed', 'archived'][i % 3],
+        isPublic: i % 4 !== 0,
+        createdAt: new Date(`2024-${String((i % 6) + 7).padStart(2, '0')}-01T10:00:00Z`).toISOString(),
+    }));
+    
+    const insertedTeams = await db.insert(teams).values(teamInserts).returning();
+    console.log(`✅ Seeded ${insertedTeams.length} teams`);
+    
+    // Seed team members
+    const memberInserts = [];
+    for (const team of insertedTeams) {
+        const numMembers = 2 + Math.floor(Math.random() * 4); // 2-5 members per team
+        const members = studentIds.sort(() => 0.5 - Math.random()).slice(0, numMembers);
+        
+        members.forEach((userId, idx) => {
+            memberInserts.push({
+                teamId: team.id,
+                userId,
+                role: idx === 0 ? 'leader' : 'member',
+                joinedAt: team.createdAt,
+            });
+        });
+    }
+    
+    await db.insert(teamMembers).values(memberInserts);
+    console.log(`✅ Seeded ${memberInserts.length} team members`);
+    
+    // Seed project submissions
+    const submissionInserts = insertedTeams.map((team, i) => ({
+        teamId: team.id,
+        submittedBy: team.creatorId,
+        title: team.projectName!,
+        description: `Comprehensive ${['AI', 'Web', 'Mobile', 'IoT', 'Blockchain', 'Cloud', 'Data Science', 'AR/VR', 'Security', 'Game', 'Robotics', 'ML'][i]} project with modern tech stack.`,
+        repositoryUrl: `https://github.com/team-${team.id}/project`,
+        demoUrl: i % 3 !== 0 ? `https://demo-team${team.id}.vercel.app` : null,
+        documentUrl: `https://docs.google.com/document/team${team.id}`,
+        technologies: JSON.stringify(['Python', 'React', 'Node.js', 'MongoDB', 'Docker'].sort(() => 0.5 - Math.random()).slice(0, 4)),
+        status: ['pending', 'approved', 'rejected', 'revision_requested'][i % 4],
+        reviewedBy: i % 4 > 0 ? facultyIds[i % facultyIds.length] : null,
+        reviewedAt: i % 4 > 0 ? new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-${String((i % 28) + 5).padStart(2, '0')}T14:00:00Z`).toISOString() : null,
+        reviewComments: i % 4 === 1 ? 'Excellent work! Very innovative approach.' : i % 4 === 2 ? 'Needs improvement in testing.' : i % 4 === 3 ? 'Good start. Please address comments and resubmit.' : null,
+        grade: i % 4 === 1 ? 'A' : i % 4 === 2 ? 'C' : null,
+        submittedAt: new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+        updatedAt: new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-${String((i % 28) + 10).padStart(2, '0')}T10:00:00Z`).toISOString(),
+    }));
+    
+    await db.insert(projectSubmissions).values(submissionInserts);
+    console.log(`✅ Seeded ${submissionInserts.length} project submissions\n`);
+    
+    return insertedTeams.map(t => t.id);
+}
+
+async function seedTasks(teamIds: number[], studentIds: number[]) {
+    console.log('📋 Seeding tasks...');
+    
+    const taskInserts = Array.from({ length: 30 }, (_, i) => ({
+        teamId: teamIds[i % teamIds.length],
+        title: [
+          'Setup project repository',
+          'Design database schema',
+          'Implement user authentication',
+          'Create API endpoints',
+          'Build frontend components',
+          'Write unit tests',
+          'Deploy to staging',
+          'Performance optimization',
+          'Security audit',
+          'Documentation'
+        ][i % 10],
+        description: `Task ${i + 1} description and requirements.`,
+        assignedTo: i % 3 !== 0 ? studentIds[i % studentIds.length] : null,
+        status: ['todo', 'in-progress', 'review', 'done'][i % 4],
+        priority: ['low', 'medium', 'high'][i % 3],
+        dueDate: new Date(`2025-0${(i % 2) + 1}-${String((i % 28) + 1).padStart(2, '0')}T23:59:59Z`).toISOString(),
+        createdAt: new Date(`2024-${String((i % 4) + 9).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`).toISOString(),
+        updatedAt: new Date(`2024-${String((i % 2) + 11).padStart(2, '0')}-${String((i % 28) + 1).padStart(2, '0')}T15:00:00Z`).toISOString(),
+    }));
+    
+    const insertedTasks = await db.insert(tasks).values(taskInserts).returning();
+    console.log(`✅ Seeded ${insertedTasks.length} tasks\n`);
+    
+    return insertedTasks.map(t => t.id);
+}
+
+async function seedMessageReactions(allUserIds: number[]) {
+    console.log('😀 Seeding message reactions...');
+    
+    const emojis = ['👍', '❤️', '😂', '🎉', '🔥', '👏'];
+    const reactionInserts = Array.from({ length: 40 }, (_, i) => ({
+        messageId: (i % 30) + 1, // Assumes 30 messages exist
+        userId: allUserIds[7 + (i % (allUserIds.length - 7))],
+        emoji: emojis[i % emojis.length],
+        createdAt: new Date(`2024-12-${String((i % 15) + 1).padStart(2, '0')}T${String(10 + (i % 10)).padStart(2, '0')}:00:00Z`).toISOString(),
+    }));
+    
+    await db.insert(messageReactions).values(reactionInserts);
+    console.log(`✅ Seeded ${reactionInserts.length} message reactions\n`);
+}
+
 async function seedChatsAndMessages(allUserIds: number[]) {
     console.log('💬 Seeding chats and messages...');
     
@@ -402,40 +783,67 @@ async function seedNotifications(allUserIds: number[]) {
 
 async function main() {
     try {
-        console.log('🚀 Starting safe database seeding (20-30 records per table)...\n');
+        console.log('🚀 Starting comprehensive database seeding...\n');
         
         await clearAllTables();
+        
         const userIds = await seedUsers();
-        const facultyIds = [userIds.firstFacultyId, userIds.firstFacultyId + 1, userIds.firstFacultyId + 2, userIds.firstFacultyId + 3, userIds.firstFacultyId + 4];
+        const facultyIds = Array.from({ length: 5 }, (_, i) => userIds.firstFacultyId + i);
+        
         const postIds = await seedPosts(userIds.firstAdminId, userIds.allUserIds);
         await seedComments(postIds, userIds.allUserIds);
         await seedPostReactions(postIds, userIds.allUserIds);
+        
         await seedConnections(userIds.studentIds, userIds.alumniIds);
+        
         const jobIds = await seedJobs(userIds.firstAdminId, userIds.alumniIds);
         await seedApplications(jobIds, userIds.studentIds);
+        
         const eventIds = await seedEvents(userIds.firstAdminId, facultyIds);
         await seedRsvps(eventIds, userIds.allUserIds);
+        
         await seedMentorshipRequests(userIds.studentIds, userIds.alumniIds);
+        await seedMentorshipSessions(userIds.studentIds, userIds.alumniIds);
+        
+        const campaignIds = await seedCampaigns(userIds.firstAdminId, facultyIds);
+        const donationData = await seedDonations(campaignIds, userIds.alumniIds, userIds.studentIds);
+        await seedPayments(donationData, userIds.alumniIds);
+        
+        const fileIds = await seedFiles(userIds.allUserIds);
+        await seedMLModels(userIds.firstAdminId);
+        
+        const skillIds = await seedUserSkills(userIds.allUserIds);
+        await seedSkillEndorsements(skillIds, userIds.allUserIds);
+        
+        const teamIds = await seedTeamsAndProjects(userIds.studentIds, facultyIds);
+        const taskIds = await seedTasks(teamIds, userIds.studentIds);
+        
         await seedChatsAndMessages(userIds.allUserIds);
+        await seedMessageReactions(userIds.allUserIds);
+        
         await seedActivityLog(userIds.allUserIds);
         await seedNotifications(userIds.allUserIds);
         
         console.log('\n✨ Database seeding completed successfully!');
-        console.log('📊 Safe Data Summary:');
+        console.log('📊 Complete Data Summary:');
         console.log('   - 25 Users (2 admin, 5 faculty, 10 students, 8 alumni)');
-        console.log('   - 25 Posts with realistic content');
-        console.log('   - 30 Comments on posts');
-        console.log('   - 30 Post reactions');
-        console.log('   - 20 Connections between users');
-        console.log('   - 20 Job listings (15 full-time, 5 internships)');
-        console.log('   - 20 Job applications');
-        console.log('   - 20 Events');
-        console.log('   - 25 Event RSVPs');
-        console.log('   - 15 Mentorship requests');
-        console.log('   - 10 Chats with 20 members and 30 messages');
+        console.log('   - 25 Posts with comments and reactions');
+        console.log('   - 20 Connections');
+        console.log('   - 20 Jobs with 20 applications');
+        console.log('   - 20 Events with 25 RSVPs');
+        console.log('   - 15 Mentorship requests with 12 completed sessions');
+        console.log('   - 10 Campaigns with 35 donations');
+        console.log('   - 30 Payment records');
+        console.log('   - 40 File uploads');
+        console.log('   - 8 ML models');
+        console.log('   - 100+ User skills with 50 endorsements');
+        console.log('   - 12 Teams with project submissions');
+        console.log('   - 30 Tasks');
+        console.log('   - 10 Chats with 30 messages and 40 reactions');
         console.log('   - 25 Activity logs');
         console.log('   - 25 Notifications');
-        console.log('\n✅ Total: ~290 records - Safe and efficient!');
+        console.log('\n✅ Total: 500+ records across ALL tables!');
+        console.log('🎯 All dashboards are now fully populated with ML-ready data!');
     } catch (error) {
         console.error('❌ Seeding failed:', error);
         throw error;

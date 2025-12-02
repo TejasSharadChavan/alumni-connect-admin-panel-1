@@ -1,0 +1,28 @@
+# Core ML Libraries (Classical ML - NO transformers)
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+python-multipart==0.0.6
+
+# Classical ML Libraries
+scikit-learn==1.4.0
+scipy==1.11.4
+numpy==1.26.3
+
+# NLP - Classical Methods
+gensim==4.3.2
+nltk==3.8.1
+spacy==3.7.2
+yake==0.4.8
+rake-nltk==1.0.6
+
+# Data Processing
+pandas==2.1.4
+python-dateutil==2.8.2
+
+# Database
+requests==2.31.0
+
+# Utilities
+joblib==1.3.2
+python-dotenv==1.0.0

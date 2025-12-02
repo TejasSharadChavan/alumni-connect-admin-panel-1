@@ -358,5 +358,83 @@ export const payments = sqliteTable('payments', {
   status: text('status').notNull().default('pending'), // 'pending', 'completed', 'failed', 'refunded'
   gateway: text('gateway'), // 'razorpay', 'stripe', etc.
   transactionId: text('transaction_id'),
+  gatewayResponse: text('gateway_response', { mode: 'json' }), // JSON response from gateway
+  receiptUrl: text('receipt_url'),
   createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// Files Management - For uploaded images, documents, attachments
+export const files = sqliteTable('files', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  ownerId: integer('owner_id').notNull().references(() => users.id),
+  fileName: text('file_name').notNull(),
+  originalName: text('original_name').notNull(),
+  fileType: text('file_type').notNull(), // 'image', 'document', 'video', 'audio'
+  mimeType: text('mime_type').notNull(),
+  fileSize: integer('file_size').notNull(), // in bytes
+  url: text('url').notNull(),
+  storagePath: text('storage_path').notNull(),
+  thumbnailUrl: text('thumbnail_url'),
+  thumbnailPath: text('thumbnail_path'),
+  relatedType: text('related_type'), // 'post', 'message', 'profile', 'resume', 'task'
+  relatedId: text('related_id'),
+  metadata: text('metadata', { mode: 'json' }), // Additional metadata (width, height, duration, etc.)
+  uploadedAt: text('uploaded_at').notNull(),
+});
+
+// ML Models Tracking - Store ML model metadata and performance metrics
+export const mlModels = sqliteTable('ml_models', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  modelName: text('model_name').notNull(), // 'profile_matcher', 'sentiment_analyzer', 'topic_model', etc.
+  modelType: text('model_type').notNull(), // 'classification', 'clustering', 'similarity', 'regression'
+  version: text('version').notNull(),
+  algorithm: text('algorithm').notNull(), // 'tfidf', 'word2vec', 'logistic_regression', 'lda', etc.
+  filePath: text('file_path').notNull(), // Path to saved model file
+  parameters: text('parameters', { mode: 'json' }), // Model hyperparameters
+  metrics: text('metrics', { mode: 'json' }), // Performance metrics (accuracy, precision, recall, F1, etc.)
+  trainingDataCount: integer('training_data_count'),
+  features: text('features', { mode: 'json' }), // Features used for training
+  status: text('status').notNull().default('active'), // 'training', 'active', 'deprecated'
+  trainedBy: integer('trained_by').references(() => users.id),
+  trainedAt: text('trained_at').notNull(),
+  lastUsedAt: text('last_used_at'),
+  description: text('description'),
+});
+
+// Task Attachments
+export const taskAttachments = sqliteTable('task_attachments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  taskId: integer('task_id').notNull().references(() => tasks.id),
+  fileId: integer('file_id').notNull().references(() => files.id),
+  uploadedBy: integer('uploaded_by').notNull().references(() => users.id),
+  createdAt: text('created_at').notNull(),
+});
+
+// Message Reactions (for chat emoji reactions)
+export const messageReactions = sqliteTable('message_reactions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  messageId: integer('message_id').notNull().references(() => messages.id),
+  userId: integer('user_id').notNull().references(() => users.id),
+  emoji: text('emoji').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+// User Skills - Separate table for better ML analysis
+export const userSkills = sqliteTable('user_skills', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id),
+  skillName: text('skill_name').notNull(),
+  proficiencyLevel: text('proficiency_level'), // 'beginner', 'intermediate', 'advanced', 'expert'
+  yearsOfExperience: integer('years_of_experience'),
+  endorsements: integer('endorsements').default(0),
+  addedAt: text('added_at').notNull(),
+});
+
+// Skill Endorsements
+export const skillEndorsements = sqliteTable('skill_endorsements', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  skillId: integer('skill_id').notNull().references(() => userSkills.id),
+  endorsedBy: integer('endorsed_by').notNull().references(() => users.id),
+  endorsedAt: text('endorsed_at').notNull(),
 });
