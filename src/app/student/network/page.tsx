@@ -9,10 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Users, Search, Filter, UserPlus, Check, X, Linkedin, Github, MessageSquare } from "lucide-react";
+import { Users, Search, Filter, UserPlus, Check, X, Linkedin, Github, MessageSquare, Brain, Sparkles, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Progress } from "@/components/ui/progress";
 
 interface User {
   id: number;
@@ -28,8 +29,23 @@ interface User {
   profileImageUrl?: string;
   linkedinUrl?: string;
   githubUrl?: string;
+  currentCompany?: string;
+  currentPosition?: string;
   connectionStatus?: "none" | "pending" | "accepted";
   connectionId?: number;
+}
+
+interface MLRecommendation {
+  alumni_id: number;
+  match_score: number;
+  breakdown: {
+    skills_overlap: number;
+    branch_match: number;
+    experience_match: number;
+    activity_score: number;
+  };
+  alumni: User;
+  explanation: string;
 }
 
 export default function StudentNetworkPage() {
@@ -38,42 +54,59 @@ export default function StudentNetworkPage() {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [connections, setConnections] = useState<User[]>([]);
   const [pendingRequests, setPendingRequests] = useState<User[]>([]);
-  const [suggestions, setSuggestions] = useState<User[]>([]);
+  const [mlRecommendations, setMlRecommendations] = useState<MLRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mlLoading, setMlLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState("discover");
+  const [activeTab, setActiveTab] = useState("ai-matches");
   const [connectingUserId, setConnectingUserId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchNetworkData();
+    fetchMLRecommendations();
   }, []);
 
   useEffect(() => {
     filterUsers();
   }, [users, searchQuery, roleFilter, branchFilter]);
 
+  const fetchMLRecommendations = async () => {
+    try {
+      setMlLoading(true);
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch("/api/ml/recommend-alumni?limit=10", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMlRecommendations(data.recommendations || []);
+      }
+    } catch (error) {
+      console.error("Error fetching ML recommendations:", error);
+    } finally {
+      setMlLoading(false);
+    }
+  };
+
   const fetchNetworkData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Fetch all users
       const usersRes = await fetch("/api/users", { headers });
       const usersData = await usersRes.json();
 
-      // Fetch connections - API returns array directly, not wrapped
       const connectionsRes = await fetch("/api/connections", { headers });
       const connectionsData = await connectionsRes.json();
 
-      // Fetch suggestions
       const suggestionsRes = await fetch("/api/connections/suggestions", { headers });
       const suggestionsData = await suggestionsRes.json();
 
       if (usersData.users) {
-        // connectionsData is already an array, not { connections: [] }
         const allConnections = Array.isArray(connectionsData) ? connectionsData : [];
         
         const usersWithStatus = usersData.users.map((user: User) => {
@@ -84,7 +117,6 @@ export default function StudentNetworkPage() {
             }
           );
           
-          // Parse skills if it's a string
           let parsedSkills = user.skills;
           if (typeof user.skills === 'string') {
             try {
@@ -111,36 +143,15 @@ export default function StudentNetworkPage() {
 
         setUsers(usersWithStatus);
 
-        // Set connections (accepted)
         const acceptedConnections = usersWithStatus.filter(
           (u: User) => u.connectionStatus === "accepted"
         );
         setConnections(acceptedConnections);
 
-        // Set pending requests (where I'm the responder)
         const pending = usersWithStatus.filter(
           (u: User) => u.connectionStatus === "pending"
         );
         setPendingRequests(pending);
-      }
-
-      if (suggestionsData.suggestions) {
-        // Parse skills for suggestions too
-        const suggestionsWithParsedSkills = suggestionsData.suggestions.map((user: User) => {
-          let parsedSkills = user.skills;
-          if (typeof user.skills === 'string') {
-            try {
-              parsedSkills = JSON.parse(user.skills);
-            } catch (e) {
-              parsedSkills = [];
-            }
-          }
-          if (!Array.isArray(parsedSkills)) {
-            parsedSkills = [];
-          }
-          return { ...user, skills: parsedSkills };
-        });
-        setSuggestions(suggestionsWithParsedSkills);
       }
     } catch (error) {
       console.error("Error fetching network data:", error);
@@ -153,7 +164,6 @@ export default function StudentNetworkPage() {
   const filterUsers = () => {
     let filtered = users;
 
-    // Search filter
     if (searchQuery) {
       filtered = filtered.filter(
         (user) =>
@@ -166,17 +176,14 @@ export default function StudentNetworkPage() {
       );
     }
 
-    // Role filter
     if (roleFilter !== "all") {
       filtered = filtered.filter((user) => user.role === roleFilter);
     }
 
-    // Branch filter
     if (branchFilter !== "all") {
       filtered = filtered.filter((user) => user.branch === branchFilter);
     }
 
-    // Filter out already connected and pending
     filtered = filtered.filter((user) => user.connectionStatus === "none");
 
     setFilteredUsers(filtered);
@@ -185,7 +192,7 @@ export default function StudentNetworkPage() {
   const handleConnect = async (userId: number) => {
     try {
       setConnectingUserId(userId);
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       const response = await fetch("/api/connections", {
         method: "POST",
         headers: {
@@ -198,7 +205,8 @@ export default function StudentNetworkPage() {
       const data = await response.json();
       if (response.ok) {
         toast.success("Connection request sent!");
-        fetchNetworkData(); // Refresh data
+        fetchNetworkData();
+        fetchMLRecommendations();
       } else {
         toast.error(data.error || "Failed to send connection request");
       }
@@ -212,7 +220,7 @@ export default function StudentNetworkPage() {
 
   const handleAcceptConnection = async (connectionId: number) => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       const response = await fetch(`/api/connections/${connectionId}/accept`, {
         method: "POST",
         headers: {
@@ -236,7 +244,7 @@ export default function StudentNetworkPage() {
 
   const handleRejectConnection = async (connectionId: number) => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       const response = await fetch(`/api/connections/${connectionId}/reject`, {
         method: "POST",
         headers: {
@@ -260,7 +268,7 @@ export default function StudentNetworkPage() {
 
   const handleStartChat = async (userId: number) => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       const response = await fetch("/api/chats", {
         method: "POST",
         headers: {
@@ -271,7 +279,6 @@ export default function StudentNetworkPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         toast.success("Opening chat...");
         router.push("/student/messages");
       } else {
@@ -282,6 +289,154 @@ export default function StudentNetworkPage() {
       console.error("Error creating chat:", error);
       toast.error("Failed to create chat");
     }
+  };
+
+  const MLMatchCard = ({ recommendation }: { recommendation: MLRecommendation }) => {
+    const { alumni, match_score, breakdown, explanation } = recommendation;
+    
+    return (
+      <Card className="h-full hover:shadow-xl transition-all border-2 bg-gradient-to-br from-white to-blue-50/30 dark:from-background dark:to-blue-950/20">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-xl flex-shrink-0">
+                {alumni.name.split(" ").map((n) => n[0]).join("")}
+              </div>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg truncate">{alumni.name}</CardTitle>
+                <CardDescription className="mt-1 space-y-1">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="capitalize">
+                      {alumni.role}
+                    </Badge>
+                    {alumni.branch && (
+                      <Badge variant="secondary" className="capitalize">
+                        {alumni.branch}
+                      </Badge>
+                    )}
+                  </div>
+                  {alumni.currentPosition && alumni.currentCompany && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {alumni.currentPosition} @ {alumni.currentCompany}
+                    </p>
+                  )}
+                </CardDescription>
+              </div>
+            </div>
+            
+            {/* Match Score Badge */}
+            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full border-4 border-primary/20 flex items-center justify-center bg-gradient-to-br from-green-500 to-blue-600">
+                  <span className="text-white font-bold text-lg">{match_score}%</span>
+                </div>
+                <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-500" />
+              </div>
+              <Badge variant="default" className="text-xs bg-gradient-to-r from-green-600 to-blue-600">
+                AI Match
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* AI Explanation */}
+          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900">
+            <div className="flex items-start gap-2">
+              <Brain className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">{explanation}</p>
+            </div>
+          </div>
+
+          {/* Match Breakdown */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Match Breakdown
+            </p>
+            
+            <div className="space-y-2">
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Skills Overlap</span>
+                  <span className="font-medium">{breakdown.skills_overlap}%</span>
+                </div>
+                <Progress value={breakdown.skills_overlap} className="h-2" />
+              </div>
+              
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Branch Match</span>
+                  <span className="font-medium">{breakdown.branch_match}%</span>
+                </div>
+                <Progress value={breakdown.branch_match} className="h-2" />
+              </div>
+              
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Experience Match</span>
+                  <span className="font-medium">{breakdown.experience_match}%</span>
+                </div>
+                <Progress value={breakdown.experience_match} className="h-2" />
+              </div>
+              
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Activity Score</span>
+                  <span className="font-medium">{breakdown.activity_score}%</span>
+                </div>
+                <Progress value={breakdown.activity_score} className="h-2" />
+              </div>
+            </div>
+          </div>
+
+          {alumni.headline && (
+            <p className="text-sm text-muted-foreground line-clamp-2">{alumni.headline}</p>
+          )}
+
+          {alumni.skills && alumni.skills.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {alumni.skills.slice(0, 4).map((skill, i) => (
+                <Badge key={i} variant="secondary" className="text-xs">
+                  {skill}
+                </Badge>
+              ))}
+              {alumni.skills.length > 4 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{alumni.skills.length - 4} more
+                </Badge>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            {alumni.linkedinUrl && (
+              <Button size="sm" variant="ghost" asChild>
+                <a href={alumni.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                  <Linkedin className="h-4 w-4" />
+                </a>
+              </Button>
+            )}
+            {alumni.githubUrl && (
+              <Button size="sm" variant="ghost" asChild>
+                <a href={alumni.githubUrl} target="_blank" rel="noopener noreferrer">
+                  <Github className="h-4 w-4" />
+                </a>
+              </Button>
+            )}
+          </div>
+
+          <Button
+            className="w-full"
+            onClick={() => handleConnect(alumni.id)}
+            disabled={connectingUserId === alumni.id}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            {connectingUserId === alumni.id ? "Connecting..." : "Connect Now"}
+          </Button>
+        </CardContent>
+      </Card>
+    );
   };
 
   const UserCard = ({ user, showActions = true, showMessageButton = false }: { user: User; showActions?: boolean; showMessageButton?: boolean }) => (
@@ -427,9 +582,15 @@ export default function StudentNetworkPage() {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">My Network</h1>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              My Network
+              <Badge variant="default" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Brain className="h-3 w-3 mr-1" />
+                AI-Powered
+              </Badge>
+            </h1>
             <p className="text-muted-foreground mt-2">
-              Connect with students, alumni, and faculty
+              Connect with students, alumni, and faculty using ML-powered recommendations
             </p>
           </div>
         </motion.div>
@@ -466,11 +627,11 @@ export default function StudentNetworkPage() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
-                  <Search className="h-6 w-6 text-green-600" />
+                  <Brain className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{suggestions.length}</p>
-                  <p className="text-sm text-muted-foreground">Suggestions</p>
+                  <p className="text-2xl font-bold">{mlRecommendations.length}</p>
+                  <p className="text-sm text-muted-foreground">AI Matches</p>
                 </div>
               </div>
             </CardContent>
@@ -480,8 +641,11 @@ export default function StudentNetworkPage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="ai-matches">
+              <Brain className="h-4 w-4 mr-2" />
+              AI Matches ({mlRecommendations.length})
+            </TabsTrigger>
             <TabsTrigger value="discover">Discover</TabsTrigger>
-            <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
             <TabsTrigger value="connections">
               Connections ({connections.length})
             </TabsTrigger>
@@ -489,6 +653,53 @@ export default function StudentNetworkPage() {
               Requests ({pendingRequests.length})
             </TabsTrigger>
           </TabsList>
+
+          {/* AI Matches Tab */}
+          <TabsContent value="ai-matches" className="space-y-6">
+            <Card className="border-2 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-yellow-500" />
+                  AI-Powered Alumni Recommendations
+                </CardTitle>
+                <CardDescription>
+                  Machine learning analyzed your profile and found these top alumni matches based on skills, branch, experience, and activity
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            {mlLoading ? (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-[500px]" />
+                ))}
+              </div>
+            ) : mlRecommendations.length === 0 ? (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="text-center">
+                    <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      No AI recommendations available yet. Complete your profile to get personalized matches!
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {mlRecommendations.map((rec, index) => (
+                  <motion.div
+                    key={rec.alumni_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                  >
+                    <MLMatchCard recommendation={rec} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           {/* Discover Tab */}
           <TabsContent value="discover" className="space-y-6">
@@ -564,35 +775,6 @@ export default function StudentNetworkPage() {
             )}
           </TabsContent>
 
-          {/* Suggestions Tab */}
-          <TabsContent value="suggestions" className="space-y-6">
-            {suggestions.length === 0 ? (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      No suggestions available at the moment
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {suggestions.map((user, index) => (
-                  <motion.div
-                    key={user.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                  >
-                    <UserCard user={user} />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
           {/* Connections Tab */}
           <TabsContent value="connections" className="space-y-6">
             {connections.length === 0 ? (
@@ -603,8 +785,8 @@ export default function StudentNetworkPage() {
                     <p className="text-muted-foreground">
                       You haven't connected with anyone yet
                     </p>
-                    <Button className="mt-4" onClick={() => setActiveTab("discover")}>
-                      Discover People
+                    <Button className="mt-4" onClick={() => setActiveTab("ai-matches")}>
+                      View AI Matches
                     </Button>
                   </div>
                 </CardContent>
