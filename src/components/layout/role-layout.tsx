@@ -31,6 +31,11 @@ import {
   FolderKanban,
   Heart,
   FileText,
+  BarChart3,
+  Brain,
+  TrendingUp,
+  Shield,
+  DollarSign,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -120,9 +125,17 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
       { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
       { icon: Users, label: "User Approvals", href: "/admin/approvals" },
       { icon: Users, label: "Manage Users", href: "/admin/users" },
-      { icon: FileText, label: "Content Moderation", href: "/admin/content" },
+      { icon: Shield, label: "Content Moderation", href: "/admin/content" },
+      { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+      { icon: GraduationCap, label: "Students", href: "/admin/students" },
+      { icon: UserCircle, label: "Alumni", href: "/admin/alumni" },
       { icon: Briefcase, label: "Jobs", href: "/admin/jobs" },
       { icon: Calendar, label: "Events", href: "/admin/events" },
+      { icon: DollarSign, label: "Campaigns", href: "/admin/campaigns" },
+      { icon: FolderKanban, label: "Projects", href: "/admin/projects" },
+      { icon: FileText, label: "News & Posts", href: "/admin/news" },
+      { icon: TrendingUp, label: "Reports", href: "/admin/reports" },
+      { icon: Brain, label: "AI Insights", href: "/admin/insights" },
     ],
     student: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/student" },
