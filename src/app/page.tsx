@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, Users, Briefcase, Calendar, MessageSquare, TrendingUp, Loader2 } from "lucide-react";
+import { GraduationCap, Users, Briefcase, Calendar, MessageSquare, TrendingUp, Loader2, Trophy, Newspaper } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -36,31 +36,71 @@ export default function HomePage() {
       icon: Users,
       title: "Network & Connect",
       description: "Build meaningful connections with students, alumni, and faculty across generations",
+      link: "/feed",
     },
     {
       icon: Briefcase,
       title: "Career Opportunities",
       description: "Access job postings, internships, and career guidance from industry professionals",
+      link: "/jobs",
     },
     {
       icon: Calendar,
       title: "Events & Workshops",
       description: "Stay updated with college events, workshops, and alumni meetups",
+      link: "/events",
     },
     {
       icon: MessageSquare,
-      title: "Mentorship Programs",
-      description: "Connect with mentors for guidance or become a mentor to help students",
+      title: "Community Feed",
+      description: "Share updates, achievements, and connect with the community",
+      link: "/feed",
+    },
+    {
+      icon: Trophy,
+      title: "Rankings & Leaderboard",
+      description: "See top contributors and celebrate community achievements",
+      link: "/rankings",
     },
     {
       icon: TrendingUp,
       title: "Track Progress",
       description: "Monitor your professional growth and contributions to the alumni community",
+      link: "/login",
     },
+  ];
+
+  const quickLinks = [
+    { title: "Community Feed", href: "/feed", icon: Newspaper, description: "Latest updates and posts" },
+    { title: "Job Board", href: "/jobs", icon: Briefcase, description: "Browse opportunities" },
+    { title: "Events", href: "/events", icon: Calendar, description: "Upcoming events" },
+    { title: "Rankings", href: "/rankings", icon: Trophy, description: "Top contributors" },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
+      {/* Navigation Bar */}
+      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-6 w-6 text-primary" />
+            <span className="font-bold text-xl">Alumni Connect</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/feed" className="text-sm hover:text-primary transition-colors">Feed</Link>
+            <Link href="/jobs" className="text-sm hover:text-primary transition-colors">Jobs</Link>
+            <Link href="/events" className="text-sm hover:text-primary transition-colors">Events</Link>
+            <Link href="/rankings" className="text-sm hover:text-primary transition-colors">Rankings</Link>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/login">Sign In</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/register">Register</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16 md:py-24">
         <motion.div
@@ -97,6 +137,36 @@ export default function HomePage() {
           </div>
         </motion.div>
 
+        {/* Quick Links */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="mt-16"
+        >
+          <h2 className="text-2xl font-bold text-center mb-8">Explore Now</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            {quickLinks.map((link, index) => (
+              <motion.div
+                key={link.title}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.2 + index * 0.1 }}
+              >
+                <Link href={link.href}>
+                  <Card className="h-full hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer border-2">
+                    <CardContent className="p-6 text-center">
+                      <link.icon className="h-8 w-8 mx-auto mb-3 text-primary" />
+                      <h3 className="font-semibold mb-1">{link.title}</h3>
+                      <p className="text-xs text-muted-foreground">{link.description}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Features Grid */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -111,17 +181,19 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
             >
-              <Card className="h-full hover:shadow-lg transition-shadow border-2">
-                <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  <CardDescription className="text-base">
-                    {feature.description}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+              <Link href={feature.link}>
+                <Card className="h-full hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer border-2">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                      <feature.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl">{feature.title}</CardTitle>
+                    <CardDescription className="text-base">
+                      {feature.description}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
             </motion.div>
           ))}
         </motion.div>
