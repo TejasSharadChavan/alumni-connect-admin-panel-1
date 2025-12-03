@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Heart, MessageCircle, Send, Loader2, PlusCircle, Filter, ThumbsUp, Award, Lightbulb, Share2, Image as ImageIcon, X, ChevronLeft, ChevronRight, Hash, AtSign, MoreHorizontal, Flag, Trash2, Edit } from "lucide-react";
+import { Heart, MessageCircle, Send, Loader2, PlusCircle, Filter, ThumbsUp, Award, Lightbulb, Share2, Image as ImageIcon, X, ChevronLeft, ChevronRight, Hash, AtSign, MoreHorizontal, Flag, Trash2, Edit, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +65,7 @@ const REACTIONS = [
 export default function FeedPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -86,21 +88,25 @@ export default function FeedPage() {
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    setIsAuthenticated(!!token);
     fetchPosts();
   }, [filterCategory]);
 
   const fetchPosts = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      if (!token) return;
-
+      
       const url = filterCategory === "all" 
         ? "/api/posts"
         : `/api/posts?category=${filterCategory}`;
 
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const headers: any = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url, { headers });
 
       if (response.ok) {
         const data = await response.json();
@@ -130,8 +136,17 @@ export default function FeedPage() {
     });
   };
 
+  const requireAuth = () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to continue");
+      return false;
+    }
+    return true;
+  };
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth()) return;
 
     try {
       const token = localStorage.getItem("auth_token");
@@ -174,6 +189,8 @@ export default function FeedPage() {
   };
 
   const handleReaction = async (postId: number, reactionType: string) => {
+    if (!requireAuth()) return;
+
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) {
@@ -236,6 +253,7 @@ export default function FeedPage() {
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth()) return;
 
     if (!selectedPost || !commentText.trim()) return;
 
@@ -328,98 +346,206 @@ export default function FeedPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background">
+        {/* Navigation Bar */}
+        <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <GraduationCap className="h-6 w-6 text-primary" />
+              <span className="font-bold text-xl">Alumni Connect</span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/feed" className="text-sm hover:text-primary transition-colors font-medium">Feed</Link>
+              <Link href="/jobs" className="text-sm hover:text-primary transition-colors">Jobs</Link>
+              <Link href="/events" className="text-sm hover:text-primary transition-colors">Events</Link>
+              <Link href="/rankings" className="text-sm hover:text-primary transition-colors">Rankings</Link>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/register">Register</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex justify-between items-center"
-      >
-        <div>
-          <h1 className="text-3xl font-bold">Community Feed</h1>
-          <p className="text-muted-foreground">Connect and share with the community</p>
+    <div className="min-h-screen bg-background">
+      {/* Navigation Bar */}
+      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <GraduationCap className="h-6 w-6 text-primary" />
+            <span className="font-bold text-xl">Alumni Connect</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/feed" className="text-sm hover:text-primary transition-colors font-medium text-primary">Feed</Link>
+            <Link href="/jobs" className="text-sm hover:text-primary transition-colors">Jobs</Link>
+            <Link href="/events" className="text-sm hover:text-primary transition-colors">Events</Link>
+            <Link href="/rankings" className="text-sm hover:text-primary transition-colors">Rankings</Link>
+            {isAuthenticated ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href="/student">Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/login">Sign In</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link href="/register">Register</Link>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="lg" className="shadow-lg">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Create Post
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Post</DialogTitle>
-              <DialogDescription>Share something with the community</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreatePost} className="space-y-4">
-              <div className="space-y-2">
-                <div className="relative">
-                  <Textarea
-                    placeholder="What's on your mind? Use #hashtags and @mentions"
-                    value={postForm.content}
-                    onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
-                    rows={5}
-                    required
-                    className="resize-none"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute bottom-2 right-2"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  >
-                    😊
-                  </Button>
-                  {showEmojiPicker && (
-                    <div className="absolute bottom-12 right-0 z-50">
-                      <EmojiPicker onEmojiClick={handleEmojiClick} />
-                    </div>
-                  )}
-                </div>
-              </div>
+      </div>
 
-              {/* Image Preview */}
-              {postForm.images.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {postForm.images.map((file, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg"
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6 pb-20 max-w-4xl mx-auto">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-between items-center"
+          >
+            <div>
+              <h1 className="text-3xl font-bold">Community Feed</h1>
+              <p className="text-muted-foreground">Connect and share with the community</p>
+            </div>
+            {isAuthenticated && (
+              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="shadow-lg">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Create Post
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Create New Post</DialogTitle>
+                    <DialogDescription>Share something with the community</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreatePost} className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Textarea
+                          placeholder="What's on your mind? Use #hashtags and @mentions"
+                          value={postForm.content}
+                          onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
+                          rows={5}
+                          required
+                          className="resize-none"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute bottom-2 right-2"
+                          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        >
+                          😊
+                        </Button>
+                        {showEmojiPicker && (
+                          <div className="absolute bottom-12 right-0 z-50">
+                            <EmojiPicker onEmojiClick={handleEmojiClick} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Image Preview */}
+                    {postForm.images.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {postForm.images.map((file, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeImage(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      <Select
+                        value={postForm.category}
+                        onValueChange={(value) => setPostForm({ ...postForm, category: value })}
+                        required
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="general">General</SelectItem>
+                          <SelectItem value="career">Career</SelectItem>
+                          <SelectItem value="events">Events</SelectItem>
+                          <SelectItem value="academic">Academic</SelectItem>
+                          <SelectItem value="achievements">Achievements</SelectItem>
+                          <SelectItem value="announcements">Announcements</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleImageSelect}
                       />
                       <Button
                         type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(index)}
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={postForm.images.length >= 5}
                       >
-                        <X className="h-4 w-4" />
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Add Images ({postForm.images.length}/5)
                       </Button>
                     </div>
-                  ))}
-                </div>
-              )}
 
-              <div className="flex items-center gap-3">
-                <Select
-                  value={postForm.category}
-                  onValueChange={(value) => setPostForm({ ...postForm, category: value })}
-                  required
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select category" />
+                    <div className="flex gap-3 pt-4">
+                      <Button type="submit" className="flex-1">Post</Button>
+                      <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
+          </motion.div>
+
+          {/* Filter */}
+          <Card className="border-2">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by category" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Posts</SelectItem>
                     <SelectItem value="general">General</SelectItem>
                     <SelectItem value="career">Career</SelectItem>
                     <SelectItem value="events">Events</SelectItem>
@@ -428,381 +554,342 @@ export default function FeedPage() {
                     <SelectItem value="announcements">Announcements</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageSelect}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={postForm.images.length >= 5}
+          {/* Posts Feed */}
+          {posts.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <MessageCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Posts Yet</h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  {isAuthenticated 
+                    ? "Be the first to share something with the community"
+                    : "Sign in to create posts and engage with the community"
+                  }
+                </p>
+                {isAuthenticated ? (
+                  <Button onClick={() => setCreateDialogOpen(true)}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Create Post
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              {posts.map((post, index) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
                 >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Add Images ({postForm.images.length}/5)
-                </Button>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" className="flex-1">Post</Button>
-                <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </motion.div>
-
-      {/* Filter */}
-      <Card className="border-2">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Posts</SelectItem>
-                <SelectItem value="general">General</SelectItem>
-                <SelectItem value="career">Career</SelectItem>
-                <SelectItem value="events">Events</SelectItem>
-                <SelectItem value="academic">Academic</SelectItem>
-                <SelectItem value="achievements">Achievements</SelectItem>
-                <SelectItem value="announcements">Announcements</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Posts Feed */}
-      {posts.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <MessageCircle className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Posts Yet</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Be the first to share something with the community
-            </p>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Create Post
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {posts.map((post, index) => (
-            <motion.div
-              key={post.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <Card className="border-2 hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userName}`} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">
-                          {post.userName.split(" ").map(n => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{post.userName}</h4>
-                          <Badge variant="outline" className={getRoleColor(post.userRole)}>
-                            {post.userRole}
-                          </Badge>
-                          <Badge className={getCategoryColor(post.category)}>
-                            {post.category}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(post.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Flag className="h-4 w-4 mr-2" />
-                          Report Post
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Post
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Post
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                  
-                  {/* Image Carousel */}
-                  {post.imageUrls && post.imageUrls.length > 0 && (
-                    <div className="relative rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={post.imageUrls[0]}
-                        alt="Post image"
-                        className="w-full h-96 object-cover cursor-pointer"
-                        onClick={() => openImageViewer(post.imageUrls!, 0)}
-                      />
-                      {post.imageUrls.length > 1 && (
-                        <Badge className="absolute top-4 right-4 bg-black/60">
-                          +{post.imageUrls.length - 1}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Reactions Summary */}
-                  {post.reactions && getTotalReactions(post.reactions) > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <div className="flex -space-x-1">
-                        {REACTIONS.filter(r => (post.reactions as any)[r.type] > 0).map(reaction => {
-                          const Icon = reaction.icon;
-                          return (
-                            <div key={reaction.type} className={`w-5 h-5 rounded-full bg-background border-2 flex items-center justify-center ${reaction.color}`}>
-                              <Icon className="h-3 w-3" />
+                  <Card className="border-2 hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userName}`} />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">
+                              {post.userName.split(" ").map(n => n[0]).join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">{post.userName}</h4>
+                              <Badge variant="outline" className={getRoleColor(post.userRole)}>
+                                {post.userRole}
+                              </Badge>
+                              <Badge className={getCategoryColor(post.category)}>
+                                {post.category}
+                              </Badge>
                             </div>
-                          );
-                        })}
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(post.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Flag className="h-4 w-4 mr-2" />
+                              Report Post
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Post
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Post
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <span>{getTotalReactions(post.reactions)} reactions</span>
-                    </div>
-                  )}
-                  
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 pt-2 border-t">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                      
+                      {/* Image Carousel */}
+                      {post.imageUrls && post.imageUrls.length > 0 && (
+                        <div className="relative rounded-lg overflow-hidden bg-muted">
+                          <img
+                            src={post.imageUrls[0]}
+                            alt="Post image"
+                            className="w-full h-96 object-cover cursor-pointer"
+                            onClick={() => openImageViewer(post.imageUrls!, 0)}
+                          />
+                          {post.imageUrls.length > 1 && (
+                            <Badge className="absolute top-4 right-4 bg-black/60">
+                              +{post.imageUrls.length - 1}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Reactions Summary */}
+                      {post.reactions && getTotalReactions(post.reactions) > 0 && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <div className="flex -space-x-1">
+                            {REACTIONS.filter(r => (post.reactions as any)[r.type] > 0).map(reaction => {
+                              const Icon = reaction.icon;
+                              return (
+                                <div key={reaction.type} className={`w-5 h-5 rounded-full bg-background border-2 flex items-center justify-center ${reaction.color}`}>
+                                  <Icon className="h-3 w-3" />
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <span>{getTotalReactions(post.reactions)} reactions</span>
+                        </div>
+                      )}
+                      
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-2 border-t">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={post.userReaction ? "text-primary" : ""}
+                            >
+                              {post.userReaction ? (
+                                <>
+                                  {REACTIONS.find(r => r.type === post.userReaction)?.icon && 
+                                    React.createElement(REACTIONS.find(r => r.type === post.userReaction)!.icon, {
+                                      className: `h-4 w-4 mr-1 fill-current`
+                                    })
+                                  }
+                                  {REACTIONS.find(r => r.type === post.userReaction)?.label}
+                                </>
+                              ) : (
+                                <>
+                                  <ThumbsUp className="h-4 w-4 mr-1" />
+                                  React
+                                </>
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            {REACTIONS.map((reaction) => {
+                              const Icon = reaction.icon;
+                              return (
+                                <DropdownMenuItem
+                                  key={reaction.type}
+                                  onClick={() => handleReaction(post.id, reaction.type)}
+                                >
+                                  <Icon className={`h-4 w-4 mr-2 ${reaction.color}`} />
+                                  {reaction.label}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={post.userReaction ? "text-primary" : ""}
+                          onClick={() => handleViewComments(post)}
                         >
-                          {post.userReaction ? (
-                            <>
-                              {REACTIONS.find(r => r.type === post.userReaction)?.icon && 
-                                React.createElement(REACTIONS.find(r => r.type === post.userReaction)!.icon, {
-                                  className: `h-4 w-4 mr-1 fill-current`
-                                })
-                              }
-                              {REACTIONS.find(r => r.type === post.userReaction)?.label}
-                            </>
-                          ) : (
-                            <>
-                              <ThumbsUp className="h-4 w-4 mr-1" />
-                              React
-                            </>
-                          )}
+                          <MessageCircle className="h-4 w-4 mr-1" />
+                          {post.commentsCount}
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {REACTIONS.map((reaction) => {
-                          const Icon = reaction.icon;
-                          return (
-                            <DropdownMenuItem
-                              key={reaction.type}
-                              onClick={() => handleReaction(post.id, reaction.type)}
-                            >
-                              <Icon className={`h-4 w-4 mr-2 ${reaction.color}`} />
-                              {reaction.label}
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewComments(post)}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-1" />
-                      {post.commentsCount}
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSharePost(post)}
-                    >
-                      <Share2 className="h-4 w-4 mr-1" />
-                      Share
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* Comments Dialog */}
-      <Dialog open={commentsDialogOpen} onOpenChange={setCommentsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Comments</DialogTitle>
-            <DialogDescription>
-              {selectedPost?.commentsCount} {selectedPost?.commentsCount === 1 ? "comment" : "comments"}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto space-y-4 py-4">
-            {comments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No comments yet. Be the first to comment!</p>
-              </div>
-            ) : (
-              comments.map((comment) => (
-                <motion.div
-                  key={comment.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userName}`} />
-                    <AvatarFallback className="text-xs bg-gradient-to-br from-green-400 to-blue-500 text-white">
-                      {comment.userName.split(" ").map(n => n[0]).join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-sm">{comment.userName}</span>
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {comment.userRole}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-sm mb-2">{comment.content}</p>
-                    <div className="flex items-center gap-3">
-                      <Button variant="ghost" size="sm" className="h-7 text-xs">
-                        <Heart className="h-3 w-3 mr-1" />
-                        Like
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-7 text-xs"
-                        onClick={() => setReplyingTo(comment)}
-                      >
-                        Reply
-                      </Button>
-                    </div>
-                  </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSharePost(post)}
+                        >
+                          <Share2 className="h-4 w-4 mr-1" />
+                          Share
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
-              ))
-            )}
-          </div>
-
-          {replyingTo && (
-            <div className="px-4 py-2 bg-muted/50 rounded-lg flex items-center justify-between">
-              <span className="text-sm">
-                Replying to <strong>{replyingTo.userName}</strong>
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setReplyingTo(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              ))}
             </div>
           )}
 
-          <form onSubmit={handleAddComment} className="flex gap-2 pt-4 border-t">
-            <Input
-              placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              required
-            />
-            <Button type="submit" size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+          {/* Comments Dialog */}
+          <Dialog open={commentsDialogOpen} onOpenChange={setCommentsDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle>Comments</DialogTitle>
+                <DialogDescription>
+                  {selectedPost?.commentsCount} {selectedPost?.commentsCount === 1 ? "comment" : "comments"}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex-1 overflow-y-auto space-y-4 py-4">
+                {comments.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No comments yet. Be the first to comment!</p>
+                  </div>
+                ) : (
+                  comments.map((comment) => (
+                    <motion.div
+                      key={comment.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userName}`} />
+                        <AvatarFallback className="text-xs bg-gradient-to-br from-green-400 to-blue-500 text-white">
+                          {comment.userName.split(" ").map(n => n[0]).join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-sm">{comment.userName}</span>
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {comment.userRole}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comment.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm mb-2">{comment.content}</p>
+                        <div className="flex items-center gap-3">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs">
+                            <Heart className="h-3 w-3 mr-1" />
+                            Like
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs"
+                            onClick={() => setReplyingTo(comment)}
+                          >
+                            Reply
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
 
-      {/* Share Dialog */}
-      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Share Post</DialogTitle>
-            <DialogDescription>Share this post with others</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Button className="w-full" onClick={copyShareLink}>
-              Copy Link
-            </Button>
-            <div className="text-sm text-muted-foreground text-center">
-              Share on social media coming soon!
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Viewer Dialog */}
-      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <div className="relative">
-            <img
-              src={selectedImages[selectedImageIndex]}
-              alt={`Image ${selectedImageIndex + 1}`}
-              className="w-full h-auto max-h-[70vh] object-contain"
-            />
-            {selectedImages.length > 1 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
-                  onClick={() => setSelectedImageIndex(Math.max(0, selectedImageIndex - 1))}
-                  disabled={selectedImageIndex === 0}
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
-                  onClick={() => setSelectedImageIndex(Math.min(selectedImages.length - 1, selectedImageIndex + 1))}
-                  disabled={selectedImageIndex === selectedImages.length - 1}
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                  {selectedImageIndex + 1} / {selectedImages.length}
+              {replyingTo && (
+                <div className="px-4 py-2 bg-muted/50 rounded-lg flex items-center justify-between">
+                  <span className="text-sm">
+                    Replying to <strong>{replyingTo.userName}</strong>
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setReplyingTo(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+              )}
+
+              <form onSubmit={handleAddComment} className="flex gap-2 pt-4 border-t">
+                <Input
+                  placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  required
+                />
+                <Button type="submit" size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Share Dialog */}
+          <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Share Post</DialogTitle>
+                <DialogDescription>Share this post with others</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Button className="w-full" onClick={copyShareLink}>
+                  Copy Link
+                </Button>
+                <div className="text-sm text-muted-foreground text-center">
+                  Share on social media coming soon!
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Image Viewer Dialog */}
+          <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+            <DialogContent className="max-w-4xl">
+              <div className="relative">
+                <img
+                  src={selectedImages[selectedImageIndex]}
+                  alt={`Image ${selectedImageIndex + 1}`}
+                  className="w-full h-auto max-h-[70vh] object-contain"
+                />
+                {selectedImages.length > 1 && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                      onClick={() => setSelectedImageIndex(Math.max(0, selectedImageIndex - 1))}
+                      disabled={selectedImageIndex === 0}
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                      onClick={() => setSelectedImageIndex(Math.min(selectedImages.length - 1, selectedImageIndex + 1))}
+                      disabled={selectedImageIndex === selectedImages.length - 1}
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </Button>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                      {selectedImageIndex + 1} / {selectedImages.length}
+                    </div>
+                  </>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
     </div>
   );
 }

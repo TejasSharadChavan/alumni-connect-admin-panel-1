@@ -81,13 +81,8 @@ async function createNotification(userId: number, type: string, title: string, m
 // GET /api/posts - List posts with filtering
 export async function GET(request: NextRequest) {
   try {
+    // Make authentication optional - allow public viewing of approved posts
     const user = await authenticateRequest(request);
-    if (!user) {
-      return NextResponse.json({ 
-        error: 'Authentication required',
-        code: 'UNAUTHORIZED' 
-      }, { status: 401 });
-    }
 
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get('category');
@@ -102,18 +97,18 @@ export async function GET(request: NextRequest) {
     const conditions: any[] = [];
 
     // Status filtering based on role
-    if (user.role === 'admin') {
+    if (user?.role === 'admin') {
       // Admin can see all posts, optionally filter by status
       if (status) {
         conditions.push(eq(posts.status, status));
       }
     } else {
-      // Non-admin users only see approved posts
+      // Non-admin users and public viewers only see approved posts
       conditions.push(eq(posts.status, 'approved'));
     }
 
     // Category filter
-    if (category) {
+    if (category && category !== 'all') {
       conditions.push(eq(posts.category, category));
     }
 
@@ -128,47 +123,53 @@ export async function GET(request: NextRequest) {
     }
 
     // Visibility filter
-    if (visibility) {
-      conditions.push(eq(posts.visibility, visibility));
-    } else {
-      // Default visibility logic: show public posts OR own posts OR posts from connections
-      
-      // Get user's connections
-      const userConnections = await db.select({
-        connectedUserId: sql<number>`CASE 
-          WHEN ${connections.requesterId} = ${user.id} THEN ${connections.responderId}
-          WHEN ${connections.responderId} = ${user.id} THEN ${connections.requesterId}
-        END`.as('connectedUserId')
-      })
-        .from(connections)
-        .where(
+    if (user) {
+      // Authenticated users see visibility-filtered posts
+      if (visibility) {
+        conditions.push(eq(posts.visibility, visibility));
+      } else {
+        // Default visibility logic: show public posts OR own posts OR posts from connections
+        
+        // Get user's connections
+        const userConnections = await db.select({
+          connectedUserId: sql<number>`CASE 
+            WHEN ${connections.requesterId} = ${user.id} THEN ${connections.responderId}
+            WHEN ${connections.responderId} = ${user.id} THEN ${connections.requesterId}
+          END`.as('connectedUserId')
+        })
+          .from(connections)
+          .where(
+            and(
+              or(
+                eq(connections.requesterId, user.id),
+                eq(connections.responderId, user.id)
+              ),
+              eq(connections.status, 'accepted')
+            )
+          );
+
+        const connectionIds = userConnections
+          .map(c => c.connectedUserId)
+          .filter(id => id !== null);
+
+        // Visibility conditions:
+        // 1. Public posts
+        // 2. Own posts (any visibility)
+        // 3. Posts from connections with 'connections' visibility
+        const visibilityConditions = or(
+          eq(posts.visibility, 'public'),
+          eq(posts.authorId, user.id),
           and(
-            or(
-              eq(connections.requesterId, user.id),
-              eq(connections.responderId, user.id)
-            ),
-            eq(connections.status, 'accepted')
+            eq(posts.visibility, 'connections'),
+            connectionIds.length > 0 ? inArray(posts.authorId, connectionIds) : sql`1=0`
           )
         );
 
-      const connectionIds = userConnections
-        .map(c => c.connectedUserId)
-        .filter(id => id !== null);
-
-      // Visibility conditions:
-      // 1. Public posts
-      // 2. Own posts (any visibility)
-      // 3. Posts from connections with 'connections' visibility
-      const visibilityConditions = or(
-        eq(posts.visibility, 'public'),
-        eq(posts.authorId, user.id),
-        and(
-          eq(posts.visibility, 'connections'),
-          connectionIds.length > 0 ? inArray(posts.authorId, connectionIds) : sql`1=0`
-        )
-      );
-
-      conditions.push(visibilityConditions);
+        conditions.push(visibilityConditions);
+      }
+    } else {
+      // Public viewers only see public posts
+      conditions.push(eq(posts.visibility, 'public'));
     }
 
     // Build query
@@ -206,15 +207,33 @@ export async function GET(request: NextRequest) {
     
     let reactionCounts: any[] = [];
     let commentCounts: any[] = [];
+    let userReactions: any[] = [];
 
     if (postIds.length > 0) {
-      reactionCounts = await db.select({
+      // Get total reaction counts by type
+      const reactionsByType = await db.select({
         postId: postReactions.postId,
+        type: postReactions.reactionType,
         count: count(postReactions.id).as('count')
       })
         .from(postReactions)
         .where(inArray(postReactions.postId, postIds))
-        .groupBy(postReactions.postId);
+        .groupBy(postReactions.postId, postReactions.reactionType);
+
+      // Get user's reactions if authenticated
+      if (user) {
+        userReactions = await db.select({
+          postId: postReactions.postId,
+          type: postReactions.reactionType,
+        })
+          .from(postReactions)
+          .where(
+            and(
+              inArray(postReactions.postId, postIds),
+              eq(postReactions.userId, user.id)
+            )
+          );
+      }
 
       commentCounts = await db.select({
         postId: comments.postId,
@@ -223,53 +242,64 @@ export async function GET(request: NextRequest) {
         .from(comments)
         .where(inArray(comments.postId, postIds))
         .groupBy(comments.postId);
+
+      // Build reaction maps
+      const reactionMapTemp = new Map<number, { like: number; celebrate: number; support: number; insightful: number }>();
+      for (const reaction of reactionsByType) {
+        if (!reactionMapTemp.has(reaction.postId)) {
+          reactionMapTemp.set(reaction.postId, { like: 0, celebrate: 0, support: 0, insightful: 0 });
+        }
+        const reactions = reactionMapTemp.get(reaction.postId)!;
+        const reactionType = reaction.type as 'like' | 'celebrate' | 'support' | 'insightful';
+        reactions[reactionType] = Number(reaction.count);
+      }
+
+      // Convert to array format
+      reactionCounts = Array.from(reactionMapTemp.entries()).map(([postId, reactions]) => ({
+        postId,
+        reactions
+      }));
     }
 
-    // Build reaction and comment maps
-    const reactionMap = new Map(reactionCounts.map(r => [r.postId, r.count]));
+    // Build maps
+    const reactionMapByPost = new Map(reactionCounts.map(r => [r.postId, r.reactions]));
     const commentMap = new Map(commentCounts.map(c => [c.postId, c.count]));
+    const userReactionMap = new Map(userReactions.map(r => [r.postId, r.type]));
 
-    // Format response
+    // Ensure every post has reaction data even if no reactions exist
     const formattedPosts = postsWithAuthors.map(post => ({
       id: post.id,
-      authorId: post.authorId,
+      userId: post.authorId,
+      userName: post.authorName || 'Unknown User',
+      userRole: post.authorRole || 'user',
       content: post.content,
-      imageUrl: post.imageUrl,
       category: post.category,
-      branch: post.branch,
-      visibility: post.visibility,
-      status: post.status,
-      approvedBy: post.approvedBy,
-      approvedAt: post.approvedAt,
+      imageUrls: post.imageUrl ? [post.imageUrl] : [],
+      likes: 0, // Deprecated, use reactions instead
+      commentsCount: Number(commentMap.get(post.id) || 0),
+      hasLiked: false, // Deprecated
+      reactions: reactionMapByPost.get(post.id) || { like: 0, celebrate: 0, support: 0, insightful: 0 },
+      userReaction: userReactionMap.get(post.id) || null,
       createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-      author: {
-        id: post.authorId,
-        name: post.authorName,
-        email: post.authorEmail,
-        role: post.authorRole,
-        profileImageUrl: post.authorProfileImageUrl,
-        headline: post.authorHeadline,
-      },
-      reactionCount: reactionMap.get(post.id) || 0,
-      commentCount: commentMap.get(post.id) || 0,
     }));
 
-    // Log activity
-    await logActivity(user.id, user.role, 'view_posts', {
-      filters: {
-        category,
-        branch,
-        authorId,
-        status,
-        visibility,
-        limit,
-        offset,
-      },
-      resultCount: formattedPosts.length,
-    });
+    // Log activity only if user is authenticated
+    if (user) {
+      await logActivity(user.id, user.role, 'view_posts', {
+        filters: {
+          category,
+          branch,
+          authorId,
+          status,
+          visibility,
+          limit,
+          offset,
+        },
+        resultCount: formattedPosts.length,
+      });
+    }
 
-    return NextResponse.json(formattedPosts);
+    return NextResponse.json({ posts: formattedPosts });
   } catch (error) {
     console.error('GET posts error:', error);
     return NextResponse.json({ 
