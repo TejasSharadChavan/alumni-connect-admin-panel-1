@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Heart, IndianRupee, Loader2 } from "lucide-react";
+import { Heart, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
+import { RazorpayButton } from "@/components/payments/razorpay-button";
 
 interface DonationFormProps {
   campaignId?: string;
@@ -21,57 +22,20 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const presetAmounts = [500, 1000, 2000, 5000, 10000];
 
-  const handleDonate = async () => {
-    const finalAmount = parseInt(amount || customAmount);
+  const handleSuccess = () => {
+    // Reset form
+    setAmount("");
+    setCustomAmount("");
+    setMessage("");
+    setIsAnonymous(false);
     
-    if (!finalAmount || finalAmount < 100) {
-      toast.error("Minimum donation amount is ₹100");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const token = localStorage.getItem("auth_token");
-
-      const response = await fetch("/api/donations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          campaignId: campaignId || null,
-          amount: finalAmount,
-          message,
-          isAnonymous,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to process donation");
-      }
-
-      toast.success("Thank you for your generous donation! 🎉");
-      
-      // Reset form
-      setAmount("");
-      setCustomAmount("");
-      setMessage("");
-      setIsAnonymous(false);
-      
-      onSuccess?.();
-    } catch (error: any) {
-      console.error("Donation error:", error);
-      toast.error(error.message || "Failed to process donation");
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSuccess?.();
   };
+
+  const finalAmount = parseInt(amount || customAmount);
 
   return (
     <Card className="border-2">
@@ -97,7 +61,6 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
                   setAmount(preset.toString());
                   setCustomAmount("");
                 }}
-                disabled={isSubmitting}
               >
                 ₹{preset.toLocaleString()}
               </Button>
@@ -113,7 +76,7 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
             <Input
               id="customAmount"
               type="number"
-              placeholder="Enter amount"
+              placeholder="Enter amount (Min: ₹100)"
               value={customAmount}
               onChange={(e) => {
                 setCustomAmount(e.target.value);
@@ -121,7 +84,6 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
               }}
               className="pl-9"
               min={100}
-              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -135,7 +97,6 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={3}
-            disabled={isSubmitting}
           />
         </div>
 
@@ -145,32 +106,38 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
             id="anonymous"
             checked={isAnonymous}
             onCheckedChange={(checked) => setIsAnonymous(checked as boolean)}
-            disabled={isSubmitting}
           />
           <Label htmlFor="anonymous" className="text-sm font-normal cursor-pointer">
             Make this donation anonymous
           </Label>
         </div>
 
-        {/* Donate Button */}
-        <Button
-          onClick={handleDonate}
-          disabled={(!amount && !customAmount) || isSubmitting}
+        {/* Payment Info */}
+        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-900">
+          <p className="text-sm text-blue-900 dark:text-blue-100">
+            <strong>Secure Payment via Razorpay</strong>
+          </p>
+          <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+            Your payment is processed securely. We accept UPI, Cards, Net Banking, and Wallets.
+          </p>
+        </div>
+
+        {/* Razorpay Payment Button */}
+        <RazorpayButton
+          amount={finalAmount}
+          campaignId={campaignId ? parseInt(campaignId) : undefined}
+          message={message}
+          onSuccess={handleSuccess}
+          disabled={!finalAmount || finalAmount < 100}
           className="w-full"
-          size="lg"
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <Heart className="mr-2 h-4 w-4" />
-              Donate ₹{(parseInt(amount || customAmount) || 0).toLocaleString()}
-            </>
-          )}
-        </Button>
+          <Heart className="mr-2 h-4 w-4" />
+          Donate ₹{(finalAmount || 0).toLocaleString()}
+        </RazorpayButton>
+
+        <p className="text-xs text-muted-foreground text-center">
+          By donating, you agree to our terms and conditions. All donations are non-refundable.
+        </p>
       </CardContent>
     </Card>
   );

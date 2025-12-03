@@ -97,11 +97,9 @@ async function notifyAllAdmins(title: string, message: string, relatedId?: strin
 
 export async function GET(request: NextRequest) {
   try {
+    // Make authentication optional for GET requests
     const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required', code: 'UNAUTHORIZED' }, { status: 401 });
-    }
-
+    
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const branch = searchParams.get('branch');
@@ -110,7 +108,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 100);
     const offset = parseInt(searchParams.get('offset') ?? '0');
 
-    const isAdmin = user.role === 'admin';
+    const isAdmin = user?.role === 'admin';
     const currentDate = new Date().toISOString();
 
     // Build where conditions
@@ -119,8 +117,8 @@ export async function GET(request: NextRequest) {
     // Status filtering based on role
     if (isAdmin && statusParam) {
       conditions.push(eq(events.status, statusParam));
-    } else if (!isAdmin) {
-      // Non-admin users only see approved events with future start dates
+    } else {
+      // Public users and non-admin users only see approved events
       conditions.push(eq(events.status, 'approved'));
       conditions.push(gte(events.startDate, currentDate));
     }
@@ -181,7 +179,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // Get RSVP counts for each event
+    // Get RSVP counts and user RSVP status for each event
     const eventsWithCounts = await Promise.all(
       eventsList.map(async (event) => {
         const rsvpCountResult = await db
@@ -194,23 +192,40 @@ export async function GET(request: NextRequest) {
 
         const rsvpCount = rsvpCountResult[0]?.count || 0;
 
+        // Check if current user has RSVPed
+        let hasRSVPed = false;
+        if (user) {
+          const userRsvp = await db
+            .select()
+            .from(rsvps)
+            .where(and(
+              eq(rsvps.eventId, event.id),
+              eq(rsvps.userId, user.id)
+            ))
+            .limit(1);
+          hasRSVPed = userRsvp.length > 0;
+        }
+
         return {
           ...event,
           rsvpCount,
+          hasRSVPed,
         };
       })
     );
 
-    // Log activity
-    await logActivity(user.id, user.role, 'view_events', { 
-      category, 
-      branch, 
-      date: dateFilter,
-      status: statusParam,
-      count: eventsWithCounts.length 
-    });
+    // Log activity only if user is authenticated
+    if (user) {
+      await logActivity(user.id, user.role, 'view_events', { 
+        category, 
+        branch, 
+        date: dateFilter,
+        status: statusParam,
+        count: eventsWithCounts.length 
+      });
+    }
 
-    return NextResponse.json(eventsWithCounts, { status: 200 });
+    return NextResponse.json({ events: eventsWithCounts }, { status: 200 });
   } catch (error) {
     console.error('GET events error:', error);
     return NextResponse.json({ error: 'Internal server error: ' + (error as Error).message }, { status: 500 });
