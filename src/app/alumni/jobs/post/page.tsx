@@ -1,12 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { RoleLayout } from "@/components/layout/role-layout";
 import { Briefcase, X, Plus } from "lucide-react";
@@ -50,7 +62,12 @@ export default function AlumniPostJobPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.company || !formData.description || !formData.location) {
+    if (
+      !formData.title ||
+      !formData.company ||
+      !formData.description ||
+      !formData.location
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -66,21 +83,27 @@ export default function AlumniPostJobPage() {
         },
         body: JSON.stringify({
           ...formData,
+          branch: formData.branch === "all" ? null : formData.branch,
           skills,
-          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days from now
+          expiresAt: new Date(
+            Date.now() + 90 * 24 * 60 * 60 * 1000
+          ).toISOString(), // 90 days from now
         }),
       });
 
       const data = await response.json();
       if (response.ok) {
-        toast.success("Job posted successfully! It will be visible after admin approval.");
-        router.push("/alumni");
+        toast.success(
+          "Job posted successfully! It will be visible after admin approval."
+        );
+        router.push("/alumni/jobs");
       } else {
-        toast.error(data.error || "Failed to post job");
+        console.error("Job posting error:", data);
+        toast.error(data.error || data.message || "Failed to post job");
       }
     } catch (error) {
       console.error("Error posting job:", error);
-      toast.error("Failed to post job");
+      toast.error("Failed to post job: " + (error as Error).message);
     } finally {
       setSubmitting(false);
     }
@@ -101,7 +124,8 @@ export default function AlumniPostJobPage() {
               Post a Job
             </h1>
             <p className="text-muted-foreground mt-2">
-              Share job opportunities with students and help them kickstart their careers
+              Share job opportunities with students and help them kickstart
+              their careers
             </p>
           </div>
         </motion.div>
@@ -116,7 +140,8 @@ export default function AlumniPostJobPage() {
             <CardHeader>
               <CardTitle>Job Details</CardTitle>
               <CardDescription>
-                Provide detailed information about the job opportunity. Your post will be reviewed by admins before being published.
+                Provide detailed information about the job opportunity. Your
+                post will be reviewed by admins before being published.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -153,7 +178,8 @@ export default function AlumniPostJobPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="description">
-                      Job Description <span className="text-destructive">*</span>
+                      Job Description{" "}
+                      <span className="text-destructive">*</span>
                     </Label>
                     <Textarea
                       id="description"
@@ -228,13 +254,19 @@ export default function AlumniPostJobPage() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select branch" />
+                        <SelectValue placeholder="Select branch (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Branches</SelectItem>
-                        <SelectItem value="computer">Computer Engineering</SelectItem>
-                        <SelectItem value="electronics">Electronics Engineering</SelectItem>
-                        <SelectItem value="mechanical">Mechanical Engineering</SelectItem>
+                        <SelectItem value="all">All Branches</SelectItem>
+                        <SelectItem value="computer">
+                          Computer Engineering
+                        </SelectItem>
+                        <SelectItem value="electronics">
+                          Electronics Engineering
+                        </SelectItem>
+                        <SelectItem value="mechanical">
+                          Mechanical Engineering
+                        </SelectItem>
                         <SelectItem value="civil">Civil Engineering</SelectItem>
                       </SelectContent>
                     </Select>
@@ -256,14 +288,22 @@ export default function AlumniPostJobPage() {
                         }
                       }}
                     />
-                    <Button type="button" onClick={handleAddSkill} disabled={!newSkill.trim()}>
+                    <Button
+                      type="button"
+                      onClick={handleAddSkill}
+                      disabled={!newSkill.trim()}
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   {skills.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-3">
                       {skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="text-sm">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="text-sm"
+                        >
                           {skill}
                           <button
                             type="button"
@@ -288,7 +328,11 @@ export default function AlumniPostJobPage() {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={submitting} className="flex-1">
+                  <Button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1"
+                  >
                     {submitting ? "Submitting..." : "Post Job"}
                   </Button>
                 </div>
@@ -296,8 +340,10 @@ export default function AlumniPostJobPage() {
                 {/* Info Message */}
                 <div className="bg-muted p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> Your job posting will be reviewed by our admin team before being published. 
-                    You'll receive a notification once it's approved. This typically takes 24-48 hours.
+                    <strong>Note:</strong> Your job posting will be reviewed by
+                    our admin team before being published. You'll receive a
+                    notification once it's approved. This typically takes 24-48
+                    hours.
                   </p>
                 </div>
               </form>

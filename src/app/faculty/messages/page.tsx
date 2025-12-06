@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +68,7 @@ export default function FacultyMessagesPage() {
   const fetchChats = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       const response = await fetch("/api/chats", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -83,7 +89,7 @@ export default function FacultyMessagesPage() {
 
   const fetchMessages = async (chatId: number) => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       const response = await fetch(`/api/chats/${chatId}/messages`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -103,7 +109,7 @@ export default function FacultyMessagesPage() {
 
     try {
       setSendingMessage(true);
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       const response = await fetch(`/api/chats/${selectedChat.id}/messages`, {
         method: "POST",
         headers: {
@@ -217,9 +223,13 @@ export default function FacultyMessagesPage() {
                       >
                         <div className="flex items-start gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={chat.otherUser?.profileImageUrl} />
+                            <AvatarImage
+                              src={chat.otherUser?.profileImageUrl}
+                            />
                             <AvatarFallback>
-                              {getInitials(chat.otherUser?.name || chat.name || "?")}
+                              {getInitials(
+                                chat.otherUser?.name || chat.name || "?"
+                              )}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
@@ -234,7 +244,10 @@ export default function FacultyMessagesPage() {
                               )}
                             </div>
                             {chat.otherUser && (
-                              <Badge variant="outline" className="text-xs capitalize mt-1">
+                              <Badge
+                                variant="outline"
+                                className="text-xs capitalize mt-1"
+                              >
                                 {chat.otherUser.role}
                               </Badge>
                             )}
@@ -259,10 +272,14 @@ export default function FacultyMessagesPage() {
                 <CardHeader className="border-b">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={selectedChat.otherUser?.profileImageUrl} />
+                      <AvatarImage
+                        src={selectedChat.otherUser?.profileImageUrl}
+                      />
                       <AvatarFallback>
                         {getInitials(
-                          selectedChat.otherUser?.name || selectedChat.name || "?"
+                          selectedChat.otherUser?.name ||
+                            selectedChat.name ||
+                            "?"
                         )}
                       </AvatarFallback>
                     </Avatar>
@@ -284,19 +301,25 @@ export default function FacultyMessagesPage() {
                       <div className="flex items-center justify-center h-full">
                         <div className="text-center">
                           <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-muted-foreground">No messages yet</p>
+                          <p className="text-muted-foreground">
+                            No messages yet
+                          </p>
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         {messages.map((message, index) => {
-                          const isCurrentUser = message.senderId === selectedChat.otherUser?.id;
+                          const isCurrentUser =
+                            message.senderId === selectedChat.otherUser?.id;
                           return (
                             <motion.div
                               key={message.id}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.2, delay: index * 0.02 }}
+                              transition={{
+                                duration: 0.2,
+                                delay: index * 0.02,
+                              }}
                               className={`flex ${isCurrentUser ? "justify-start" : "justify-end"}`}
                             >
                               <div
@@ -309,10 +332,14 @@ export default function FacultyMessagesPage() {
                                 <p className="text-sm">{message.content}</p>
                                 <p
                                   className={`text-xs mt-1 ${
-                                    isCurrentUser ? "text-muted-foreground" : "opacity-70"
+                                    isCurrentUser
+                                      ? "text-muted-foreground"
+                                      : "opacity-70"
                                   }`}
                                 >
-                                  {new Date(message.createdAt).toLocaleTimeString()}
+                                  {new Date(
+                                    message.createdAt
+                                  ).toLocaleTimeString()}
                                 </p>
                               </div>
                             </motion.div>
@@ -332,7 +359,10 @@ export default function FacultyMessagesPage() {
                       onChange={(e) => setNewMessage(e.target.value)}
                       disabled={sendingMessage}
                     />
-                    <Button type="submit" disabled={sendingMessage || !newMessage.trim()}>
+                    <Button
+                      type="submit"
+                      disabled={sendingMessage || !newMessage.trim()}
+                    >
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
@@ -342,7 +372,9 @@ export default function FacultyMessagesPage() {
               <CardContent className="h-[600px] flex items-center justify-center">
                 <div className="text-center">
                   <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-xl font-semibold mb-2">Select a conversation</p>
+                  <p className="text-xl font-semibold mb-2">
+                    Select a conversation
+                  </p>
                   <p className="text-muted-foreground">
                     Choose a chat from the list to start messaging
                   </p>

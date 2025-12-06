@@ -1,15 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Briefcase, Search, Eye, CheckCircle2, XCircle, Clock, TrendingUp } from "lucide-react";
+import {
+  Briefcase,
+  Search,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  TrendingUp,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -48,7 +82,19 @@ export default function JobsManagementPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setJobs(data.jobs || []);
+        // Parse skills if they're strings
+        const jobsWithParsedSkills = (data.jobs || []).map((job: any) => ({
+          ...job,
+          skills:
+            typeof job.skills === "string"
+              ? job.skills
+                ? JSON.parse(job.skills)
+                : []
+              : Array.isArray(job.skills)
+                ? job.skills
+                : [],
+        }));
+        setJobs(jobsWithParsedSkills);
       }
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -88,7 +134,11 @@ export default function JobsManagementPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ contentType: "job", contentId: jobId, reason: "Does not meet requirements" }),
+        body: JSON.stringify({
+          contentType: "job",
+          contentId: jobId,
+          reason: "Does not meet requirements",
+        }),
       });
 
       if (response.ok) {
@@ -112,7 +162,10 @@ export default function JobsManagementPage() {
     total: jobs.length,
     pending: jobs.filter((j) => j.status === "pending").length,
     approved: jobs.filter((j) => j.status === "approved").length,
-    totalApplications: jobs.reduce((acc, j) => acc + (j.applicationsCount || 0), 0),
+    totalApplications: jobs.reduce(
+      (acc, j) => acc + (j.applicationsCount || 0),
+      0
+    ),
   };
 
   const getStatusColor = (status: string) => {
@@ -131,14 +184,19 @@ export default function JobsManagementPage() {
   return (
     <RoleLayout role="admin">
       <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-lg bg-primary/10">
               <Briefcase className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">Jobs Management</h1>
-              <p className="text-muted-foreground">Manage job postings and applications</p>
+              <p className="text-muted-foreground">
+                Manage job postings and applications
+              </p>
             </div>
           </div>
         </motion.div>
@@ -156,7 +214,9 @@ export default function JobsManagementPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pending Review
+              </CardTitle>
               <Clock className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
@@ -174,11 +234,15 @@ export default function JobsManagementPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Applications
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalApplications}</div>
+              <div className="text-2xl font-bold">
+                {stats.totalApplications}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -236,24 +300,37 @@ export default function JobsManagementPage() {
                     </TableRow>
                   ) : filteredJobs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         No jobs found
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredJobs.map((job) => (
                       <TableRow key={job.id}>
-                        <TableCell className="font-medium">{job.title}</TableCell>
+                        <TableCell className="font-medium">
+                          {job.title}
+                        </TableCell>
                         <TableCell>{job.company}</TableCell>
-                        <TableCell className="text-sm">{job.location}</TableCell>
+                        <TableCell className="text-sm">
+                          {job.location}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{job.jobType}</Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{job.postedBy}</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusColor(job.status)}>{job.status}</Badge>
+                        <TableCell className="text-sm">
+                          {job.postedBy}
                         </TableCell>
-                        <TableCell className="text-center">{job.applicationsCount || 0}</TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusColor(job.status)}>
+                            {job.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {job.applicationsCount || 0}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button
@@ -306,7 +383,9 @@ export default function JobsManagementPage() {
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-lg">{selectedJob.title}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedJob.company}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedJob.company}
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -323,17 +402,24 @@ export default function JobsManagementPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
-                    <Badge variant={getStatusColor(selectedJob.status)}>{selectedJob.status}</Badge>
+                    <Badge variant={getStatusColor(selectedJob.status)}>
+                      {selectedJob.status}
+                    </Badge>
                   </div>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Applications</p>
-                  <p className="font-medium">{selectedJob.applicationsCount || 0} applications received</p>
+                  <p className="font-medium">
+                    {selectedJob.applicationsCount || 0} applications received
+                  </p>
                 </div>
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setViewDialogOpen(false)}
+              >
                 Close
               </Button>
             </DialogFooter>

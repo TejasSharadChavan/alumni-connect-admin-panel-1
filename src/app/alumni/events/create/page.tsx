@@ -2,12 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RoleLayout } from "@/components/layout/role-layout";
 import { Calendar, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -54,28 +66,34 @@ export default function CreateEventPage() {
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
-          type: formData.type,
+          category: formData.type, // API expects 'category' not 'type'
           location: formData.location,
-          date: eventDateTime.toISOString(),
-          maxAttendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : null,
-          registrationDeadline: formData.registrationDeadline
-            ? new Date(formData.registrationDeadline).toISOString()
+          startDate: eventDateTime.toISOString(),
+          endDate: new Date(
+            eventDateTime.getTime() + 2 * 60 * 60 * 1000
+          ).toISOString(), // Default 2 hours duration
+          maxAttendees: formData.maxAttendees
+            ? parseInt(formData.maxAttendees)
             : null,
-          branch: formData.branch || null,
+          branch: formData.branch === "all" ? null : formData.branch || null,
           isPaid: formData.isPaid,
-          price: formData.isPaid && formData.price ? parseFloat(formData.price) : null,
+          price:
+            formData.isPaid && formData.price ? `₹${formData.price}` : null,
+          imageUrl: null,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        console.error("Event creation error:", data);
         throw new Error(data.error || "Failed to create event");
       }
 
       toast.success("Event submitted for admin approval!");
-      router.push("/alumni");
+      router.push("/alumni/events");
     } catch (error: any) {
+      console.error("Error creating event:", error);
       toast.error(error.message || "Failed to create event");
     } finally {
       setLoading(false);
@@ -101,7 +119,8 @@ export default function CreateEventPage() {
               <div>
                 <CardTitle className="text-2xl">Create New Event</CardTitle>
                 <CardDescription>
-                  Submit an event for admin approval. Once approved, it will be visible to all members.
+                  Submit an event for admin approval. Once approved, it will be
+                  visible to all members.
                 </CardDescription>
               </div>
             </div>
@@ -113,7 +132,9 @@ export default function CreateEventPage() {
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   placeholder="Alumni Tech Meetup 2024"
                   required
                 />
@@ -124,7 +145,9 @@ export default function CreateEventPage() {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Describe your event, what attendees can expect, and any special instructions..."
                   rows={6}
                   required
@@ -136,7 +159,9 @@ export default function CreateEventPage() {
                   <Label htmlFor="type">Event Type *</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value) => setFormData({ ...formData, type: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, type: value })
+                    }
                     required
                   >
                     <SelectTrigger id="type">
@@ -159,16 +184,20 @@ export default function CreateEventPage() {
                   <Label htmlFor="branch">Target Branch (Optional)</Label>
                   <Select
                     value={formData.branch}
-                    onValueChange={(value) => setFormData({ ...formData, branch: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, branch: value })
+                    }
                   >
                     <SelectTrigger id="branch">
-                      <SelectValue placeholder="All branches" />
+                      <SelectValue placeholder="All branches (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Branches</SelectItem>
+                      <SelectItem value="all">All Branches</SelectItem>
                       <SelectItem value="CSE">Computer Science</SelectItem>
                       <SelectItem value="IT">Information Technology</SelectItem>
-                      <SelectItem value="EXTC">Electronics & Telecom</SelectItem>
+                      <SelectItem value="EXTC">
+                        Electronics & Telecom
+                      </SelectItem>
                       <SelectItem value="MECH">Mechanical</SelectItem>
                       <SelectItem value="CIVIL">Civil</SelectItem>
                       <SelectItem value="EE">Electrical</SelectItem>
@@ -182,7 +211,9 @@ export default function CreateEventPage() {
                 <Input
                   id="location"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
                   placeholder="Campus Auditorium / Zoom Link / Address"
                   required
                 />
@@ -195,7 +226,9 @@ export default function CreateEventPage() {
                     id="date"
                     type="date"
                     value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, date: e.target.value })
+                    }
                     min={new Date().toISOString().split("T")[0]}
                     required
                   />
@@ -207,7 +240,9 @@ export default function CreateEventPage() {
                     id="time"
                     type="time"
                     value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, time: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -220,20 +255,27 @@ export default function CreateEventPage() {
                     id="maxAttendees"
                     type="number"
                     value={formData.maxAttendees}
-                    onChange={(e) => setFormData({ ...formData, maxAttendees: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, maxAttendees: e.target.value })
+                    }
                     placeholder="Leave empty for unlimited"
                     min="1"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="registrationDeadline">Registration Deadline (Optional)</Label>
+                  <Label htmlFor="registrationDeadline">
+                    Registration Deadline (Optional)
+                  </Label>
                   <Input
                     id="registrationDeadline"
                     type="date"
                     value={formData.registrationDeadline}
                     onChange={(e) =>
-                      setFormData({ ...formData, registrationDeadline: e.target.value })
+                      setFormData({
+                        ...formData,
+                        registrationDeadline: e.target.value,
+                      })
                     }
                     min={new Date().toISOString().split("T")[0]}
                     max={formData.date}
@@ -247,10 +289,15 @@ export default function CreateEventPage() {
                     type="checkbox"
                     id="isPaid"
                     checked={formData.isPaid}
-                    onChange={(e) => setFormData({ ...formData, isPaid: e.target.checked })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isPaid: e.target.checked })
+                    }
                     className="w-4 h-4"
                   />
-                  <Label htmlFor="isPaid" className="font-medium cursor-pointer">
+                  <Label
+                    htmlFor="isPaid"
+                    className="font-medium cursor-pointer"
+                  >
                     This is a paid event
                   </Label>
                 </div>
@@ -262,7 +309,9 @@ export default function CreateEventPage() {
                       id="price"
                       type="number"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price: e.target.value })
+                      }
                       placeholder="500"
                       min="0"
                       step="0.01"
@@ -274,8 +323,9 @@ export default function CreateEventPage() {
 
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Note:</strong> Your event will be submitted for admin review. Once approved,
-                  it will be visible to all members and they can RSVP.
+                  <strong>Note:</strong> Your event will be submitted for admin
+                  review. Once approved, it will be visible to all members and
+                  they can RSVP.
                 </p>
               </div>
 
@@ -290,7 +340,11 @@ export default function CreateEventPage() {
                     "Submit Event for Approval"
                   )}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => router.back()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                >
                   Cancel
                 </Button>
               </div>

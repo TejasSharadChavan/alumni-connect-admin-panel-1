@@ -1,13 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Briefcase, Calendar, Users, TrendingUp, Award, BookOpen, Target, ArrowRight } from "lucide-react";
+import {
+  Briefcase,
+  Calendar,
+  Users,
+  TrendingUp,
+  Award,
+  BookOpen,
+  Target,
+  ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -43,7 +58,9 @@ export default function StudentDashboard() {
     upcomingEvents: 0,
     skillsEndorsed: 0,
   });
-  const [recommendedMentors, setRecommendedMentors] = useState<Connection[]>([]);
+  const [recommendedMentors, setRecommendedMentors] = useState<Connection[]>(
+    []
+  );
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
@@ -61,10 +78,15 @@ export default function StudentDashboard() {
       // Fetch connections
       const connectionsRes = await fetch("/api/connections", { headers });
       const connectionsData = await connectionsRes.json();
-      const acceptedConnections = connectionsData.connections?.filter((c: any) => c.status === "accepted") || [];
+      const acceptedConnections =
+        connectionsData.connections?.filter(
+          (c: any) => c.status === "accepted"
+        ) || [];
 
       // Fetch job applications
-      const applicationsRes = await fetch("/api/jobs/applications", { headers });
+      const applicationsRes = await fetch("/api/jobs/applications", {
+        headers,
+      });
       const applicationsData = await applicationsRes.json();
       const myApplications = applicationsData.applications || [];
 
@@ -73,7 +95,9 @@ export default function StudentDashboard() {
       const eventsData = await eventsRes.json();
       const allEvents = eventsData.events || [];
       const now = new Date();
-      const upcomingEvents = allEvents.filter((e: any) => new Date(e.startDate) > now);
+      const upcomingEvents = allEvents.filter(
+        (e: any) => new Date(e.startDate) > now
+      );
 
       // Update stats
       setStats({
@@ -84,14 +108,19 @@ export default function StudentDashboard() {
       });
 
       // Fetch connection suggestions for recommended mentors
-      const suggestionsRes = await fetch("/api/connections/suggestions", { headers });
+      const suggestionsRes = await fetch("/api/connections/suggestions", {
+        headers,
+      });
       const suggestionsData = await suggestionsRes.json();
-      const alumniSuggestions = suggestionsData.suggestions?.filter((s: any) => s.role === "alumni").slice(0, 2) || [];
+      const alumniSuggestions =
+        suggestionsData.suggestions
+          ?.filter((s: any) => s.role === "alumni")
+          .slice(0, 2) || [];
       setRecommendedMentors(alumniSuggestions);
 
       // Build recent activities from applications and events
       const activities: Activity[] = [];
-      
+
       // Recent applications
       myApplications.slice(0, 2).forEach((app: any) => {
         activities.push({
@@ -125,11 +154,14 @@ export default function StudentDashboard() {
         });
       });
 
-      setRecentActivities(activities.sort((a, b) => {
-        // Sort by most recent first
-        return 0; // simplified for now
-      }).slice(0, 3));
-
+      setRecentActivities(
+        activities
+          .sort((a, b) => {
+            // Sort by most recent first
+            return 0; // simplified for now
+          })
+          .slice(0, 3)
+      );
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       toast.error("Failed to load dashboard data");
@@ -140,7 +172,7 @@ export default function StudentDashboard() {
 
   const formatTimeAgo = (dateString: string) => {
     if (!dateString) return "Recently";
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -148,9 +180,12 @@ export default function StudentDashboard() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
-    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
-    if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    if (diffMins < 60)
+      return `${diffMins} ${diffMins === 1 ? "minute" : "minutes"} ago`;
+    if (diffHours < 24)
+      return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+    if (diffDays < 7)
+      return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
     return date.toLocaleDateString();
   };
 
@@ -215,12 +250,12 @@ export default function StudentDashboard() {
       bgColor: "bg-green-50 dark:bg-green-950",
     },
     {
-      title: "My Projects",
-      description: "Manage your team projects",
-      icon: Target,
-      href: "/student/projects",
-      color: "text-orange-600",
-      bgColor: "bg-orange-50 dark:bg-orange-950",
+      title: "AI Analytics",
+      description: "View your profile insights and recommendations",
+      icon: TrendingUp,
+      href: "/analytics",
+      color: "text-pink-600",
+      bgColor: "bg-pink-50 dark:bg-pink-950",
     },
   ];
 
@@ -252,7 +287,9 @@ export default function StudentDashboard() {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.name?.split(' ')[0]}! 👋</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Welcome back, {user?.name?.split(" ")[0]}! 👋
+            </h1>
             <p className="text-muted-foreground mt-2">
               Here's what's happening with your profile today
             </p>
@@ -260,30 +297,58 @@ export default function StudentDashboard() {
         </motion.div>
 
         {/* Profile Completion Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/50 dark:border-blue-800">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-blue-500/10">
-                    <TrendingUp className="h-6 w-6 text-blue-600" />
+        {(() => {
+          const calculateProfileCompletion = () => {
+            if (!user) return 20;
+            let score = 20; // Base score for having an account
+            if (user.headline) score += 15;
+            if (user.bio) score += 20;
+            if (user.skills && user.skills.length > 0) {
+              score += 10 * Math.min(user.skills.length, 3);
+            }
+            if (user.linkedinUrl) score += 10;
+            if (user.githubUrl) score += 10;
+            if (user.profileImageUrl) score += 15;
+            return Math.min(100, score);
+          };
+
+          const completionScore = calculateProfileCompletion();
+
+          // Only show banner if profile is not 100% complete
+          if (completionScore >= 100) return null;
+
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/50 dark:border-blue-800">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-lg bg-blue-500/10">
+                        <TrendingUp className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">
+                          Complete Your Profile
+                        </CardTitle>
+                        <CardDescription>
+                          Your profile is {completionScore}% complete. Add more
+                          details to stand out!
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Button asChild>
+                      <Link href="/student/profile">Complete Profile</Link>
+                    </Button>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">Complete Your Profile</CardTitle>
-                    <CardDescription>Your profile is {Math.min(100, (user?.bio ? 20 : 0) + (user?.skills?.length || 0) * 10 + (user?.resumeUrl ? 30 : 0) + 20)}% complete. Add more details to stand out!</CardDescription>
-                  </div>
-                </div>
-                <Button asChild>
-                  <Link href="/student/profile">Complete Profile</Link>
-                </Button>
-              </div>
-            </CardHeader>
-          </Card>
-        </motion.div>
+                </CardHeader>
+              </Card>
+            </motion.div>
+          );
+        })()}
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -296,14 +361,18 @@ export default function StudentDashboard() {
             >
               <Card className="hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {stat.title}
+                  </CardTitle>
                   <div className={`p-2 rounded-lg ${stat.bgColor}`}>
                     <stat.icon className={`h-4 w-4 ${stat.color}`} />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stat.change}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -320,7 +389,9 @@ export default function StudentDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Get started with these common tasks</CardDescription>
+                <CardDescription>
+                  Get started with these common tasks
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
                 {quickActions.map((action) => (
@@ -334,7 +405,9 @@ export default function StudentDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{action.title}</p>
-                      <p className="text-sm text-muted-foreground">{action.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {action.description}
+                      </p>
                     </div>
                     <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </Link>
@@ -353,7 +426,9 @@ export default function StudentDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Recommended Mentors</CardTitle>
-                  <CardDescription>Alumni who can guide your career</CardDescription>
+                  <CardDescription>
+                    Alumni who can guide your career
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {recommendedMentors.length === 0 ? (
@@ -362,16 +437,26 @@ export default function StudentDashboard() {
                     </p>
                   ) : (
                     recommendedMentors.map((mentor) => (
-                      <div key={mentor.id} className="flex items-center justify-between p-4 rounded-lg border">
+                      <div
+                        key={mentor.id}
+                        className="flex items-center justify-between p-4 rounded-lg border"
+                      >
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">
-                            {mentor.name.split(' ').map(n => n[0]).join('')}
+                            {mentor.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
                           </div>
                           <div>
                             <p className="font-medium">{mentor.name}</p>
-                            <p className="text-sm text-muted-foreground capitalize">{mentor.role}</p>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {mentor.role}
+                            </p>
                             {mentor.expertise && (
-                              <Badge variant="outline" className="mt-1 text-xs">{mentor.expertise}</Badge>
+                              <Badge variant="outline" className="mt-1 text-xs">
+                                {mentor.expertise}
+                              </Badge>
                             )}
                           </div>
                         </div>
@@ -408,7 +493,9 @@ export default function StudentDashboard() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm">{activity.text}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {activity.time}
+                          </p>
                         </div>
                       </div>
                     ))

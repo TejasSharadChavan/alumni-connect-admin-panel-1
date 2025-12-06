@@ -1,14 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Briefcase, MapPin, Clock, DollarSign, Search, PlusCircle } from "lucide-react";
+import {
+  Briefcase,
+  MapPin,
+  Clock,
+  DollarSign,
+  Search,
+  PlusCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -48,7 +67,19 @@ export default function AlumniJobsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setJobs(data.jobs || []);
+        // Parse skills if they're strings
+        const jobsWithParsedSkills = (data.jobs || []).map((job: any) => ({
+          ...job,
+          skills:
+            typeof job.skills === "string"
+              ? job.skills
+                ? JSON.parse(job.skills)
+                : []
+              : Array.isArray(job.skills)
+                ? job.skills
+                : [],
+        }));
+        setJobs(jobsWithParsedSkills);
       } else {
         toast.error("Failed to load jobs");
       }
@@ -207,13 +238,17 @@ export default function AlumniJobsPage() {
                           {job.company}
                         </CardDescription>
                       </div>
-                      <Badge className={`${getJobTypeColor(job.jobType)} text-white capitalize`}>
+                      <Badge
+                        className={`${getJobTypeColor(job.jobType)} text-white capitalize`}
+                      >
                         {job.jobType}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-muted-foreground line-clamp-2">{job.description}</p>
+                    <p className="text-muted-foreground line-clamp-2">
+                      {job.description}
+                    </p>
 
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
@@ -240,7 +275,9 @@ export default function AlumniJobsPage() {
                           </Badge>
                         ))}
                         {job.skills.length > 5 && (
-                          <Badge variant="outline">+{job.skills.length - 5} more</Badge>
+                          <Badge variant="outline">
+                            +{job.skills.length - 5} more
+                          </Badge>
                         )}
                       </div>
                     )}
@@ -249,7 +286,16 @@ export default function AlumniJobsPage() {
                       <p className="text-sm text-muted-foreground">
                         Posted by {job.postedByName}
                       </p>
-                      <Button variant="outline">View Details</Button>
+                      <div className="flex gap-2">
+                        <Link href={`/alumni/jobs/${job.id}/applicants`}>
+                          <Button variant="outline" size="sm">
+                            View Applicants
+                          </Button>
+                        </Link>
+                        <Button variant="outline" size="sm">
+                          View Details
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

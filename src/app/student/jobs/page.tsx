@@ -1,19 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Briefcase, MapPin, Clock, DollarSign, Search, Filter, Building2 } from "lucide-react";
+import {
+  Briefcase,
+  MapPin,
+  Clock,
+  DollarSign,
+  Search,
+  Filter,
+  Building2,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface Job {
   id: number;
@@ -28,27 +46,78 @@ interface Job {
   createdAt: string;
   postedBy: string;
   status: string;
+  matchScore?: number;
 }
 
 export default function StudentJobsPage() {
+  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [applying, setApplying] = useState(false);
-  const [coverLetter, setCoverLetter] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [appliedFilter, setAppliedFilter] = useState("all"); // all, applied, not-applied
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<number>>(new Set());
+  const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchJobs();
+    fetchAppliedJobs();
+    fetchJobMatches();
   }, []);
 
   useEffect(() => {
     filterJobs();
-  }, [jobs, searchQuery, jobTypeFilter, branchFilter]);
+  }, [
+    jobs,
+    searchQuery,
+    jobTypeFilter,
+    branchFilter,
+    appliedFilter,
+    appliedJobIds,
+  ]);
+
+  const fetchAppliedJobs = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch("/api/jobs/applications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (data.success && data.applications) {
+        const appliedIds = new Set(
+          data.applications.map((app: any) => app.job.id)
+        );
+        setAppliedJobIds(appliedIds);
+      }
+    } catch (error) {
+      console.error("Error fetching applied jobs:", error);
+    }
+  };
+
+  const fetchJobMatches = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch("/api/ml/job-match", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (data.success && data.matches) {
+        const matchMap = new Map(
+          data.matches.map((m: any) => [m.jobId, m.matchScore])
+        );
+        setJobs((prevJobs) =>
+          prevJobs.map((job) => ({
+            ...job,
+            matchScore: matchMap.get(job.id) || 0,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching job matches:", error);
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -61,22 +130,28 @@ export default function StudentJobsPage() {
       const data = await response.json();
       if (response.ok) {
         // Only show approved jobs and parse skills
-        const approvedJobs = data.jobs?.filter((j: any) => j.status === "approved").map((job: any) => {
-          // Parse skills if it's a string
-          let parsedSkills = job.skills;
-          if (typeof job.skills === 'string') {
-            try {
-              parsedSkills = JSON.parse(job.skills);
-            } catch (e) {
-              parsedSkills = [];
-            }
-          }
-          if (!Array.isArray(parsedSkills)) {
-            parsedSkills = [];
-          }
-          return { ...job, skills: parsedSkills };
-        }) || [];
+        const approvedJobs =
+          data.jobs
+            ?.filter((j: any) => j.status === "approved")
+            .map((job: any) => {
+              // Parse skills if it's a string
+              let parsedSkills = job.skills;
+              if (typeof job.skills === "string") {
+                try {
+                  parsedSkills = JSON.parse(job.skills);
+                } catch (e) {
+                  parsedSkills = [];
+                }
+              }
+              if (!Array.isArray(parsedSkills)) {
+                parsedSkills = [];
+              }
+              return { ...job, skills: parsedSkills, matchScore: 0 };
+            }) || [];
         setJobs(approvedJobs);
+
+        // Fetch match scores after jobs are loaded
+        fetchJobMatchesForJobs(approvedJobs);
       } else {
         toast.error("Failed to load jobs");
       }
@@ -88,8 +163,37 @@ export default function StudentJobsPage() {
     }
   };
 
+  const fetchJobMatchesForJobs = async (jobsList: Job[]) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch("/api/ml/job-match", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (data.success && data.matches) {
+        const matchMap = new Map(
+          data.matches.map((m: any) => [m.jobId, m.matchScore])
+        );
+        const updatedJobs = jobsList.map((job) => ({
+          ...job,
+          matchScore: matchMap.get(job.id) || 0,
+        }));
+        setJobs(updatedJobs);
+      }
+    } catch (error) {
+      console.error("Error fetching job matches:", error);
+    }
+  };
+
   const filterJobs = () => {
     let filtered = jobs;
+
+    // Applied filter
+    if (appliedFilter === "applied") {
+      filtered = filtered.filter((job) => appliedJobIds.has(job.id));
+    } else if (appliedFilter === "not-applied") {
+      filtered = filtered.filter((job) => !appliedJobIds.has(job.id));
+    }
 
     // Search filter
     if (searchQuery) {
@@ -108,44 +212,12 @@ export default function StudentJobsPage() {
 
     // Branch filter
     if (branchFilter !== "all") {
-      filtered = filtered.filter((job) => job.branch === branchFilter || !job.branch);
+      filtered = filtered.filter(
+        (job) => job.branch === branchFilter || !job.branch
+      );
     }
 
     setFilteredJobs(filtered);
-  };
-
-  const handleApply = async () => {
-    if (!selectedJob) return;
-
-    try {
-      setApplying(true);
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`/api/jobs/${selectedJob.id}/apply`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          coverLetter: coverLetter.trim() || undefined,
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        toast.success("Application submitted successfully!");
-        setDialogOpen(false);
-        setCoverLetter("");
-        setSelectedJob(null);
-      } else {
-        toast.error(data.error || "Failed to submit application");
-      }
-    } catch (error) {
-      console.error("Error applying to job:", error);
-      toast.error("Failed to submit application");
-    } finally {
-      setApplying(false);
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -165,8 +237,8 @@ export default function StudentJobsPage() {
       <RoleLayout role="student">
         <div className="space-y-6">
           <Skeleton className="h-20 w-full" />
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div className="grid gap-6 md:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-64" />
             ))}
           </div>
@@ -185,7 +257,9 @@ export default function StudentJobsPage() {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Job Opportunities</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Job Opportunities
+            </h1>
             <p className="text-muted-foreground mt-2">
               Browse and apply to internships and full-time positions
             </p>
@@ -206,7 +280,7 @@ export default function StudentJobsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -216,6 +290,16 @@ export default function StudentJobsPage() {
                     className="pl-9"
                   />
                 </div>
+                <Select value={appliedFilter} onValueChange={setAppliedFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Application Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Jobs</SelectItem>
+                    <SelectItem value="not-applied">Not Applied</SelectItem>
+                    <SelectItem value="applied">Already Applied</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Job Type" />
@@ -233,9 +317,15 @@ export default function StudentJobsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Branches</SelectItem>
-                    <SelectItem value="computer">Computer Engineering</SelectItem>
-                    <SelectItem value="electronics">Electronics Engineering</SelectItem>
-                    <SelectItem value="mechanical">Mechanical Engineering</SelectItem>
+                    <SelectItem value="computer">
+                      Computer Engineering
+                    </SelectItem>
+                    <SelectItem value="electronics">
+                      Electronics Engineering
+                    </SelectItem>
+                    <SelectItem value="mechanical">
+                      Mechanical Engineering
+                    </SelectItem>
                     <SelectItem value="civil">Civil Engineering</SelectItem>
                   </SelectContent>
                 </Select>
@@ -254,7 +344,9 @@ export default function StudentJobsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{filteredJobs.length}</p>
-                  <p className="text-sm text-muted-foreground">Available Jobs</p>
+                  <p className="text-sm text-muted-foreground">
+                    Available Jobs
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -266,7 +358,9 @@ export default function StudentJobsPage() {
                   <Building2 className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{new Set(filteredJobs.map(j => j.company)).size}</p>
+                  <p className="text-2xl font-bold">
+                    {new Set(filteredJobs.map((j) => j.company)).size}
+                  </p>
                   <p className="text-sm text-muted-foreground">Companies</p>
                 </div>
               </div>
@@ -280,7 +374,10 @@ export default function StudentJobsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
-                    {filteredJobs.filter(j => j.jobType === "internship").length}
+                    {
+                      filteredJobs.filter((j) => j.jobType === "internship")
+                        .length
+                    }
                   </p>
                   <p className="text-sm text-muted-foreground">Internships</p>
                 </div>
@@ -295,12 +392,14 @@ export default function StudentJobsPage() {
             <CardContent className="py-12">
               <div className="text-center">
                 <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No jobs found matching your criteria</p>
+                <p className="text-muted-foreground">
+                  No jobs found matching your criteria
+                </p>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2">
             {filteredJobs.map((job, index) => (
               <motion.div
                 key={job.id}
@@ -308,25 +407,74 @@ export default function StudentJobsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
               >
-                <Card className="h-full hover:shadow-lg transition-shadow">
+                <Card
+                  className={`h-full hover:shadow-lg transition-all cursor-pointer ${
+                    expandedJobId === job.id ? "ring-2 ring-primary" : ""
+                  }`}
+                  onClick={() =>
+                    setExpandedJobId(expandedJobId === job.id ? null : job.id)
+                  }
+                >
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <CardTitle className="text-xl line-clamp-1">{job.title}</CardTitle>
+                        <CardTitle className="text-xl line-clamp-1">
+                          {job.title}
+                        </CardTitle>
                         <CardDescription className="mt-1 flex items-center gap-1">
                           <Building2 className="h-3 w-3" />
                           {job.company}
                         </CardDescription>
                       </div>
-                      <Badge variant={job.jobType === "internship" ? "secondary" : "default"}>
-                        {job.jobType}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-2">
+                        {job.matchScore !== undefined && job.matchScore > 0 && (
+                          <Badge
+                            variant="default"
+                            className={`${
+                              job.matchScore >= 80
+                                ? "bg-green-600"
+                                : job.matchScore >= 60
+                                  ? "bg-blue-600"
+                                  : "bg-orange-600"
+                            }`}
+                          >
+                            {job.matchScore}% Match
+                          </Badge>
+                        )}
+                        <Badge
+                          variant={
+                            job.jobType === "internship"
+                              ? "secondary"
+                              : "default"
+                          }
+                        >
+                          {job.jobType}
+                        </Badge>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {job.description}
-                    </p>
+                    <div
+                      className="cursor-pointer"
+                      onClick={() =>
+                        setExpandedJobId(
+                          expandedJobId === job.id ? null : job.id
+                        )
+                      }
+                    >
+                      <p
+                        className={`text-sm text-muted-foreground ${
+                          expandedJobId === job.id ? "" : "line-clamp-3"
+                        }`}
+                      >
+                        {job.description}
+                      </p>
+                      {job.description.length > 150 && (
+                        <button className="text-xs text-primary mt-1 hover:underline">
+                          {expandedJobId === job.id ? "Show less" : "Show more"}
+                        </button>
+                      )}
+                    </div>
 
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -343,16 +491,25 @@ export default function StudentJobsPage() {
                         <Clock className="h-4 w-4" />
                         Posted {formatDate(job.createdAt)}
                       </div>
+                      {expandedJobId === job.id && job.branch && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Filter className="h-4 w-4" />
+                          {job.branch}
+                        </div>
+                      )}
                     </div>
 
                     {job.skills && job.skills.length > 0 && (
                       <div className="flex flex-wrap gap-2">
-                        {job.skills.slice(0, 3).map((skill, i) => (
+                        {(expandedJobId === job.id
+                          ? job.skills
+                          : job.skills.slice(0, 3)
+                        ).map((skill, i) => (
                           <Badge key={i} variant="outline" className="text-xs">
                             {skill}
                           </Badge>
                         ))}
-                        {job.skills.length > 3 && (
+                        {expandedJobId !== job.id && job.skills.length > 3 && (
                           <Badge variant="outline" className="text-xs">
                             +{job.skills.length - 3} more
                           </Badge>
@@ -360,99 +517,12 @@ export default function StudentJobsPage() {
                       </div>
                     )}
 
-                    <Dialog open={dialogOpen && selectedJob?.id === job.id} onOpenChange={(open) => {
-                      setDialogOpen(open);
-                      if (!open) {
-                        setSelectedJob(null);
-                        setCoverLetter("");
-                      }
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          className="w-full" 
-                          onClick={() => setSelectedJob(job)}
-                        >
-                          Apply Now
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>{job.title}</DialogTitle>
-                          <DialogDescription>{job.company} • {job.location}</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="font-semibold mb-2">Job Description</h4>
-                            <p className="text-sm text-muted-foreground">{job.description}</p>
-                          </div>
-
-                          <div>
-                            <h4 className="font-semibold mb-2">Job Details</h4>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Type:</span>
-                                <Badge>{job.jobType}</Badge>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Location:</span>
-                                <span>{job.location}</span>
-                              </div>
-                              {job.salary && (
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Salary:</span>
-                                  <span>{job.salary}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {job.skills && job.skills.length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-2">Required Skills</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {job.skills.map((skill, i) => (
-                                  <Badge key={i} variant="secondary">
-                                    {skill}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="space-y-2">
-                            <Label htmlFor="coverLetter">Cover Letter (Optional)</Label>
-                            <Textarea
-                              id="coverLetter"
-                              placeholder="Tell the employer why you're a great fit for this role..."
-                              value={coverLetter}
-                              onChange={(e) => setCoverLetter(e.target.value)}
-                              rows={6}
-                            />
-                          </div>
-
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              onClick={() => {
-                                setDialogOpen(false);
-                                setSelectedJob(null);
-                                setCoverLetter("");
-                              }}
-                              className="flex-1"
-                            >
-                              Cancel
-                            </Button>
-                            <Button 
-                              onClick={handleApply} 
-                              disabled={applying}
-                              className="flex-1"
-                            >
-                              {applying ? "Submitting..." : "Submit Application"}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button
+                      className="w-full"
+                      onClick={() => router.push(`/student/jobs/${job.id}`)}
+                    >
+                      View Details
+                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>

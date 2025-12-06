@@ -14,7 +14,7 @@ export async function GET(
     }
 
     const token = authHeader.substring(7);
-    
+
     // Get current user from token
     const [session] = await db
       .select()
@@ -57,6 +57,7 @@ export async function GET(
         senderName: users.name,
         messageType: messages.messageType,
         fileUrl: messages.fileUrl,
+        imageUrl: messages.imageUrl,
         createdAt: messages.createdAt,
         editedAt: messages.editedAt,
       })
@@ -97,7 +98,7 @@ export async function POST(
     }
 
     const token = authHeader.substring(7);
-    
+
     // Get current user from token
     const [session] = await db
       .select()

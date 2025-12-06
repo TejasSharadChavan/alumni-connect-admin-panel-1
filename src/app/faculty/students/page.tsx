@@ -1,14 +1,42 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Search, Loader2, GraduationCap, Mail, Phone, Calendar, Award, Briefcase } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Users,
+  Search,
+  Loader2,
+  GraduationCap,
+  Mail,
+  Phone,
+  Calendar,
+  Award,
+  Briefcase,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface Student {
@@ -44,7 +72,7 @@ export default function FacultyStudentsPage() {
 
   const fetchStudents = async () => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       const response = await fetch("/api/users?role=student", {
@@ -54,20 +82,22 @@ export default function FacultyStudentsPage() {
       if (response.ok) {
         const data = await response.json();
         // Parse skills if they're JSON strings
-        const studentsWithParsedSkills = (data.users || []).map((student: any) => {
-          let parsedSkills = student.skills;
-          if (typeof student.skills === 'string') {
-            try {
-              parsedSkills = JSON.parse(student.skills);
-            } catch (e) {
+        const studentsWithParsedSkills = (data.users || []).map(
+          (student: any) => {
+            let parsedSkills = student.skills;
+            if (typeof student.skills === "string") {
+              try {
+                parsedSkills = JSON.parse(student.skills);
+              } catch (e) {
+                parsedSkills = [];
+              }
+            }
+            if (!Array.isArray(parsedSkills)) {
               parsedSkills = [];
             }
+            return { ...student, skills: parsedSkills };
           }
-          if (!Array.isArray(parsedSkills)) {
-            parsedSkills = [];
-          }
-          return { ...student, skills: parsedSkills };
-        });
+        );
         setStudents(studentsWithParsedSkills);
       }
     } catch (error) {
@@ -134,7 +164,9 @@ export default function FacultyStudentsPage() {
 
   // Get unique branches and cohorts for filters
   const uniqueBranches = Array.from(new Set(students.map((s) => s.branch)));
-  const uniqueCohorts = Array.from(new Set(students.map((s) => s.cohort))).sort();
+  const uniqueCohorts = Array.from(
+    new Set(students.map((s) => s.cohort))
+  ).sort();
 
   if (loading) {
     return (
@@ -148,7 +180,9 @@ export default function FacultyStudentsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Students</h1>
-        <p className="text-muted-foreground">View and monitor students in your department</p>
+        <p className="text-muted-foreground">
+          View and monitor students in your department
+        </p>
       </div>
 
       {/* Stats */}
@@ -162,7 +196,9 @@ export default function FacultyStudentsPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Filtered Results</CardDescription>
-            <CardTitle className="text-3xl">{filteredStudents.length}</CardTitle>
+            <CardTitle className="text-3xl">
+              {filteredStudents.length}
+            </CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -238,17 +274,26 @@ export default function FacultyStudentsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredStudents.map((student) => (
-            <Card key={student.id} className="hover:shadow-lg transition-shadow">
+            <Card
+              key={student.id}
+              className="hover:shadow-lg transition-shadow"
+            >
               <CardHeader>
                 <div className="flex items-start gap-3">
                   <Avatar className="h-12 w-12">
                     <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg truncate">{student.name}</CardTitle>
-                    <CardDescription className="truncate">{student.email}</CardDescription>
+                    <CardTitle className="text-lg truncate">
+                      {student.name}
+                    </CardTitle>
+                    <CardDescription className="truncate">
+                      {student.email}
+                    </CardDescription>
                     <div className="flex gap-2 mt-2">
-                      <Badge className={getBranchColor(student.branch)}>{student.branch}</Badge>
+                      <Badge className={getBranchColor(student.branch)}>
+                        {student.branch}
+                      </Badge>
                       <Badge variant="outline">{student.cohort}</Badge>
                     </div>
                   </div>
@@ -256,15 +301,21 @@ export default function FacultyStudentsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {student.headline && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">{student.headline}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {student.headline}
+                  </p>
                 )}
-                
+
                 {student.skills.length > 0 && (
                   <div>
                     <p className="text-xs font-medium mb-2">Skills</p>
                     <div className="flex flex-wrap gap-1">
                       {student.skills.slice(0, 3).map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {skill}
                         </Badge>
                       ))}
@@ -296,9 +347,11 @@ export default function FacultyStudentsPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Student Details</DialogTitle>
-            <DialogDescription>Complete information about the student</DialogDescription>
+            <DialogDescription>
+              Complete information about the student
+            </DialogDescription>
           </DialogHeader>
-          
+
           {selectedStudent && (
             <div className="space-y-6">
               <div className="flex items-start gap-4">
@@ -310,7 +363,9 @@ export default function FacultyStudentsPage() {
                 <div className="flex-1">
                   <h3 className="text-xl font-bold">{selectedStudent.name}</h3>
                   {selectedStudent.headline && (
-                    <p className="text-muted-foreground mt-1">{selectedStudent.headline}</p>
+                    <p className="text-muted-foreground mt-1">
+                      {selectedStudent.headline}
+                    </p>
                   )}
                   <div className="flex gap-2 mt-2">
                     <Badge className={getBranchColor(selectedStudent.branch)}>
@@ -335,7 +390,10 @@ export default function FacultyStudentsPage() {
                   )}
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>Joined {new Date(selectedStudent.createdAt).toLocaleDateString()}</span>
+                    <span>
+                      Joined{" "}
+                      {new Date(selectedStudent.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -346,7 +404,9 @@ export default function FacultyStudentsPage() {
                     <GraduationCap className="h-4 w-4" />
                     About
                   </h4>
-                  <p className="text-sm text-muted-foreground">{selectedStudent.bio}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedStudent.bio}
+                  </p>
                 </div>
               )}
 
@@ -374,7 +434,11 @@ export default function FacultyStudentsPage() {
                   </a>
                 </Button>
                 <Button variant="outline" className="flex-1" asChild>
-                  <a href={`/student/${selectedStudent.id}`} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={`/student/${selectedStudent.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     View Profile
                   </a>
                 </Button>

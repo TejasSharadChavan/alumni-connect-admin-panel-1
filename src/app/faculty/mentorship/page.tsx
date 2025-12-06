@@ -1,12 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GraduationCap, Users, CheckCircle, Clock, Loader2, Mail } from "lucide-react";
+import {
+  GraduationCap,
+  Users,
+  CheckCircle,
+  Clock,
+  Loader2,
+  Mail,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface MentorshipRequest {
@@ -31,7 +44,7 @@ export default function FacultyMentorshipPage() {
 
   const fetchMentorshipRequests = async () => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       const response = await fetch("/api/mentorship", {
@@ -53,7 +66,7 @@ export default function FacultyMentorshipPage() {
   const handleAccept = async (requestId: number) => {
     try {
       setActionLoading(requestId);
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       const response = await fetch(`/api/mentorship/${requestId}/accept`, {
@@ -78,7 +91,7 @@ export default function FacultyMentorshipPage() {
   const handleDecline = async (requestId: number) => {
     try {
       setActionLoading(requestId);
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       const response = await fetch(`/api/mentorship/${requestId}/decline`, {
@@ -101,7 +114,12 @@ export default function FacultyMentorshipPage() {
   };
 
   const getInitials = (name: string) => {
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const formatDate = (dateString: string) => {
@@ -128,7 +146,9 @@ export default function FacultyMentorshipPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Mentorship</h1>
-        <p className="text-muted-foreground">Manage student mentorship requests</p>
+        <p className="text-muted-foreground">
+          Manage student mentorship requests
+        </p>
       </div>
 
       {/* Stats */}
@@ -191,7 +211,9 @@ export default function FacultyMentorshipPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <GraduationCap className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Pending Requests</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No Pending Requests
+                </h3>
                 <p className="text-muted-foreground text-center">
                   No students have requested mentorship at this time.
                 </p>
@@ -200,23 +222,34 @@ export default function FacultyMentorshipPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {pendingRequests.map((request) => (
-                <Card key={request.id} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={request.id}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardHeader>
                     <div className="flex items-start gap-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarFallback>{getInitials(request.studentName)}</AvatarFallback>
+                        <AvatarFallback>
+                          {getInitials(request.studentName)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-2">
                         <div className="flex items-start justify-between">
                           <div>
-                            <CardTitle className="text-lg">{request.studentName}</CardTitle>
+                            <CardTitle className="text-lg">
+                              {request.studentName}
+                            </CardTitle>
                             <CardDescription>
                               {request.studentBranch} • {request.studentCohort}
                             </CardDescription>
                           </div>
-                          <Badge variant="outline">{formatDate(request.createdAt)}</Badge>
+                          <Badge variant="outline">
+                            {formatDate(request.createdAt)}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{request.message}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {request.message}
+                        </p>
                       </div>
                     </div>
                   </CardHeader>
@@ -253,7 +286,9 @@ export default function FacultyMentorshipPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Active Mentorships</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No Active Mentorships
+                </h3>
                 <p className="text-muted-foreground text-center">
                   Accept pending requests to start mentoring students.
                 </p>
@@ -262,14 +297,21 @@ export default function FacultyMentorshipPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {activeRequests.map((request) => (
-                <Card key={request.id} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={request.id}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardHeader>
                     <div className="flex items-start gap-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarFallback>{getInitials(request.studentName)}</AvatarFallback>
+                        <AvatarFallback>
+                          {getInitials(request.studentName)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-1">
-                        <CardTitle className="text-lg">{request.studentName}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {request.studentName}
+                        </CardTitle>
                         <CardDescription>
                           {request.studentBranch} • {request.studentCohort}
                         </CardDescription>
@@ -282,8 +324,15 @@ export default function FacultyMentorshipPage() {
                       {request.message}
                     </p>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1" asChild>
-                        <a href={`mailto:student${request.studentId}@terna.ac.in`}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        asChild
+                      >
+                        <a
+                          href={`mailto:student${request.studentId}@terna.ac.in`}
+                        >
                           <Mail className="h-4 w-4 mr-2" />
                           Email
                         </a>
@@ -303,7 +352,9 @@ export default function FacultyMentorshipPage() {
           {declinedRequests.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <h3 className="text-lg font-semibold mb-2">No Declined Requests</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No Declined Requests
+                </h3>
                 <p className="text-muted-foreground text-center">
                   Requests you decline will appear here.
                 </p>
@@ -316,10 +367,14 @@ export default function FacultyMentorshipPage() {
                   <CardHeader>
                     <div className="flex items-start gap-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarFallback>{getInitials(request.studentName)}</AvatarFallback>
+                        <AvatarFallback>
+                          {getInitials(request.studentName)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">{request.studentName}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {request.studentName}
+                        </CardTitle>
                         <CardDescription>
                           {request.studentBranch} • {request.studentCohort}
                         </CardDescription>

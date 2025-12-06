@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+      }
+      .container {
+        border: 2px solid #333;
+        padding: 20px;
+        border-radius: 8px;
+      }
+      input,
+      button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 16px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      #result {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 5px;
+        white-space: pre-wrap;
+        font-family: monospace;
+      }
+      .success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔐 Login API Test</h1>
+      <p>Test the login API directly from the browser</p>
+
+      <label for="email">Email:</label>
+      <input
+        type="email"
+        id="email"
+        value="aarav.sharma@terna.ac.in"
+        placeholder="Enter email"
+      />
+
+      <label for="password">Password:</label>
+      <input
+        type="password"
+        id="password"
+        value="password123"
+        placeholder="Enter password"
+      />
+
+      <button onclick="testLogin()">Test Login</button>
+
+      <div id="result"></div>
+    </div>
+
+    <script>
+      async function testLogin() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const resultDiv = document.getElementById("result");
+
+        resultDiv.innerHTML = "⏳ Testing login...";
+        resultDiv.className = "";
+
+        try {
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const contentType = response.headers.get("content-type");
+          let data;
+
+          if (contentType && contentType.includes("application/json")) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            data = { error: "Non-JSON response", response: text };
+          }
+
+          if (response.ok) {
+            resultDiv.className = "success";
+            resultDiv.innerHTML = `✅ LOGIN SUCCESSFUL!
+
+Status: ${response.status} ${response.statusText}
+
+Response:
+${JSON.stringify(data, null, 2)}
+
+Token: ${data.token ? data.token.substring(0, 20) + "..." : "N/A"}
+User: ${data.user ? data.user.name : "N/A"}
+Role: ${data.user ? data.user.role : "N/A"}`;
+          } else {
+            resultDiv.className = "error";
+            resultDiv.innerHTML = `❌ LOGIN FAILED!
+
+Status: ${response.status} ${response.statusText}
+
+Error Response:
+${JSON.stringify(data, null, 2)}`;
+          }
+        } catch (error) {
+          resultDiv.className = "error";
+          resultDiv.innerHTML = `❌ REQUEST FAILED!
+
+Error: ${error.message}
+
+This usually means:
+- Dev server is not running
+- Network error
+- CORS issue`;
+        }
+      }
+
+      // Auto-test on load
+      window.addEventListener("load", () => {
+        console.log('Test page loaded. Click "Test Login" to test the API.');
+      });
+    </script>
+  </body>
+</html>

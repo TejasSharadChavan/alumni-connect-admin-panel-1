@@ -49,7 +49,7 @@ interface Notification {
   title: string;
   message: string;
   type: string;
-  read: boolean;
+  isRead: boolean;
   createdAt: string;
 }
 
@@ -63,8 +63,8 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
+    // Poll for new notifications every 10 seconds for faster updates
+    const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -72,14 +72,16 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) return;
-      
+
       const response = await fetch("/api/notifications?limit=5", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications || []);
-        setUnreadCount(data.notifications?.filter((n: Notification) => !n.read).length || 0);
+        setUnreadCount(
+          data.notifications?.filter((n: Notification) => !n.isRead).length || 0
+        );
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -91,16 +93,21 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
       const token = localStorage.getItem("auth_token");
       if (!token) return;
 
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `/api/notifications/${notificationId}/read`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.ok) {
-        setNotifications(notifications.map(n => 
-          n.id === notificationId ? { ...n, read: true } : n
-        ));
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setNotifications(
+          notifications.map((n) =>
+            n.id === notificationId ? { ...n, isRead: true } : n
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
@@ -186,7 +193,11 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
               className="lg:hidden"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {sidebarOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </Button>
             <Link href={`/${role}`} className="flex items-center gap-2">
               <GraduationCap className="h-6 w-6 text-primary" />
@@ -194,7 +205,10 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
                 Alumni Connect
               </span>
             </Link>
-            <Badge variant="secondary" className="capitalize hidden sm:inline-flex">
+            <Badge
+              variant="secondary"
+              className="capitalize hidden sm:inline-flex"
+            >
               {role}
             </Badge>
           </div>
@@ -219,22 +233,37 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
                   <>
                     <div className="max-h-[400px] overflow-y-auto">
                       {notifications.map((notif) => (
-                        <DropdownMenuItem 
-                          key={notif.id} 
+                        <DropdownMenuItem
+                          key={notif.id}
                           className={`flex flex-col items-start py-3 cursor-pointer ${
-                            !notif.read ? "bg-muted/50" : ""
+                            !notif.isRead ? "bg-muted/50" : ""
                           }`}
-                          onClick={() => !notif.read && handleMarkAsRead(notif.id)}
+                          onClick={() => {
+                            if (!notif.isRead) handleMarkAsRead(notif.id);
+                            // Navigate based on notification type
+                            if (notif.type === "job") {
+                              router.push(`/${role}/jobs`);
+                            } else if (notif.type === "application") {
+                              // Students have their own applications page
+                              router.push(`/${role}/applications`);
+                            } else if (notif.type === "connection") {
+                              router.push(`/${role}/network`);
+                            }
+                          }}
                         >
                           <div className="flex items-start justify-between w-full">
                             <div className="flex-1">
-                              <span className="font-medium text-sm">{notif.title}</span>
-                              <p className="text-xs text-muted-foreground mt-1">{notif.message}</p>
+                              <span className="font-medium text-sm">
+                                {notif.title}
+                              </span>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {notif.message}
+                              </p>
                               <span className="text-xs text-muted-foreground mt-1">
                                 {new Date(notif.createdAt).toLocaleDateString()}
                               </span>
                             </div>
-                            {!notif.read && (
+                            {!notif.isRead && (
                               <div className="h-2 w-2 rounded-full bg-primary ml-2 mt-1" />
                             )}
                           </div>
@@ -243,7 +272,10 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={`/${role}/notifications`} className="w-full text-center">
+                      <Link
+                        href={`/${role}/notifications`}
+                        className="w-full text-center"
+                      >
                         View all notifications
                       </Link>
                     </DropdownMenuItem>
@@ -259,10 +291,15 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-10 w-10 rounded-full"
+                >
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={user?.profileImageUrl} alt={user?.name} />
-                    <AvatarFallback>{user?.name ? getInitials(user.name) : "U"}</AvatarFallback>
+                    <AvatarFallback>
+                      {user?.name ? getInitials(user.name) : "U"}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -270,7 +307,9 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium">{user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -302,7 +341,8 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:border-r lg:bg-muted/30">
           <nav className="flex-1 space-y-1 p-4">
             {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.href}
@@ -347,7 +387,9 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
                 </div>
                 <nav className="flex-1 space-y-1 p-4">
                   {navItems.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    const isActive =
+                      pathname === item.href ||
+                      pathname.startsWith(item.href + "/");
                     return (
                       <Link
                         key={item.href}

@@ -1,14 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Calendar, MapPin, Users, Clock, Search, PlusCircle, CheckCircle } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Search,
+  PlusCircle,
+  CheckCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -48,7 +68,12 @@ export default function AlumniEventsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setEvents(data.events || []);
+        // Map category to type for consistency
+        const eventsWithType = (data.events || []).map((event: any) => ({
+          ...event,
+          type: event.category || event.type || "general",
+        }));
+        setEvents(eventsWithType);
       } else {
         toast.error("Failed to load events");
       }
@@ -114,6 +139,8 @@ export default function AlumniEventsPage() {
   });
 
   const getEventTypeColor = (type: string) => {
+    if (!type) return "bg-gray-500";
+
     switch (type.toLowerCase()) {
       case "workshop":
         return "bg-blue-500";
@@ -237,11 +264,16 @@ export default function AlumniEventsPage() {
                 <Card className="hover:shadow-md transition-shadow h-full">
                   <CardHeader>
                     <div className="flex items-start justify-between mb-2">
-                      <Badge className={`${getEventTypeColor(event.type)} text-white capitalize`}>
+                      <Badge
+                        className={`${getEventTypeColor(event.type)} text-white capitalize`}
+                      >
                         {event.type}
                       </Badge>
                       {event.userRsvpStatus === "going" && (
-                        <Badge variant="outline" className="text-green-600 border-green-600">
+                        <Badge
+                          variant="outline"
+                          className="text-green-600 border-green-600"
+                        >
                           <CheckCircle className="h-3 w-3 mr-1" />
                           RSVP'd
                         </Badge>
@@ -270,7 +302,10 @@ export default function AlumniEventsPage() {
                         <Users className="h-4 w-4" />
                         <span>
                           {event.currentAttendees}
-                          {event.maxAttendees ? ` / ${event.maxAttendees}` : ""} attendees
+                          {event.maxAttendees
+                            ? ` / ${event.maxAttendees}`
+                            : ""}{" "}
+                          attendees
                         </span>
                       </div>
                     </div>
@@ -292,7 +327,8 @@ export default function AlumniEventsPage() {
                               : false
                           }
                         >
-                          {event.maxAttendees && event.currentAttendees >= event.maxAttendees
+                          {event.maxAttendees &&
+                          event.currentAttendees >= event.maxAttendees
                             ? "Full"
                             : "RSVP"}
                         </Button>

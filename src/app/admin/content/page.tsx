@@ -1,16 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { CheckCircle2, XCircle, Eye, Clock, Shield, AlertTriangle, FileText, Briefcase, Calendar } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Clock,
+  Shield,
+  AlertTriangle,
+  FileText,
+  Briefcase,
+  Calendar,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -30,8 +60,12 @@ export default function ContentModerationPage() {
   const [pendingPosts, setPendingPosts] = useState<PendingContent[]>([]);
   const [pendingJobs, setPendingJobs] = useState<PendingContent[]>([]);
   const [pendingEvents, setPendingEvents] = useState<PendingContent[]>([]);
-  const [selectedContent, setSelectedContent] = useState<PendingContent | null>(null);
-  const [actionType, setActionType] = useState<"approve" | "reject" | "view" | null>(null);
+  const [selectedContent, setSelectedContent] = useState<PendingContent | null>(
+    null
+  );
+  const [actionType, setActionType] = useState<
+    "approve" | "reject" | "view" | null
+  >(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -77,8 +111,8 @@ export default function ContentModerationPage() {
             type: "job",
             title: j.title,
             content: j.description,
-            author: j.postedByName || "Unknown",
-            authorId: j.postedById,
+            author: j.poster?.name || j.postedByName || "Unknown",
+            authorId: j.poster?.id || j.postedById || 0,
             status: j.status,
             createdAt: j.createdAt,
           }))
@@ -97,8 +131,8 @@ export default function ContentModerationPage() {
             type: "event",
             title: e.title,
             content: e.description,
-            author: e.organizerName || "Unknown",
-            authorId: e.organizerId,
+            author: e.organizer?.name || e.organizerName || "Unknown",
+            authorId: e.organizer?.id || e.organizerId || 0,
             status: e.status,
             createdAt: e.createdAt,
           }))
@@ -127,8 +161,8 @@ export default function ContentModerationPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          contentType: selectedContent.type,
-          contentId: selectedContent.id,
+          type: selectedContent.type + "s", // Convert "job" to "jobs", "event" to "events", "post" to "posts"
+          id: selectedContent.id,
         }),
       });
 
@@ -163,8 +197,8 @@ export default function ContentModerationPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          contentType: selectedContent.type,
-          contentId: selectedContent.id,
+          type: selectedContent.type + "s", // Convert "job" to "jobs", "event" to "events", "post" to "posts"
+          id: selectedContent.id,
           reason: rejectionReason,
         }),
       });
@@ -196,7 +230,13 @@ export default function ContentModerationPage() {
     }
   };
 
-  const ContentTable = ({ items, type }: { items: PendingContent[]; type: string }) => (
+  const ContentTable = ({
+    items,
+    type,
+  }: {
+    items: PendingContent[];
+    type: string;
+  }) => (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
@@ -210,7 +250,10 @@ export default function ContentModerationPage() {
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+              <TableCell
+                colSpan={4}
+                className="text-center py-8 text-muted-foreground"
+              >
                 No pending {type}
               </TableCell>
             </TableRow>
@@ -275,14 +318,19 @@ export default function ContentModerationPage() {
   return (
     <RoleLayout role="admin">
       <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-lg bg-primary/10">
               <Shield className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">Content Moderation</h1>
-              <p className="text-muted-foreground">Review and moderate user-generated content</p>
+              <p className="text-muted-foreground">
+                Review and moderate user-generated content
+              </p>
             </div>
           </div>
         </motion.div>
@@ -291,7 +339,9 @@ export default function ContentModerationPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Pending</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Pending
+              </CardTitle>
               <Clock className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
@@ -331,14 +381,18 @@ export default function ContentModerationPage() {
         <Card>
           <CardHeader>
             <CardTitle>Pending Content</CardTitle>
-            <CardDescription>Review and approve or reject user submissions</CardDescription>
+            <CardDescription>
+              Review and approve or reject user submissions
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="posts">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="posts">Posts ({stats.posts})</TabsTrigger>
                 <TabsTrigger value="jobs">Jobs ({stats.jobs})</TabsTrigger>
-                <TabsTrigger value="events">Events ({stats.events})</TabsTrigger>
+                <TabsTrigger value="events">
+                  Events ({stats.events})
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="posts" className="mt-6">
                 <ContentTable items={pendingPosts} type="posts" />
@@ -354,7 +408,13 @@ export default function ContentModerationPage() {
         </Card>
 
         {/* View Dialog */}
-        <Dialog open={actionType === "view"} onOpenChange={() => { setActionType(null); setSelectedContent(null); }}>
+        <Dialog
+          open={actionType === "view"}
+          onOpenChange={() => {
+            setActionType(null);
+            setSelectedContent(null);
+          }}
+        >
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -369,21 +429,37 @@ export default function ContentModerationPage() {
                   <p className="font-medium">{selectedContent.title}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Author</Label>
+                  <Label className="text-sm text-muted-foreground">
+                    Author
+                  </Label>
                   <p>{selectedContent.author}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Content</Label>
-                  <p className="text-sm mt-2 whitespace-pre-wrap">{selectedContent.content}</p>
+                  <Label className="text-sm text-muted-foreground">
+                    Content
+                  </Label>
+                  <p className="text-sm mt-2 whitespace-pre-wrap">
+                    {selectedContent.content}
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Submitted</Label>
-                  <p className="text-sm">{new Date(selectedContent.createdAt).toLocaleString()}</p>
+                  <Label className="text-sm text-muted-foreground">
+                    Submitted
+                  </Label>
+                  <p className="text-sm">
+                    {new Date(selectedContent.createdAt).toLocaleString()}
+                  </p>
                 </div>
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setActionType(null); setSelectedContent(null); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setActionType(null);
+                  setSelectedContent(null);
+                }}
+              >
                 Close
               </Button>
               <Button
@@ -405,7 +481,13 @@ export default function ContentModerationPage() {
         </Dialog>
 
         {/* Approve Dialog */}
-        <Dialog open={actionType === "approve"} onOpenChange={() => { setActionType(null); setSelectedContent(null); }}>
+        <Dialog
+          open={actionType === "approve"}
+          onOpenChange={() => {
+            setActionType(null);
+            setSelectedContent(null);
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Approve Content</DialogTitle>
@@ -416,14 +498,27 @@ export default function ContentModerationPage() {
             {selectedContent && (
               <div className="py-4">
                 <p className="font-medium">{selectedContent.title}</p>
-                <p className="text-sm text-muted-foreground">by {selectedContent.author}</p>
+                <p className="text-sm text-muted-foreground">
+                  by {selectedContent.author}
+                </p>
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setActionType(null); setSelectedContent(null); }} disabled={actionLoading}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setActionType(null);
+                  setSelectedContent(null);
+                }}
+                disabled={actionLoading}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleApprove} disabled={actionLoading} className="bg-green-600 hover:bg-green-700">
+              <Button
+                onClick={handleApprove}
+                disabled={actionLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
                 {actionLoading ? "Approving..." : "Approve"}
               </Button>
             </DialogFooter>
@@ -431,19 +526,29 @@ export default function ContentModerationPage() {
         </Dialog>
 
         {/* Reject Dialog */}
-        <Dialog open={actionType === "reject"} onOpenChange={() => { setActionType(null); setSelectedContent(null); setRejectionReason(""); }}>
+        <Dialog
+          open={actionType === "reject"}
+          onOpenChange={() => {
+            setActionType(null);
+            setSelectedContent(null);
+            setRejectionReason("");
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Reject Content</DialogTitle>
               <DialogDescription>
-                Provide a reason for rejecting this content. The author will be notified.
+                Provide a reason for rejecting this content. The author will be
+                notified.
               </DialogDescription>
             </DialogHeader>
             {selectedContent && (
               <div className="space-y-4">
                 <div className="p-3 rounded-lg bg-destructive/10">
                   <p className="font-medium">{selectedContent.title}</p>
-                  <p className="text-sm text-muted-foreground">by {selectedContent.author}</p>
+                  <p className="text-sm text-muted-foreground">
+                    by {selectedContent.author}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="reason">Rejection Reason *</Label>

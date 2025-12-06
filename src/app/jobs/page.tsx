@@ -1,17 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Briefcase, MapPin, DollarSign, Clock, Building2, Search, Filter, ChevronRight, Upload } from "lucide-react";
+import {
+  Briefcase,
+  MapPin,
+  DollarSign,
+  Clock,
+  Building2,
+  Search,
+  Filter,
+  ChevronRight,
+  Upload,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
@@ -74,11 +103,23 @@ export default function JobsPage() {
       setLoading(true);
       const token = localStorage.getItem("auth_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
+
       const response = await fetch("/api/jobs", { headers });
       if (response.ok) {
         const data = await response.json();
-        setJobs(data.jobs || []);
+        // Parse skills if they're strings
+        const jobsWithParsedSkills = (data.jobs || []).map((job: any) => ({
+          ...job,
+          skills:
+            typeof job.skills === "string"
+              ? job.skills
+                ? JSON.parse(job.skills)
+                : []
+              : Array.isArray(job.skills)
+                ? job.skills
+                : [],
+        }));
+        setJobs(jobsWithParsedSkills);
       }
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -185,8 +226,16 @@ export default function JobsPage() {
       {/* Header */}
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="shrink-0"
+            >
+              <ChevronRight className="h-5 w-5 rotate-180" />
+            </Button>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold flex items-center gap-2">
                 <Briefcase className="h-8 w-8" />
                 Job Opportunities
@@ -270,13 +319,17 @@ export default function JobsPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <CardTitle className="text-xl mb-2">{job.title}</CardTitle>
+                        <CardTitle className="text-xl mb-2">
+                          {job.title}
+                        </CardTitle>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                           <Building2 className="h-4 w-4" />
                           <span className="font-medium">{job.company}</span>
                         </div>
                       </div>
-                      <Badge className={getTypeColor(job.type)}>{job.type}</Badge>
+                      <Badge className={getTypeColor(job.type)}>
+                        {job.type}
+                      </Badge>
                     </div>
                     <CardDescription className="line-clamp-2">
                       {job.description}
@@ -301,10 +354,16 @@ export default function JobsPage() {
 
                       {job.requirements && job.requirements.length > 0 && (
                         <div className="pt-2">
-                          <p className="text-xs font-semibold mb-2">Requirements:</p>
+                          <p className="text-xs font-semibold mb-2">
+                            Requirements:
+                          </p>
                           <div className="flex flex-wrap gap-2">
                             {job.requirements.slice(0, 3).map((req, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
+                              <Badge
+                                key={idx}
+                                variant="secondary"
+                                className="text-xs"
+                              >
                                 {req}
                               </Badge>
                             ))}
@@ -363,7 +422,10 @@ export default function JobsPage() {
                 placeholder="Tell us why you're a great fit for this role..."
                 value={applicationForm.coverLetter}
                 onChange={(e) =>
-                  setApplicationForm({ ...applicationForm, coverLetter: e.target.value })
+                  setApplicationForm({
+                    ...applicationForm,
+                    coverLetter: e.target.value,
+                  })
                 }
                 rows={6}
                 required
@@ -378,7 +440,10 @@ export default function JobsPage() {
                   placeholder="https://... or upload below"
                   value={applicationForm.resumeUrl}
                   onChange={(e) =>
-                    setApplicationForm({ ...applicationForm, resumeUrl: e.target.value })
+                    setApplicationForm({
+                      ...applicationForm,
+                      resumeUrl: e.target.value,
+                    })
                   }
                 />
                 <Button type="button" variant="outline">

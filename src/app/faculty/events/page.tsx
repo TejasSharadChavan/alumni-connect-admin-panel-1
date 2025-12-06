@@ -1,11 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Plus, Search, Loader2, Clock, CheckCircle } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Plus,
+  Search,
+  Loader2,
+  Clock,
+  CheckCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -41,7 +56,7 @@ export default function FacultyEventsPage() {
 
   const fetchEvents = async () => {
     try {
-      const token = localStorage.getItem("bearer_token");
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       const response = await fetch("/api/events", {
@@ -86,7 +101,8 @@ export default function FacultyEventsPage() {
     const end = new Date(event.endDate);
 
     if (now < start) return { label: "Upcoming", color: "bg-blue-500" };
-    if (now >= start && now <= end) return { label: "Ongoing", color: "bg-green-500" };
+    if (now >= start && now <= end)
+      return { label: "Ongoing", color: "bg-green-500" };
     return { label: "Completed", color: "bg-gray-500" };
   };
 
@@ -106,8 +122,12 @@ export default function FacultyEventsPage() {
     });
   };
 
-  const upcomingEvents = filteredEvents.filter(e => new Date(e.startDate) > new Date());
-  const pastEvents = filteredEvents.filter(e => new Date(e.endDate) < new Date());
+  const upcomingEvents = filteredEvents.filter(
+    (e) => new Date(e.startDate) > new Date()
+  );
+  const pastEvents = filteredEvents.filter(
+    (e) => new Date(e.endDate) < new Date()
+  );
 
   if (loading) {
     return (
@@ -122,7 +142,9 @@ export default function FacultyEventsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Events</h1>
-          <p className="text-muted-foreground">Organize and manage college events</p>
+          <p className="text-muted-foreground">
+            Organize and manage college events
+          </p>
         </div>
         <Button asChild>
           <Link href="/faculty/events/create">
@@ -184,7 +206,9 @@ export default function FacultyEventsPage() {
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Events Found</h3>
             <p className="text-muted-foreground text-center mb-4">
-              {searchQuery ? "Try adjusting your search" : "Start by creating your first event"}
+              {searchQuery
+                ? "Try adjusting your search"
+                : "Start by creating your first event"}
             </p>
             <Button asChild>
               <Link href="/faculty/events/create">
@@ -204,11 +228,16 @@ export default function FacultyEventsPage() {
                 {upcomingEvents.map((event) => {
                   const status = getEventStatus(event);
                   return (
-                    <Card key={event.id} className="hover:shadow-lg transition-shadow">
+                    <Card
+                      key={event.id}
+                      className="hover:shadow-lg transition-shadow"
+                    >
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="space-y-1">
-                            <CardTitle className="text-xl">{event.title}</CardTitle>
+                            <CardTitle className="text-xl">
+                              {event.title}
+                            </CardTitle>
                             <CardDescription className="line-clamp-2">
                               {event.description}
                             </CardDescription>
@@ -220,13 +249,15 @@ export default function FacultyEventsPage() {
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           <span>
-                            {formatDate(event.startDate)} - {formatDate(event.endDate)}
+                            {formatDate(event.startDate)} -{" "}
+                            {formatDate(event.endDate)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Clock className="h-4 w-4" />
                           <span>
-                            {formatTime(event.startDate)} - {formatTime(event.endDate)}
+                            {formatTime(event.startDate)} -{" "}
+                            {formatTime(event.endDate)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -237,12 +268,22 @@ export default function FacultyEventsPage() {
                           <Users className="h-4 w-4" />
                           <span>
                             {event.attendeeCount}
-                            {event.maxAttendees ? ` / ${event.maxAttendees}` : ""} attendees
+                            {event.maxAttendees
+                              ? ` / ${event.maxAttendees}`
+                              : ""}{" "}
+                            attendees
                           </span>
                         </div>
                         <div className="flex gap-2 pt-2">
-                          <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link href={`/faculty/events/${event.id}`}>View Details</Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            asChild
+                          >
+                            <Link href={`/faculty/events/${event.id}`}>
+                              View Details
+                            </Link>
                           </Button>
                         </div>
                       </CardContent>
@@ -261,11 +302,16 @@ export default function FacultyEventsPage() {
                 {pastEvents.map((event) => {
                   const status = getEventStatus(event);
                   return (
-                    <Card key={event.id} className="hover:shadow-lg transition-shadow opacity-75">
+                    <Card
+                      key={event.id}
+                      className="hover:shadow-lg transition-shadow opacity-75"
+                    >
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="space-y-1">
-                            <CardTitle className="text-xl">{event.title}</CardTitle>
+                            <CardTitle className="text-xl">
+                              {event.title}
+                            </CardTitle>
                             <CardDescription className="line-clamp-2">
                               {event.description}
                             </CardDescription>
@@ -277,7 +323,8 @@ export default function FacultyEventsPage() {
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           <span>
-                            {formatDate(event.startDate)} - {formatDate(event.endDate)}
+                            {formatDate(event.startDate)} -{" "}
+                            {formatDate(event.endDate)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -289,8 +336,15 @@ export default function FacultyEventsPage() {
                           <span>{event.attendeeCount} attendees</span>
                         </div>
                         <div className="flex gap-2 pt-2">
-                          <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link href={`/faculty/events/${event.id}`}>View Details</Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            asChild
+                          >
+                            <Link href={`/faculty/events/${event.id}`}>
+                              View Details
+                            </Link>
                           </Button>
                         </div>
                       </CardContent>

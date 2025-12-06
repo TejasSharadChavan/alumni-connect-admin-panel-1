@@ -1,19 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { users, sessions } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import { users, sessions } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 // Helper function to validate session
 async function validateSession(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
 
   const token = authHeader.substring(7);
-  
+
   try {
-    const sessionResult = await db.select()
+    const sessionResult = await db
+      .select()
       .from(sessions)
       .where(eq(sessions.token, token))
       .limit(1);
@@ -24,12 +25,13 @@ async function validateSession(request: NextRequest) {
 
     const session = sessionResult[0];
     const expiresAt = new Date(session.expiresAt);
-    
+
     if (expiresAt < new Date()) {
       return null;
     }
 
-    const userResult = await db.select()
+    const userResult = await db
+      .select()
       .from(users)
       .where(eq(users.id, session.userId))
       .limit(1);
@@ -40,7 +42,7 @@ async function validateSession(request: NextRequest) {
 
     return userResult[0];
   } catch (error) {
-    console.error('Session validation error:', error);
+    console.error("Session validation error:", error);
     return null;
   }
 }
@@ -48,7 +50,7 @@ async function validateSession(request: NextRequest) {
 // Helper function to exclude passwordHash from user object
 function sanitizeUser(user: any, includeAllFields: boolean = false) {
   const { passwordHash, ...sanitizedUser } = user;
-  
+
   if (includeAllFields) {
     return sanitizedUser;
   }
@@ -76,7 +78,7 @@ function sanitizeUser(user: any, includeAllFields: boolean = false) {
 function isValidUrl(urlString: string): boolean {
   try {
     const url = new URL(urlString);
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
   }
@@ -85,11 +87,11 @@ function isValidUrl(urlString: string): boolean {
 export async function GET(request: NextRequest) {
   try {
     // Extract id from URL
-    const id = request.nextUrl.pathname.split('/')[3];
+    const id = request.nextUrl.pathname.split("/")[3];
 
     if (!id || isNaN(parseInt(id))) {
       return NextResponse.json(
-        { error: 'Valid user ID is required', code: 'INVALID_ID' },
+        { error: "Valid user ID is required", code: "INVALID_ID" },
         { status: 400 }
       );
     }
@@ -97,24 +99,25 @@ export async function GET(request: NextRequest) {
     const userId = parseInt(id);
 
     // Find user by id
-    const userResult = await db.select()
+    const userResult = await db
+      .select()
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
     if (userResult.length === 0) {
       return NextResponse.json(
-        { error: 'User not found or not active', code: 'NOT_FOUND' },
+        { error: "User not found or not active", code: "NOT_FOUND" },
         { status: 404 }
       );
     }
 
     const user = userResult[0];
 
-    // Check if user status is active
-    if (user.status !== 'active') {
+    // Check if user status is active or approved
+    if (user.status !== "active" && user.status !== "approved") {
       return NextResponse.json(
-        { error: 'User not found or not active', code: 'NOT_FOUND' },
+        { error: "User not found or not active", code: "NOT_FOUND" },
         { status: 404 }
       );
     }
@@ -123,16 +126,20 @@ export async function GET(request: NextRequest) {
     const authenticatedUser = await validateSession(request);
 
     // Determine if user should see all fields
-    const includeAllFields = authenticatedUser && 
-      (authenticatedUser.id === userId || authenticatedUser.role === 'admin');
+    const includeAllFields =
+      authenticatedUser &&
+      (authenticatedUser.id === userId || authenticatedUser.role === "admin");
 
     const sanitizedUser = sanitizeUser(user, includeAllFields);
 
     return NextResponse.json({ user: sanitizedUser }, { status: 200 });
   } catch (error) {
-    console.error('GET error:', error);
+    console.error("GET error:", error);
     return NextResponse.json(
-      { error: 'Internal server error: ' + (error as Error).message, code: 'SERVER_ERROR' },
+      {
+        error: "Internal server error: " + (error as Error).message,
+        code: "SERVER_ERROR",
+      },
       { status: 500 }
     );
   }
@@ -141,11 +148,11 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Extract id from URL
-    const id = request.nextUrl.pathname.split('/')[3];
+    const id = request.nextUrl.pathname.split("/")[3];
 
     if (!id || isNaN(parseInt(id))) {
       return NextResponse.json(
-        { error: 'Valid user ID is required', code: 'INVALID_ID' },
+        { error: "Valid user ID is required", code: "INVALID_ID" },
         { status: 400 }
       );
     }
@@ -157,18 +164,21 @@ export async function PUT(request: NextRequest) {
 
     if (!authenticatedUser) {
       return NextResponse.json(
-        { error: 'Unauthorized', code: 'UNAUTHORIZED' },
+        { error: "Unauthorized", code: "UNAUTHORIZED" },
         { status: 401 }
       );
     }
 
     // Check authorization: own profile or admin
     const isOwnProfile = authenticatedUser.id === userId;
-    const isAdmin = authenticatedUser.role === 'admin';
+    const isAdmin = authenticatedUser.role === "admin";
 
     if (!isOwnProfile && !isAdmin) {
       return NextResponse.json(
-        { error: 'Forbidden. Cannot update another user\'s profile.', code: 'FORBIDDEN' },
+        {
+          error: "Forbidden. Cannot update another user's profile.",
+          code: "FORBIDDEN",
+        },
         { status: 403 }
       );
     }
@@ -177,14 +187,15 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
 
     // Find user by id
-    const userResult = await db.select()
+    const userResult = await db
+      .select()
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
     if (userResult.length === 0) {
       return NextResponse.json(
-        { error: 'User not found', code: 'NOT_FOUND' },
+        { error: "User not found", code: "NOT_FOUND" },
         { status: 404 }
       );
     }
@@ -196,33 +207,49 @@ export async function PUT(request: NextRequest) {
 
     // Regular user updatable fields
     const regularUserFields = [
-      'name', 'headline', 'bio', 'skills', 'profileImageUrl', 
-      'resumeUrl', 'linkedinUrl', 'githubUrl', 'phone'
+      "name",
+      "headline",
+      "bio",
+      "skills",
+      "profileImageUrl",
+      "resumeUrl",
+      "linkedinUrl",
+      "githubUrl",
+      "phone",
     ];
 
     // Admin-only updatable fields
     const adminOnlyFields = [
-      'role', 'status', 'branch', 'cohort', 'department', 'yearOfPassing', 'email'
+      "role",
+      "status",
+      "branch",
+      "cohort",
+      "department",
+      "yearOfPassing",
+      "email",
     ];
 
     // Process regular user fields
     for (const field of regularUserFields) {
       if (field in body) {
         // Validate skills is an array
-        if (field === 'skills') {
+        if (field === "skills") {
           if (!Array.isArray(body[field])) {
             return NextResponse.json(
-              { error: 'Skills must be an array', code: 'VALIDATION_ERROR' },
+              { error: "Skills must be an array", code: "VALIDATION_ERROR" },
               { status: 400 }
             );
           }
           updates[field] = JSON.stringify(body[field]);
         }
         // Validate URLs
-        else if (field.includes('Url') || field.includes('url')) {
+        else if (field.includes("Url") || field.includes("url")) {
           if (body[field] && !isValidUrl(body[field])) {
             return NextResponse.json(
-              { error: `Invalid URL format for ${field}`, code: 'VALIDATION_ERROR' },
+              {
+                error: `Invalid URL format for ${field}`,
+                code: "VALIDATION_ERROR",
+              },
               { status: 400 }
             );
           }
@@ -240,23 +267,28 @@ export async function PUT(request: NextRequest) {
       for (const field of adminOnlyFields) {
         if (field in body) {
           // Validate email uniqueness if being updated
-          if (field === 'email') {
-            const existingUserResult = await db.select()
+          if (field === "email") {
+            const existingUserResult = await db
+              .select()
               .from(users)
-              .where(and(
-                eq(users.email, body[field]),
-                eq(users.id, userId)
-              ))
+              .where(and(eq(users.email, body[field]), eq(users.id, userId)))
               .limit(1);
 
-            const otherUserWithEmail = await db.select()
+            const otherUserWithEmail = await db
+              .select()
               .from(users)
               .where(eq(users.email, body[field]))
               .limit(1);
 
-            if (otherUserWithEmail.length > 0 && otherUserWithEmail[0].id !== userId) {
+            if (
+              otherUserWithEmail.length > 0 &&
+              otherUserWithEmail[0].id !== userId
+            ) {
               return NextResponse.json(
-                { error: 'Email already in use by another user', code: 'VALIDATION_ERROR' },
+                {
+                  error: "Email already in use by another user",
+                  code: "VALIDATION_ERROR",
+                },
                 { status: 400 }
               );
             }
@@ -270,7 +302,10 @@ export async function PUT(request: NextRequest) {
       for (const field of adminOnlyFields) {
         if (field in body) {
           return NextResponse.json(
-            { error: `Permission denied. Cannot update field: ${field}`, code: 'FORBIDDEN' },
+            {
+              error: `Permission denied. Cannot update field: ${field}`,
+              code: "FORBIDDEN",
+            },
             { status: 403 }
           );
         }
@@ -280,20 +315,21 @@ export async function PUT(request: NextRequest) {
     // Check if there are any updates besides updatedAt
     if (Object.keys(updates).length === 1) {
       return NextResponse.json(
-        { error: 'No valid fields to update', code: 'VALIDATION_ERROR' },
+        { error: "No valid fields to update", code: "VALIDATION_ERROR" },
         { status: 400 }
       );
     }
 
     // Update user record
-    const updatedUserResult = await db.update(users)
+    const updatedUserResult = await db
+      .update(users)
       .set(updates)
       .where(eq(users.id, userId))
       .returning();
 
     if (updatedUserResult.length === 0) {
       return NextResponse.json(
-        { error: 'Failed to update user', code: 'SERVER_ERROR' },
+        { error: "Failed to update user", code: "SERVER_ERROR" },
         { status: 500 }
       );
     }
@@ -302,13 +338,16 @@ export async function PUT(request: NextRequest) {
     const sanitizedUser = sanitizeUser(updatedUser, true);
 
     return NextResponse.json(
-      { message: 'Profile updated successfully', user: sanitizedUser },
+      { message: "Profile updated successfully", user: sanitizedUser },
       { status: 200 }
     );
   } catch (error) {
-    console.error('PUT error:', error);
+    console.error("PUT error:", error);
     return NextResponse.json(
-      { error: 'Internal server error: ' + (error as Error).message, code: 'SERVER_ERROR' },
+      {
+        error: "Internal server error: " + (error as Error).message,
+        code: "SERVER_ERROR",
+      },
       { status: 500 }
     );
   }

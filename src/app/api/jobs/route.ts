@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { jobs, users, sessions, activityLog, notifications } from '@/db/schema';
-import { eq, and, or, desc, gt, like, sql, inArray } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import { jobs, users, sessions, activityLog, notifications } from "@/db/schema";
+import { eq, and, or, desc, gt, like, sql, inArray } from "drizzle-orm";
 
 async function getCurrentUser(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
 
@@ -39,18 +39,19 @@ async function getCurrentUser(request: NextRequest) {
   return user[0];
 }
 
-async function notifyAdmins(jobId: number, jobTitle: string, posterName: string) {
+async function notifyAdmins(
+  jobId: number,
+  jobTitle: string,
+  posterName: string
+) {
   try {
-    const admins = await db
-      .select()
-      .from(users)
-      .where(eq(users.role, 'admin'));
+    const admins = await db.select().from(users).where(eq(users.role, "admin"));
 
-    const notificationPromises = admins.map(admin =>
+    const notificationPromises = admins.map((admin) =>
       db.insert(notifications).values({
         userId: admin.id,
-        type: 'job',
-        title: 'New Job Awaiting Approval',
+        type: "job",
+        title: "New Job Awaiting Approval",
         message: `${posterName} has posted a new job: "${jobTitle}". Please review and approve.`,
         relatedId: jobId.toString(),
         isRead: false,
@@ -60,42 +61,78 @@ async function notifyAdmins(jobId: number, jobTitle: string, posterName: string)
 
     await Promise.all(notificationPromises);
   } catch (error) {
-    console.error('Error notifying admins:', error);
+    console.error("Error notifying admins:", error);
+  }
+}
+
+async function notifyStudentsAboutNewJob(
+  jobId: number,
+  jobTitle: string,
+  company: string,
+  jobType: string
+) {
+  try {
+    // Get all active students
+    const students = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.role, "student"),
+          or(eq(users.status, "active"), eq(users.status, "approved"))
+        )
+      );
+
+    // Create notifications for all students
+    const notificationPromises = students.map((student) =>
+      db.insert(notifications).values({
+        userId: student.id,
+        type: "job",
+        title: "New Job Opportunity!",
+        message: `${company} is hiring for ${jobTitle} (${jobType}). Check it out now!`,
+        relatedId: jobId.toString(),
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      })
+    );
+
+    await Promise.all(notificationPromises);
+  } catch (error) {
+    console.error("Error notifying students about new job:", error);
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    // Make authentication optional for GET requests
     const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
 
     const { searchParams } = new URL(request.url);
-    const jobType = searchParams.get('type');
-    const branch = searchParams.get('branch');
-    const skillsParam = searchParams.get('skills');
-    const postedBy = searchParams.get('postedBy');
-    const statusParam = searchParams.get('status');
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 100);
-    const offset = parseInt(searchParams.get('offset') ?? '0');
+    const jobType = searchParams.get("type");
+    const branch = searchParams.get("branch");
+    const skillsParam = searchParams.get("skills");
+    const postedBy = searchParams.get("postedBy");
+    const statusParam = searchParams.get("status");
+    const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 100);
+    const offset = parseInt(searchParams.get("offset") ?? "0");
 
-    const isAdmin = user.role === 'admin';
+    const isAdmin = user?.role === "admin";
     const currentDate = new Date().toISOString();
 
     let conditions: any[] = [];
 
     if (isAdmin && statusParam) {
       conditions.push(eq(jobs.status, statusParam));
-    } else if (!isAdmin) {
-      conditions.push(eq(jobs.status, 'approved'));
+    } else {
+      // Public users and non-admin users only see approved, non-expired jobs
+      conditions.push(eq(jobs.status, "approved"));
       conditions.push(gt(jobs.expiresAt, currentDate));
     }
 
     if (jobType) {
-      if (!['full-time', 'internship', 'part-time'].includes(jobType)) {
+      if (!["full-time", "internship", "part-time"].includes(jobType)) {
         return NextResponse.json(
-          { error: 'Invalid job type', code: 'INVALID_JOB_TYPE' },
+          { error: "Invalid job type", code: "INVALID_JOB_TYPE" },
           { status: 400 }
         );
       }
@@ -110,7 +147,7 @@ export async function GET(request: NextRequest) {
       const postedByInt = parseInt(postedBy);
       if (isNaN(postedByInt)) {
         return NextResponse.json(
-          { error: 'Invalid postedBy user ID', code: 'INVALID_POSTED_BY' },
+          { error: "Invalid postedBy user ID", code: "INVALID_POSTED_BY" },
           { status: 400 }
         );
       }
@@ -156,32 +193,43 @@ export async function GET(request: NextRequest) {
     let results = await query;
 
     if (skillsParam) {
-      const requestedSkills = skillsParam.split(',').map(s => s.trim().toLowerCase());
-      results = results.filter(job => {
+      const requestedSkills = skillsParam
+        .split(",")
+        .map((s) => s.trim().toLowerCase());
+      results = results.filter((job) => {
         if (!job.skills) return false;
         const jobSkills = Array.isArray(job.skills)
           ? job.skills.map((s: string) => s.toLowerCase())
           : [];
-        return requestedSkills.some(skill => jobSkills.includes(skill));
+        return requestedSkills.some((skill) => jobSkills.includes(skill));
       });
     }
 
-    await db.insert(activityLog).values({
-      userId: user.id,
-      role: user.role,
-      action: 'view_jobs',
-      metadata: JSON.stringify({
-        filters: { jobType, branch, skills: skillsParam, postedBy, status: statusParam },
-        count: results.length,
-      }),
-      timestamp: new Date().toISOString(),
-    });
+    // Log activity only if user is authenticated
+    if (user) {
+      await db.insert(activityLog).values({
+        userId: user.id,
+        role: user.role,
+        action: "view_jobs",
+        metadata: JSON.stringify({
+          filters: {
+            jobType,
+            branch,
+            skills: skillsParam,
+            postedBy,
+            status: statusParam,
+          },
+          count: results.length,
+        }),
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-    return NextResponse.json(results, { status: 200 });
+    return NextResponse.json({ jobs: results }, { status: 200 });
   } catch (error: any) {
-    console.error('GET jobs error:', error);
+    console.error("GET jobs error:", error);
     return NextResponse.json(
-      { error: 'Internal server error: ' + error.message },
+      { error: "Internal server error: " + error.message },
       { status: 500 }
     );
   }
@@ -191,34 +239,56 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser(request);
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
     }
 
-    if (user.role !== 'alumni' && user.role !== 'admin') {
+    if (user.role !== "alumni" && user.role !== "admin") {
       return NextResponse.json(
-        { error: 'Only alumni and admins can post jobs', code: 'FORBIDDEN' },
+        { error: "Only alumni and admins can post jobs", code: "FORBIDDEN" },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    const { title, company, description, location, jobType, expiresAt, salary, skills, branch } = body;
+    const {
+      title,
+      company,
+      description,
+      location,
+      jobType,
+      expiresAt,
+      salary,
+      skills,
+      branch,
+    } = body;
 
-    if (!title || !company || !description || !location || !jobType || !expiresAt) {
+    if (
+      !title ||
+      !company ||
+      !description ||
+      !location ||
+      !jobType ||
+      !expiresAt
+    ) {
       return NextResponse.json(
         {
-          error: 'Missing required fields: title, company, description, location, jobType, expiresAt',
-          code: 'MISSING_REQUIRED_FIELDS',
+          error:
+            "Missing required fields: title, company, description, location, jobType, expiresAt",
+          code: "MISSING_REQUIRED_FIELDS",
         },
         { status: 400 }
       );
     }
 
-    if (!['full-time', 'internship', 'part-time'].includes(jobType)) {
+    if (!["full-time", "internship", "part-time"].includes(jobType)) {
       return NextResponse.json(
         {
-          error: 'Invalid jobType. Must be one of: full-time, internship, part-time',
-          code: 'INVALID_JOB_TYPE',
+          error:
+            "Invalid jobType. Must be one of: full-time, internship, part-time",
+          code: "INVALID_JOB_TYPE",
         },
         { status: 400 }
       );
@@ -229,14 +299,15 @@ export async function POST(request: NextRequest) {
     if (isNaN(expiresAtDate.getTime()) || expiresAtDate <= currentDate) {
       return NextResponse.json(
         {
-          error: 'Invalid expiresAt. Must be a valid ISO timestamp in the future',
-          code: 'INVALID_EXPIRES_AT',
+          error:
+            "Invalid expiresAt. Must be a valid ISO timestamp in the future",
+          code: "INVALID_EXPIRES_AT",
         },
         { status: 400 }
       );
     }
 
-    const status = user.role === 'admin' ? 'approved' : 'pending';
+    const status = user.role === "admin" ? "approved" : "pending";
 
     const jobData: any = {
       postedById: user.id,
@@ -257,7 +328,7 @@ export async function POST(request: NextRequest) {
     if (skills) {
       if (!Array.isArray(skills)) {
         return NextResponse.json(
-          { error: 'Skills must be an array', code: 'INVALID_SKILLS_FORMAT' },
+          { error: "Skills must be an array", code: "INVALID_SKILLS_FORMAT" },
           { status: 400 }
         );
       }
@@ -268,7 +339,7 @@ export async function POST(request: NextRequest) {
       jobData.branch = branch.trim();
     }
 
-    if (status === 'approved') {
+    if (status === "approved") {
       jobData.approvedBy = user.id;
       jobData.approvedAt = new Date().toISOString();
     }
@@ -278,20 +349,23 @@ export async function POST(request: NextRequest) {
     await db.insert(activityLog).values({
       userId: user.id,
       role: user.role,
-      action: 'create_job',
+      action: "create_job",
       metadata: JSON.stringify({ jobId: newJob[0].id, status }),
       timestamp: new Date().toISOString(),
     });
 
-    if (status === 'pending') {
+    if (status === "pending") {
       await notifyAdmins(newJob[0].id, title, user.name);
+    } else if (status === "approved") {
+      // Notify all students about new job
+      await notifyStudentsAboutNewJob(newJob[0].id, title, company, jobType);
     }
 
     return NextResponse.json(newJob[0], { status: 201 });
   } catch (error: any) {
-    console.error('POST jobs error:', error);
+    console.error("POST jobs error:", error);
     return NextResponse.json(
-      { error: 'Internal server error: ' + error.message },
+      { error: "Internal server error: " + error.message },
       { status: 500 }
     );
   }

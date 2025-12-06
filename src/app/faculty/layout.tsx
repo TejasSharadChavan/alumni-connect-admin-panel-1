@@ -12,19 +12,38 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GraduationCap, LayoutDashboard, Users, Calendar, FileText, MessageSquare, LogOut, Menu, BarChart3, FileCheck, UserCircle, Settings } from "lucide-react";
+import {
+  GraduationCap,
+  LayoutDashboard,
+  Users,
+  Calendar,
+  FileText,
+  MessageSquare,
+  LogOut,
+  Menu,
+  BarChart3,
+  FileCheck,
+  UserCircle,
+  Settings,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-export default function FacultyLayout({ children }: { children: React.ReactNode }) {
+export default function FacultyLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
     { name: "Dashboard", href: "/faculty", icon: LayoutDashboard },
+    { name: "Analytics", href: "/analytics", icon: TrendingUp },
     { name: "Students", href: "/faculty/students", icon: Users },
     { name: "Events", href: "/faculty/events", icon: Calendar },
     { name: "Mentorship", href: "/faculty/mentorship", icon: GraduationCap },
@@ -34,7 +53,12 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   ];
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -52,7 +76,10 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              <Link href="/faculty" className="flex items-center gap-2 font-semibold">
+              <Link
+                href="/faculty"
+                className="flex items-center gap-2 font-semibold"
+              >
                 <GraduationCap className="h-6 w-6 text-primary" />
                 <span className="hidden sm:inline-block">Alumni Connect</span>
               </Link>
@@ -63,14 +90,20 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
                 <span className="text-sm font-medium">{user?.name}</span>
                 <span className="text-xs text-muted-foreground">Faculty</span>
               </div>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full"
+                  >
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user?.profileImageUrl} alt={user?.name} />
+                      <AvatarImage
+                        src={user?.profileImageUrl}
+                        alt={user?.name}
+                      />
                       <AvatarFallback className="bg-purple-500/10 text-purple-600">
-                        {user?.name ? getInitials(user.name) : 'FC'}
+                        {user?.name ? getInitials(user.name) : "FC"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -78,9 +111,15 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user?.name}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                      <p className="text-xs font-medium text-purple-600 mt-1">Faculty</p>
+                      <p className="text-sm font-medium leading-none">
+                        {user?.name}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user?.email}
+                      </p>
+                      <p className="text-xs font-medium text-purple-600 mt-1">
+                        Faculty
+                      </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -97,7 +136,10 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive">
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="cursor-pointer text-destructive"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -109,10 +151,12 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
 
         <div className="flex">
           {/* Sidebar */}
-          <aside className={cn(
-            "fixed inset-y-0 left-0 z-40 w-64 border-r bg-background transition-transform duration-300 md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:translate-x-0",
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          )}>
+          <aside
+            className={cn(
+              "fixed inset-y-0 left-0 z-40 w-64 border-r bg-background transition-transform duration-300 md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:translate-x-0",
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            )}
+          >
             <nav className="flex flex-col gap-2 p-4 pt-20 md:pt-4">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
@@ -146,9 +190,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
 
           {/* Main Content */}
           <main className="flex-1 overflow-y-auto">
-            <div className="container py-6 px-4 md:px-6">
-              {children}
-            </div>
+            <div className="container py-6 px-4 md:px-6">{children}</div>
           </main>
         </div>
       </div>

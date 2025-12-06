@@ -1,14 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Calendar, MapPin, Clock, Users, Search, Filter, DollarSign, Check } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  Users,
+  Search,
+  Filter,
+  DollarSign,
+  Check,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -57,8 +78,13 @@ export default function StudentEventsPage() {
 
       const data = await response.json();
       if (response.ok) {
-        // Only show approved events
-        const approvedEvents = data.events?.filter((e: any) => e.status === "approved") || [];
+        // Only show approved events and map category to type
+        const approvedEvents = (
+          data.events?.filter((e: any) => e.status === "approved") || []
+        ).map((event: any) => ({
+          ...event,
+          type: event.category || event.type || "general",
+        }));
         setEvents(approvedEvents);
       } else {
         toast.error("Failed to load events");
@@ -184,7 +210,8 @@ export default function StudentEventsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Events</h1>
             <p className="text-muted-foreground mt-2">
-              Discover and register for workshops, webinars, and networking events
+              Discover and register for workshops, webinars, and networking
+              events
             </p>
           </div>
         </motion.div>
@@ -213,7 +240,10 @@ export default function StudentEventsPage() {
                     className="pl-9"
                   />
                 </div>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select
+                  value={categoryFilter}
+                  onValueChange={setCategoryFilter}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
@@ -252,7 +282,9 @@ export default function StudentEventsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{upcomingEvents.length}</p>
-                  <p className="text-sm text-muted-foreground">Upcoming Events</p>
+                  <p className="text-sm text-muted-foreground">
+                    Upcoming Events
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -291,7 +323,9 @@ export default function StudentEventsPage() {
             <CardContent className="py-12">
               <div className="text-center">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No events found matching your criteria</p>
+                <p className="text-muted-foreground">
+                  No events found matching your criteria
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -317,12 +351,20 @@ export default function StudentEventsPage() {
                   <CardHeader className="flex-grow">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <CardTitle className="text-xl line-clamp-2">{event.title}</CardTitle>
+                        <CardTitle className="text-xl line-clamp-2">
+                          {event.title}
+                        </CardTitle>
                         <CardDescription className="mt-2 line-clamp-2">
                           {event.description}
                         </CardDescription>
                       </div>
-                      <Badge variant={event.category === "workshop" ? "default" : "secondary"}>
+                      <Badge
+                        variant={
+                          event.category === "workshop"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
                         {event.category}
                       </Badge>
                     </div>
@@ -335,7 +377,8 @@ export default function StudentEventsPage() {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        {formatTime(event.startDate)} - {formatTime(event.endDate)}
+                        {formatTime(event.startDate)} -{" "}
+                        {formatTime(event.endDate)}
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="h-4 w-4" />
@@ -350,7 +393,8 @@ export default function StudentEventsPage() {
                       {event.maxAttendees && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Users className="h-4 w-4" />
-                          {event.attendeeCount || 0} / {event.maxAttendees} attendees
+                          {event.attendeeCount || 0} / {event.maxAttendees}{" "}
+                          attendees
                         </div>
                       )}
                     </div>
@@ -364,7 +408,9 @@ export default function StudentEventsPage() {
                       <Button className="w-full" variant="secondary" disabled>
                         Event Ended
                       </Button>
-                    ) : event.maxAttendees && event.attendeeCount && event.attendeeCount >= event.maxAttendees ? (
+                    ) : event.maxAttendees &&
+                      event.attendeeCount &&
+                      event.attendeeCount >= event.maxAttendees ? (
                       <Button className="w-full" variant="secondary" disabled>
                         Event Full
                       </Button>
@@ -374,7 +420,9 @@ export default function StudentEventsPage() {
                         onClick={() => handleRSVP(event.id)}
                         disabled={rsvpingEventId === event.id}
                       >
-                        {rsvpingEventId === event.id ? "Registering..." : "RSVP Now"}
+                        {rsvpingEventId === event.id
+                          ? "Registering..."
+                          : "RSVP Now"}
                       </Button>
                     )}
                   </CardContent>

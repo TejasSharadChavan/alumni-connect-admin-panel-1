@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -11,7 +17,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { RoleLayout } from "@/components/layout/role-layout";
 import { ImageUpload } from "@/components/profile/image-upload";
-import { User, Mail, MapPin, Briefcase, Award, Link2, Github, Linkedin, Save, X } from "lucide-react";
+import {
+  User,
+  Mail,
+  MapPin,
+  Briefcase,
+  Award,
+  Link2,
+  Github,
+  Linkedin,
+  Save,
+  X,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -20,7 +37,7 @@ export default function StudentProfilePage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -34,14 +51,14 @@ export default function StudentProfilePage() {
     skills: [] as string[],
     profileImageUrl: "",
   });
-  
+
   const [newSkill, setNewSkill] = useState("");
 
   useEffect(() => {
     if (user) {
       // Parse skills if they're a JSON string
       let parsedSkills = user.skills;
-      if (typeof user.skills === 'string') {
+      if (typeof user.skills === "string") {
         try {
           parsedSkills = JSON.parse(user.skills);
         } catch (e) {
@@ -51,7 +68,7 @@ export default function StudentProfilePage() {
       if (!Array.isArray(parsedSkills)) {
         parsedSkills = [];
       }
-      
+
       setFormData({
         name: user.name || "",
         email: user.email || "",
@@ -156,13 +173,18 @@ export default function StudentProfilePage() {
   };
 
   const profileCompleteness = () => {
+    // Calculate from user data, not formData, for consistency
+    if (!user) return 20;
+
     let score = 20; // Base score for having an account
-    if (formData.headline) score += 15;
-    if (formData.bio) score += 20;
-    if (formData.skills.length > 0) score += 10 * Math.min(formData.skills.length, 3);
-    if (formData.linkedinUrl) score += 10;
-    if (formData.githubUrl) score += 10;
-    if (formData.profileImageUrl) score += 15;
+    if (user.headline) score += 15;
+    if (user.bio) score += 20;
+    if (user.skills && user.skills.length > 0) {
+      score += 10 * Math.min(user.skills.length, 3);
+    }
+    if (user.linkedinUrl) score += 10;
+    if (user.githubUrl) score += 10;
+    if (user.profileImageUrl) score += 15;
     return Math.min(100, score);
   };
 
@@ -227,7 +249,9 @@ export default function StudentProfilePage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Progress</span>
-                  <span className="font-semibold">{profileCompleteness()}%</span>
+                  <span className="font-semibold">
+                    {profileCompleteness()}%
+                  </span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
@@ -284,15 +308,24 @@ export default function StudentProfilePage() {
                 <div className="flex items-center gap-6">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-3xl overflow-hidden">
                     {formData.profileImageUrl ? (
-                      <img src={formData.profileImageUrl} alt={formData.name} className="w-full h-full object-cover" />
+                      <img
+                        src={formData.profileImageUrl}
+                        alt={formData.name}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      formData.name.split(" ").map((n) => n[0]).join("")
+                      formData.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
                     )}
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">{formData.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {formData.branch && <span className="capitalize">{formData.branch}</span>}
+                      {formData.branch && (
+                        <span className="capitalize">{formData.branch}</span>
+                      )}
                       {formData.cohort && <span> • {formData.cohort}</span>}
                     </p>
                     <Badge variant="secondary" className="mt-2 capitalize">
@@ -323,7 +356,11 @@ export default function StudentProfilePage() {
                     <MapPin className="h-4 w-4" />
                     Branch
                   </Label>
-                  <Input value={formData.branch} disabled className="capitalize" />
+                  <Input
+                    value={formData.branch}
+                    disabled
+                    className="capitalize"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Cohort</Label>
@@ -405,7 +442,11 @@ export default function StudentProfilePage() {
                 {formData.skills.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {formData.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="text-sm">
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-sm"
+                      >
                         {skill}
                         {isEditing && (
                           <button
@@ -439,7 +480,10 @@ export default function StudentProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="linkedinUrl" className="flex items-center gap-2">
+                <Label
+                  htmlFor="linkedinUrl"
+                  className="flex items-center gap-2"
+                >
                   <Linkedin className="h-4 w-4" />
                   LinkedIn URL
                 </Label>

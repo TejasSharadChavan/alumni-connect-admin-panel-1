@@ -1,51 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { users, sessions, activityLog } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import { users, sessions } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
+  console.log("🔐 Login API called");
+
   try {
     const body = await request.json();
     const { email, password } = body;
 
-    // Validate required fields
+    console.log("📧 Login attempt for:", email);
+
     if (!email || !password) {
+      console.log("❌ Missing email or password");
       return NextResponse.json(
-        { 
-          error: 'Email and password are required',
-          code: 'MISSING_FIELDS'
-        },
+        { error: "Email and password are required" },
         { status: 400 }
       );
     }
 
-    // Find user by email
-    const userResults = await db.select()
+    // Find user
+    const userResults = await db
+      .select()
       .from(users)
       .where(eq(users.email, email.toLowerCase().trim()))
       .limit(1);
 
     if (userResults.length === 0) {
+      console.log("❌ User not found");
       return NextResponse.json(
-        { 
-          error: 'Invalid credentials',
-          code: 'INVALID_CREDENTIALS'
-        },
+        { error: "Invalid credentials" },
         { status: 401 }
       );
     }
 
     const user = userResults[0];
+    console.log("✅ User found:", user.name, "Status:", user.status);
 
-    // Check user status before password verification
-    if (user.status !== 'active') {
+    // Check status
+    if (user.status !== "active" && user.status !== "approved") {
+      console.log("❌ User not active/approved");
       return NextResponse.json(
-        { 
-          error: `Account not active. Status: ${user.status}`,
-          code: 'ACCOUNT_INACTIVE'
-        },
+        { error: `Account not active. Status: ${user.status}` },
         { status: 403 }
       );
     }
@@ -54,72 +53,52 @@ export async function POST(request: NextRequest) {
     const passwordMatch = await bcrypt.compare(password, user.passwordHash);
 
     if (!passwordMatch) {
+      console.log("❌ Password mismatch");
       return NextResponse.json(
-        { 
-          error: 'Invalid credentials',
-          code: 'INVALID_CREDENTIALS'
-        },
+        { error: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    // Generate session token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    console.log("✅ Password verified");
+
+    // Generate token
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ).toISOString();
     const createdAt = new Date().toISOString();
 
-    // Extract IP address and user agent
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
-    const userAgent = request.headers.get('user-agent') || 'unknown';
+    // Create session
+    await db.insert(sessions).values({
+      userId: user.id,
+      token,
+      expiresAt,
+      createdAt,
+      ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      userAgent: request.headers.get("user-agent") || "unknown",
+    });
 
-    // Create session in database
-    const newSession = await db.insert(sessions)
-      .values({
-        userId: user.id,
-        token,
-        expiresAt,
-        createdAt,
-        ipAddress,
-        userAgent
-      })
-      .returning();
+    console.log("✅ Session created, returning success");
 
-    // Log login activity
-    await db.insert(activityLog)
-      .values({
-        userId: user.id,
+    // Return success
+    return NextResponse.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
         role: user.role,
-        action: 'login',
-        metadata: JSON.stringify({
-          loginTime: createdAt,
-          ipAddress
-        }),
-        timestamp: createdAt
-      });
-
-    // Return success response with token and user info
+        status: user.status,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Login error:", error);
     return NextResponse.json(
       {
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          status: user.status
-        }
-      },
-      { status: 200 }
-    );
-
-  } catch (error) {
-    console.error('POST /api/auth/login error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Internal server error: ' + (error instanceof Error ? error.message : 'Unknown error'),
-        code: 'SERVER_ERROR'
+        error:
+          "Login failed: " +
+          (error instanceof Error ? error.message : "Unknown"),
       },
       { status: 500 }
     );

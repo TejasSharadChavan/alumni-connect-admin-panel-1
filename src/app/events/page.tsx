@@ -1,16 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, MapPin, Users, Clock, Filter, Search, ChevronRight } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Filter,
+  Search,
+  ChevronRight,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 
 interface Event {
@@ -63,11 +83,16 @@ export default function EventsPage() {
       setLoading(true);
       const token = localStorage.getItem("auth_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
+
       const response = await fetch("/api/events", { headers });
       if (response.ok) {
         const data = await response.json();
-        setEvents(data.events || []);
+        // Map category to type for consistency
+        const eventsWithType = (data.events || []).map((event: any) => ({
+          ...event,
+          type: event.category || event.type || "general",
+        }));
+        setEvents(eventsWithType);
       }
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -165,8 +190,16 @@ export default function EventsPage() {
       {/* Header */}
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="shrink-0"
+            >
+              <ChevronRight className="h-5 w-5 rotate-180" />
+            </Button>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold flex items-center gap-2">
                 <Calendar className="h-8 w-8" />
                 Events & Workshops
@@ -242,18 +275,24 @@ export default function EventsPage() {
                         alt={event.title}
                         className="w-full h-full object-cover"
                       />
-                      <Badge className={`absolute top-3 right-3 ${getTypeColor(event.type)}`}>
+                      <Badge
+                        className={`absolute top-3 right-3 ${getTypeColor(event.type)}`}
+                      >
                         {event.type}
                       </Badge>
                     </div>
                   )}
                   <CardHeader>
                     {!event.imageUrl && (
-                      <Badge className={`w-fit mb-2 ${getTypeColor(event.type)}`}>
+                      <Badge
+                        className={`w-fit mb-2 ${getTypeColor(event.type)}`}
+                      >
                         {event.type}
                       </Badge>
                     )}
-                    <CardTitle className="line-clamp-2">{event.title}</CardTitle>
+                    <CardTitle className="line-clamp-2">
+                      {event.title}
+                    </CardTitle>
                     <CardDescription className="line-clamp-2">
                       {event.description}
                     </CardDescription>
@@ -275,11 +314,13 @@ export default function EventsPage() {
                       <div className="flex items-center gap-2 text-sm">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>
-                          {event.currentAttendees} / {event.maxAttendees} attendees
+                          {event.currentAttendees} / {event.maxAttendees}{" "}
+                          attendees
                         </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Organized by {event.organizerName} ({event.organizerRole})
+                        Organized by {event.organizerName} (
+                        {event.organizerRole})
                       </div>
                     </div>
 
