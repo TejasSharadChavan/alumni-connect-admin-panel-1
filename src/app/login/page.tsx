@@ -5,7 +5,14 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Loader2, GraduationCap, LogIn, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -44,14 +51,17 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
             <CardDescription className="text-base">
-              Sign in to access your Terna Engineering College Alumni Connect account
+              Sign in to access your Terna Engineering College AlumConnect
+              account
             </CardDescription>
           </CardHeader>
 
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -65,7 +75,9 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -85,14 +97,22 @@ export default function LoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={loading}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
             </CardContent>
 
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full h-11 text-base" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full h-11 text-base"
+                disabled={loading}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -107,18 +127,27 @@ export default function LoginPage() {
               </Button>
 
               <div className="text-center text-sm">
-                <span className="text-muted-foreground">Don't have an account? </span>
-                <Link href="/register" className="text-primary hover:underline font-medium">
+                <span className="text-muted-foreground">
+                  Don't have an account?{" "}
+                </span>
+                <Link
+                  href="/register"
+                  className="text-primary hover:underline font-medium"
+                >
                   Register here
                 </Link>
               </div>
 
               <div className="text-center">
                 <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
-                  💡 <strong>Demo Credentials (Password: Password@123):</strong><br />
-                  Student: aarav.sharma@terna.ac.in<br />
-                  Admin: dean@terna.ac.in<br />
-                  Faculty: prof.joshi@terna.ac.in<br />
+                  💡 <strong>Demo Credentials (Password: Password@123):</strong>
+                  <br />
+                  Student: aarav.sharma@terna.ac.in
+                  <br />
+                  Admin: dean@terna.ac.in
+                  <br />
+                  Faculty: prof.joshi@terna.ac.in
+                  <br />
                   Alumni: rahul.agarwal@gmail.com
                 </p>
               </div>

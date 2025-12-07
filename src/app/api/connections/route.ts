@@ -7,7 +7,7 @@ import {
   activityLog,
   notifications,
 } from "@/db/schema";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, inArray } from "drizzle-orm";
 
 async function getAuthenticatedUser(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -113,57 +113,68 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    const results = await Promise.all(
-      userConnections.map(async (connection) => {
-        const isRequester = connection.requesterId === user.id;
-        const otherUserId = isRequester
-          ? connection.responderId
-          : connection.requesterId;
+    // Get all unique responder IDs that need to be fetched
+    const responderIds = userConnections
+      .filter((conn) => conn.requesterId === user.id)
+      .map((conn) => conn.responderId);
 
-        let otherUserData;
-        if (isRequester) {
-          const responderData = await db
-            .select({
-              id: users.id,
-              name: users.name,
-              email: users.email,
-              role: users.role,
-              branch: users.branch,
-              cohort: users.cohort,
-              profileImageUrl: users.profileImageUrl,
-              headline: users.headline,
-            })
-            .from(users)
-            .where(eq(users.id, otherUserId))
-            .limit(1);
+    // Fetch all responders in a single query
+    let responderMap = new Map();
+    if (responderIds.length > 0) {
+      const responders = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: users.role,
+          branch: users.branch,
+          cohort: users.cohort,
+          profileImageUrl: users.profileImageUrl,
+          headline: users.headline,
+        })
+        .from(users)
+        .where(inArray(users.id, responderIds));
 
-          otherUserData = responderData[0];
-        } else {
-          otherUserData = {
-            id: connection.requesterId,
-            name: connection.requesterName,
-            email: connection.requesterEmail,
-            role: connection.requesterRole,
-            branch: connection.requesterBranch,
-            cohort: connection.requesterCohort,
-            profileImageUrl: connection.requesterProfileImageUrl,
-            headline: connection.requesterHeadline,
-          };
-        }
+      responders.forEach((responder) => {
+        responderMap.set(responder.id, responder);
+      });
+    }
 
-        return {
-          id: connection.id,
-          requesterId: connection.requesterId,
-          responderId: connection.responderId,
-          status: connection.status,
-          message: connection.message,
-          createdAt: connection.createdAt,
-          respondedAt: connection.respondedAt,
-          connectedUser: otherUserData,
-          isRequester,
+    // Map results without additional queries
+    const results = userConnections.map((connection) => {
+      const isRequester = connection.requesterId === user.id;
+      const otherUserId = isRequester
+        ? connection.responderId
+        : connection.requesterId;
+
+      let otherUserData;
+      if (isRequester) {
+        otherUserData = responderMap.get(otherUserId);
+      } else {
+        otherUserData = {
+          id: connection.requesterId,
+          name: connection.requesterName,
+          email: connection.requesterEmail,
+          role: connection.requesterRole,
+          branch: connection.requesterBranch,
+          cohort: connection.requesterCohort,
+          profileImageUrl: connection.requesterProfileImageUrl,
+          headline: connection.requesterHeadline,
         };
-      })
-    );
+      }
+
+      return {
+        id: connection.id,
+        requesterId: connection.requesterId,
+        responderId: connection.responderId,
+        status: connection.status,
+        message: connection.message,
+        createdAt: connection.createdAt,
+        respondedAt: connection.respondedAt,
+        connectedUser: otherUserData,
+        isRequester,
+      };
+    });
 
     await db.insert(activityLog).values({
       userId: user.id,

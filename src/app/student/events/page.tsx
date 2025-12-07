@@ -47,7 +47,9 @@ interface Event {
   imageUrl?: string;
   organizerName?: string;
   attendeeCount?: number;
+  rsvpCount?: number;
   hasRSVP?: boolean;
+  hasRSVPed?: boolean;
   status: string;
 }
 
@@ -196,7 +198,7 @@ export default function StudentEventsPage() {
   }
 
   const upcomingEvents = events.filter((e) => isEventUpcoming(e.startDate));
-  const myRSVPs = events.filter((e) => e.hasRSVP);
+  const myRSVPs = events.filter((e) => e.hasRSVP || e.hasRSVPed);
 
   return (
     <RoleLayout role="student">
@@ -390,16 +392,17 @@ export default function StudentEventsPage() {
                           {event.price}
                         </div>
                       )}
-                      {event.maxAttendees && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Users className="h-4 w-4" />
-                          {event.attendeeCount || 0} / {event.maxAttendees}{" "}
-                          attendees
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        {(event as any).rsvpCount || event.attendeeCount || 0}
+                        {event.maxAttendees
+                          ? ` / ${event.maxAttendees}`
+                          : ""}{" "}
+                        attendees
+                      </div>
                     </div>
 
-                    {event.hasRSVP ? (
+                    {event.hasRSVP || (event as any).hasRSVPed ? (
                       <Button className="w-full" disabled>
                         <Check className="h-4 w-4 mr-2" />
                         Already Registered
@@ -409,8 +412,8 @@ export default function StudentEventsPage() {
                         Event Ended
                       </Button>
                     ) : event.maxAttendees &&
-                      event.attendeeCount &&
-                      event.attendeeCount >= event.maxAttendees ? (
+                      ((event as any).rsvpCount || event.attendeeCount || 0) >=
+                        event.maxAttendees ? (
                       <Button className="w-full" variant="secondary" disabled>
                         Event Full
                       </Button>

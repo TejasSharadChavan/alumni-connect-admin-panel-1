@@ -1,17 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { events, users, rsvps, sessions, activityLog, notifications } from '@/db/schema';
-import { eq, and, gte, desc, sql, or } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import {
+  events,
+  users,
+  rsvps,
+  sessions,
+  activityLog,
+  notifications,
+} from "@/db/schema";
+import { eq, and, gte, desc, sql, or, inArray } from "drizzle-orm";
 
 // Helper function to get authenticated user from session
 async function getAuthenticatedUser(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
   }
 
   const token = authHeader.substring(7);
-  
+
   try {
     const sessionResult = await db
       .select()
@@ -25,7 +32,7 @@ async function getAuthenticatedUser(request: NextRequest) {
 
     const session = sessionResult[0];
     const expiresAt = new Date(session.expiresAt);
-    
+
     if (expiresAt < new Date()) {
       return null;
     }
@@ -42,13 +49,18 @@ async function getAuthenticatedUser(request: NextRequest) {
 
     return userResult[0];
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error("Authentication error:", error);
     return null;
   }
 }
 
 // Helper function to log activity
-async function logActivity(userId: number, role: string, action: string, metadata?: any) {
+async function logActivity(
+  userId: number,
+  role: string,
+  action: string,
+  metadata?: any
+) {
   try {
     await db.insert(activityLog).values({
       userId,
@@ -58,12 +70,18 @@ async function logActivity(userId: number, role: string, action: string, metadat
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Activity log error:', error);
+    console.error("Activity log error:", error);
   }
 }
 
 // Helper function to create notification
-async function createNotification(userId: number, type: string, title: string, message: string, relatedId?: string) {
+async function createNotification(
+  userId: number,
+  type: string,
+  title: string,
+  message: string,
+  relatedId?: string
+) {
   try {
     await db.insert(notifications).values({
       userId,
@@ -75,23 +93,27 @@ async function createNotification(userId: number, type: string, title: string, m
       createdAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Notification creation error:', error);
+    console.error("Notification creation error:", error);
   }
 }
 
 // Helper function to notify all admins
-async function notifyAllAdmins(title: string, message: string, relatedId?: string) {
+async function notifyAllAdmins(
+  title: string,
+  message: string,
+  relatedId?: string
+) {
   try {
     const admins = await db
       .select({ id: users.id })
       .from(users)
-      .where(eq(users.role, 'admin'));
+      .where(eq(users.role, "admin"));
 
     for (const admin of admins) {
-      await createNotification(admin.id, 'event', title, message, relatedId);
+      await createNotification(admin.id, "event", title, message, relatedId);
     }
   } catch (error) {
-    console.error('Admin notification error:', error);
+    console.error("Admin notification error:", error);
   }
 }
 
@@ -99,16 +121,16 @@ export async function GET(request: NextRequest) {
   try {
     // Make authentication optional for GET requests
     const user = await getAuthenticatedUser(request);
-    
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const branch = searchParams.get('branch');
-    const dateFilter = searchParams.get('date');
-    const statusParam = searchParams.get('status');
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 100);
-    const offset = parseInt(searchParams.get('offset') ?? '0');
 
-    const isAdmin = user?.role === 'admin';
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get("category");
+    const branch = searchParams.get("branch");
+    const dateFilter = searchParams.get("date");
+    const statusParam = searchParams.get("status");
+    const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 100);
+    const offset = parseInt(searchParams.get("offset") ?? "0");
+
+    const isAdmin = user?.role === "admin";
     const currentDate = new Date().toISOString();
 
     // Build where conditions
@@ -119,15 +141,24 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(events.status, statusParam));
     } else {
       // Public users and non-admin users only see approved events
-      conditions.push(eq(events.status, 'approved'));
+      conditions.push(eq(events.status, "approved"));
       conditions.push(gte(events.startDate, currentDate));
     }
 
     // Category filter
     if (category) {
-      const validCategories = ['workshop', 'webinar', 'meetup', 'conference', 'social'];
+      const validCategories = [
+        "workshop",
+        "webinar",
+        "meetup",
+        "conference",
+        "social",
+      ];
       if (!validCategories.includes(category)) {
-        return NextResponse.json({ error: 'Invalid category', code: 'INVALID_CATEGORY' }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid category", code: "INVALID_CATEGORY" },
+          { status: 400 }
+        );
       }
       conditions.push(eq(events.category, category));
     }
@@ -143,8 +174,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch events with organizer details
-    const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
-    
+    const whereCondition =
+      conditions.length > 0 ? and(...conditions) : undefined;
+
     const eventsList = await db
       .select({
         id: events.id,
@@ -179,56 +211,68 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // Get RSVP counts and user RSVP status for each event
-    const eventsWithCounts = await Promise.all(
-      eventsList.map(async (event) => {
-        const rsvpCountResult = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(rsvps)
-          .where(and(
-            eq(rsvps.eventId, event.id),
-            eq(rsvps.status, 'registered')
-          ));
+    // Get all event IDs for batch queries
+    const eventIds = eventsList.map((e) => e.id);
 
-        const rsvpCount = rsvpCountResult[0]?.count || 0;
-
-        // Check if current user has RSVPed
-        let hasRSVPed = false;
-        if (user) {
-          const userRsvp = await db
-            .select()
+    // Batch fetch RSVP counts for all events
+    const rsvpCounts =
+      eventIds.length > 0
+        ? await db
+            .select({
+              eventId: rsvps.eventId,
+              count: sql<number>`count(*)`,
+            })
             .from(rsvps)
-            .where(and(
-              eq(rsvps.eventId, event.id),
-              eq(rsvps.userId, user.id)
-            ))
-            .limit(1);
-          hasRSVPed = userRsvp.length > 0;
-        }
+            .where(
+              and(
+                inArray(rsvps.eventId, eventIds),
+                eq(rsvps.status, "registered")
+              )
+            )
+            .groupBy(rsvps.eventId)
+        : [];
 
-        return {
-          ...event,
-          rsvpCount,
-          hasRSVPed,
-        };
-      })
+    const rsvpCountMap = new Map(
+      rsvpCounts.map((r) => [r.eventId, Number(r.count)])
     );
+
+    // Batch fetch user RSVPs if authenticated
+    let userRsvpMap = new Map();
+    if (user && eventIds.length > 0) {
+      const userRsvps = await db
+        .select({ eventId: rsvps.eventId })
+        .from(rsvps)
+        .where(
+          and(inArray(rsvps.eventId, eventIds), eq(rsvps.userId, user.id))
+        );
+      userRsvps.forEach((r) => userRsvpMap.set(r.eventId, true));
+    }
+
+    // Map results without additional queries
+    const eventsWithCounts = eventsList.map((event) => ({
+      ...event,
+      rsvpCount: rsvpCountMap.get(event.id) || 0,
+      hasRSVPed: userRsvpMap.has(event.id),
+    }));
 
     // Log activity only if user is authenticated
     if (user) {
-      await logActivity(user.id, user.role, 'view_events', { 
-        category, 
-        branch, 
+      await logActivity(user.id, user.role, "view_events", {
+        category,
+        branch,
         date: dateFilter,
         status: statusParam,
-        count: eventsWithCounts.length 
+        count: eventsWithCounts.length,
       });
     }
 
     return NextResponse.json({ events: eventsWithCounts }, { status: 200 });
   } catch (error) {
-    console.error('GET events error:', error);
-    return NextResponse.json({ error: 'Internal server error: ' + (error as Error).message }, { status: 500 });
+    console.error("GET events error:", error);
+    return NextResponse.json(
+      { error: "Internal server error: " + (error as Error).message },
+      { status: 500 }
+    );
   }
 }
 
@@ -236,22 +280,31 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser(request);
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required', code: 'UNAUTHORIZED' }, { status: 401 });
+      return NextResponse.json(
+        { error: "Authentication required", code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
     }
 
     // Validate user role
-    if (user.role === 'student') {
-      return NextResponse.json({ 
-        error: 'Students cannot create events', 
-        code: 'FORBIDDEN_ROLE' 
-      }, { status: 403 });
+    if (user.role === "student") {
+      return NextResponse.json(
+        {
+          error: "Students cannot create events",
+          code: "FORBIDDEN_ROLE",
+        },
+        { status: 403 }
+      );
     }
 
-    if (!['alumni', 'faculty', 'admin'].includes(user.role)) {
-      return NextResponse.json({ 
-        error: 'Only alumni, faculty, and admin can create events', 
-        code: 'FORBIDDEN_ROLE' 
-      }, { status: 403 });
+    if (!["alumni", "faculty", "admin"].includes(user.role)) {
+      return NextResponse.json(
+        {
+          error: "Only alumni, faculty, and admin can create events",
+          code: "FORBIDDEN_ROLE",
+        },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -270,20 +323,40 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!title || !description || !location || !startDate || !endDate || !category) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: title, description, location, startDate, endDate, category', 
-        code: 'MISSING_REQUIRED_FIELDS' 
-      }, { status: 400 });
+    if (
+      !title ||
+      !description ||
+      !location ||
+      !startDate ||
+      !endDate ||
+      !category
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Missing required fields: title, description, location, startDate, endDate, category",
+          code: "MISSING_REQUIRED_FIELDS",
+        },
+        { status: 400 }
+      );
     }
 
     // Validate category
-    const validCategories = ['workshop', 'webinar', 'meetup', 'conference', 'social'];
+    const validCategories = [
+      "workshop",
+      "webinar",
+      "meetup",
+      "conference",
+      "social",
+    ];
     if (!validCategories.includes(category)) {
-      return NextResponse.json({ 
-        error: `Invalid category. Must be one of: ${validCategories.join(', ')}`, 
-        code: 'INVALID_CATEGORY' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: `Invalid category. Must be one of: ${validCategories.join(", ")}`,
+          code: "INVALID_CATEGORY",
+        },
+        { status: 400 }
+      );
     }
 
     // Validate dates
@@ -292,36 +365,48 @@ export async function POST(request: NextRequest) {
     const eventEndDate = new Date(endDate);
 
     if (eventStartDate <= currentDate) {
-      return NextResponse.json({ 
-        error: 'Start date must be in the future', 
-        code: 'INVALID_START_DATE' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "Start date must be in the future",
+          code: "INVALID_START_DATE",
+        },
+        { status: 400 }
+      );
     }
 
     if (eventEndDate <= currentDate) {
-      return NextResponse.json({ 
-        error: 'End date must be in the future', 
-        code: 'INVALID_END_DATE' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "End date must be in the future",
+          code: "INVALID_END_DATE",
+        },
+        { status: 400 }
+      );
     }
 
     if (eventEndDate <= eventStartDate) {
-      return NextResponse.json({ 
-        error: 'End date must be after start date', 
-        code: 'INVALID_DATE_RANGE' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "End date must be after start date",
+          code: "INVALID_DATE_RANGE",
+        },
+        { status: 400 }
+      );
     }
 
     // Validate paid event requirements
     if (isPaid === true && !price) {
-      return NextResponse.json({ 
-        error: 'Price is required for paid events', 
-        code: 'MISSING_PRICE' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "Price is required for paid events",
+          code: "MISSING_PRICE",
+        },
+        { status: 400 }
+      );
     }
 
     // Determine status based on role
-    const eventStatus = user.role === 'admin' ? 'approved' : 'pending';
+    const eventStatus = user.role === "admin" ? "approved" : "pending";
 
     // Create event
     const newEvent = await db
@@ -340,8 +425,8 @@ export async function POST(request: NextRequest) {
         imageUrl: imageUrl ? imageUrl.trim() : null,
         status: eventStatus,
         branch: branch ? branch.trim() : null,
-        approvedBy: user.role === 'admin' ? user.id : null,
-        approvedAt: user.role === 'admin' ? new Date().toISOString() : null,
+        approvedBy: user.role === "admin" ? user.id : null,
+        approvedAt: user.role === "admin" ? new Date().toISOString() : null,
         createdAt: new Date().toISOString(),
       })
       .returning();
@@ -349,7 +434,7 @@ export async function POST(request: NextRequest) {
     const createdEvent = newEvent[0];
 
     // Log activity
-    await logActivity(user.id, user.role, 'create_event', { 
+    await logActivity(user.id, user.role, "create_event", {
       eventId: createdEvent.id,
       status: eventStatus,
       title: createdEvent.title,
@@ -357,9 +442,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Notify admins if event is pending approval
-    if (eventStatus === 'pending') {
+    if (eventStatus === "pending") {
       await notifyAllAdmins(
-        'New Event Pending Approval',
+        "New Event Pending Approval",
         `${user.name} has created a new event "${title}" that requires approval.`,
         createdEvent.id.toString()
       );
@@ -367,7 +452,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(createdEvent, { status: 201 });
   } catch (error) {
-    console.error('POST events error:', error);
-    return NextResponse.json({ error: 'Internal server error: ' + (error as Error).message }, { status: 500 });
+    console.error("POST events error:", error);
+    return NextResponse.json(
+      { error: "Internal server error: " + (error as Error).message },
+      { status: 500 }
+    );
   }
 }

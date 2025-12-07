@@ -75,24 +75,29 @@ export default function StudentDashboard() {
       const token = localStorage.getItem("auth_token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Fetch connections
-      const connectionsRes = await fetch("/api/connections", { headers });
-      const connectionsData = await connectionsRes.json();
+      // Fetch all data in parallel for faster loading
+      const [connectionsRes, applicationsRes, eventsRes, suggestionsRes] =
+        await Promise.all([
+          fetch("/api/connections", { headers }),
+          fetch("/api/jobs/applications", { headers }),
+          fetch("/api/events", { headers }),
+          fetch("/api/connections/suggestions", { headers }),
+        ]);
+
+      // Parse all responses in parallel
+      const [connectionsData, applicationsData, eventsData, suggestionsData] =
+        await Promise.all([
+          connectionsRes.json(),
+          applicationsRes.json(),
+          eventsRes.json(),
+          suggestionsRes.json(),
+        ]);
+
       const acceptedConnections =
         connectionsData.connections?.filter(
           (c: any) => c.status === "accepted"
         ) || [];
-
-      // Fetch job applications
-      const applicationsRes = await fetch("/api/jobs/applications", {
-        headers,
-      });
-      const applicationsData = await applicationsRes.json();
       const myApplications = applicationsData.applications || [];
-
-      // Fetch events
-      const eventsRes = await fetch("/api/events", { headers });
-      const eventsData = await eventsRes.json();
       const allEvents = eventsData.events || [];
       const now = new Date();
       const upcomingEvents = allEvents.filter(
@@ -107,11 +112,7 @@ export default function StudentDashboard() {
         skillsEndorsed: user.skills?.length || 0,
       });
 
-      // Fetch connection suggestions for recommended mentors
-      const suggestionsRes = await fetch("/api/connections/suggestions", {
-        headers,
-      });
-      const suggestionsData = await suggestionsRes.json();
+      // Set recommended mentors
       const alumniSuggestions =
         suggestionsData.suggestions
           ?.filter((s: any) => s.role === "alumni")
@@ -124,21 +125,19 @@ export default function StudentDashboard() {
       // Recent applications
       myApplications.slice(0, 2).forEach((app: any) => {
         activities.push({
-          text: `Applied for ${app.jobTitle || "a job position"}`,
+          text: `Applied for ${app.jobTitle || app.job?.title || "a job position"}`,
           time: formatTimeAgo(app.appliedAt),
           icon: Briefcase,
           type: "application",
         });
       });
 
-      // Recent event RSVPs
-      const rsvpsRes = await fetch("/api/events?myRsvps=true", { headers });
-      const rsvpsData = await rsvpsRes.json();
-      const myRsvps = rsvpsData.events?.slice(0, 1) || [];
+      // Recent event RSVPs (from events that user has RSVPed to)
+      const myRsvps = allEvents.filter((e: any) => e.hasRSVPed).slice(0, 1);
       myRsvps.forEach((event: any) => {
         activities.push({
           text: `Registered for ${event.title}`,
-          time: formatTimeAgo(event.rsvpedAt),
+          time: formatTimeAgo(event.createdAt),
           icon: Calendar,
           type: "event",
         });
@@ -147,7 +146,7 @@ export default function StudentDashboard() {
       // Recent connections
       acceptedConnections.slice(0, 1).forEach((conn: any) => {
         activities.push({
-          text: `Connected with ${conn.name}`,
+          text: `Connected with ${conn.connectedUser?.name || "someone"}`,
           time: formatTimeAgo(conn.respondedAt),
           icon: Users,
           type: "connection",

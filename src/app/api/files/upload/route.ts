@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     let uploadFolder = "resumes";
     let maxSize = 5 * 1024 * 1024; // 5MB default
 
-    if (type === "message-image") {
+    if (type === "message-image" || type === "profile-image") {
       allowedTypes = [
         "image/jpeg",
         "image/jpg",
@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
         "image/gif",
         "image/webp",
       ];
-      uploadFolder = "message-images";
+      uploadFolder =
+        type === "profile-image" ? "profile-images" : "message-images";
     } else {
       // Resume upload
       allowedTypes = [
@@ -73,18 +74,25 @@ export async function POST(request: NextRequest) {
     // Generate unique filename
     const ext = file.name.split(".").pop();
     const filename = `${randomUUID()}-${Date.now()}.${ext}`;
-    const filepath = join(
-      process.cwd(),
-      "public",
-      "uploads",
-      uploadFolder,
-      filename
-    );
+
+    // Ensure upload directory exists
+    const uploadDir = join(process.cwd(), "public", "uploads", uploadFolder);
+    const filepath = join(uploadDir, filename);
+
+    // Create directory if it doesn't exist
+    const { mkdir } = await import("fs/promises");
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch (err) {
+      console.log("Directory already exists or created:", uploadDir);
+    }
 
     // Save file
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filepath, buffer);
+
+    console.log("File uploaded successfully:", filepath);
 
     const fileUrl = `/uploads/${uploadFolder}/${filename}`;
 
@@ -97,11 +105,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("File upload error:", error);
+    console.error("Error stack:", (error as Error).stack);
     return NextResponse.json(
       {
         success: false,
         error: "Upload failed",
         details: (error as Error).message,
+        stack:
+          process.env.NODE_ENV === "development"
+            ? (error as Error).stack
+            : undefined,
       },
       { status: 500 }
     );

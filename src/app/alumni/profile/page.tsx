@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +16,18 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { User, Mail, Briefcase, GraduationCap, MapPin, Calendar, Edit2, Save, X, Upload } from "lucide-react";
+import {
+  User,
+  Mail,
+  Briefcase,
+  GraduationCap,
+  MapPin,
+  Calendar,
+  Edit2,
+  Save,
+  X,
+  Upload,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -53,10 +70,10 @@ export default function AlumniProfilePage() {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Parse skills if it's a string
         let parsedSkills = data.user.skills || [];
-        if (typeof parsedSkills === 'string') {
+        if (typeof parsedSkills === "string") {
           try {
             parsedSkills = JSON.parse(parsedSkills);
           } catch (e) {
@@ -67,7 +84,7 @@ export default function AlumniProfilePage() {
         if (!Array.isArray(parsedSkills)) {
           parsedSkills = [];
         }
-        
+
         setProfileData({
           name: data.user.name || "",
           email: data.user.email || "",
@@ -133,20 +150,20 @@ export default function AlumniProfilePage() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size should be less than 5MB");
+    // Validate file size (max 2MB for base64)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image size should be less than 2MB");
       return;
     }
 
     try {
       setUploadingImage(true);
-      
-      // Convert to base64
+
+      // Convert to base64 (simpler, always works)
       const reader = new FileReader();
       reader.onload = async (event) => {
         const imageUrl = event.target?.result as string;
-        
+
         // Update profile with new image
         const token = localStorage.getItem("auth_token");
         const response = await fetch(`/api/users/${user?.id}`, {
@@ -160,18 +177,20 @@ export default function AlumniProfilePage() {
 
         if (response.ok) {
           setProfileData((prev) => ({ ...prev, profileImageUrl: imageUrl }));
-          toast.success("Profile image updated");
+          toast.success("Profile image updated successfully!");
+          // Refresh to update avatar in header
+          setTimeout(() => window.location.reload(), 500);
         } else {
           toast.error("Failed to update profile image");
         }
         setUploadingImage(false);
       };
-      
+
       reader.onerror = () => {
         toast.error("Failed to read image file");
         setUploadingImage(false);
       };
-      
+
       reader.readAsDataURL(file);
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -277,9 +296,13 @@ export default function AlumniProfilePage() {
               )}
               <div className="text-center">
                 <h3 className="font-semibold text-lg">{profileData.name}</h3>
-                <p className="text-sm text-muted-foreground">{profileData.currentPosition}</p>
+                <p className="text-sm text-muted-foreground">
+                  {profileData.currentPosition}
+                </p>
                 {profileData.currentCompany && (
-                  <p className="text-sm text-muted-foreground">@ {profileData.currentCompany}</p>
+                  <p className="text-sm text-muted-foreground">
+                    @ {profileData.currentCompany}
+                  </p>
                 )}
               </div>
               <div className="w-full space-y-2 text-sm">
@@ -308,7 +331,9 @@ export default function AlumniProfilePage() {
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
               <CardDescription>
-                {editing ? "Update your professional information" : "Your professional details"}
+                {editing
+                  ? "Update your professional information"
+                  : "Your professional details"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -355,7 +380,10 @@ export default function AlumniProfilePage() {
                     id="graduationYear"
                     value={profileData.graduationYear}
                     onChange={(e) =>
-                      setProfileData({ ...profileData, graduationYear: e.target.value })
+                      setProfileData({
+                        ...profileData,
+                        graduationYear: e.target.value,
+                      })
                     }
                     disabled={!editing}
                   />
@@ -369,7 +397,10 @@ export default function AlumniProfilePage() {
                     id="currentCompany"
                     value={profileData.currentCompany}
                     onChange={(e) =>
-                      setProfileData({ ...profileData, currentCompany: e.target.value })
+                      setProfileData({
+                        ...profileData,
+                        currentCompany: e.target.value,
+                      })
                     }
                     disabled={!editing}
                   />
@@ -380,7 +411,10 @@ export default function AlumniProfilePage() {
                     id="currentPosition"
                     value={profileData.currentPosition}
                     onChange={(e) =>
-                      setProfileData({ ...profileData, currentPosition: e.target.value })
+                      setProfileData({
+                        ...profileData,
+                        currentPosition: e.target.value,
+                      })
                     }
                     disabled={!editing}
                   />
@@ -420,7 +454,10 @@ export default function AlumniProfilePage() {
                     id="linkedin"
                     value={profileData.linkedin}
                     onChange={(e) =>
-                      setProfileData({ ...profileData, linkedin: e.target.value })
+                      setProfileData({
+                        ...profileData,
+                        linkedin: e.target.value,
+                      })
                     }
                     disabled={!editing}
                     placeholder="https://linkedin.com/in/..."
@@ -440,18 +477,19 @@ export default function AlumniProfilePage() {
                 </div>
               </div>
 
-              {Array.isArray(profileData.skills) && profileData.skills.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Skills</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {profileData.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary">
-                        {skill}
-                      </Badge>
-                    ))}
+              {Array.isArray(profileData.skills) &&
+                profileData.skills.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Skills</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {profileData.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </CardContent>
           </Card>
         </div>

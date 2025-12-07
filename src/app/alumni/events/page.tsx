@@ -40,11 +40,15 @@ interface Event {
   type: string;
   location: string;
   date: string;
+  startDate?: string;
+  endDate?: string;
   maxAttendees?: number;
-  currentAttendees: number;
+  currentAttendees?: number;
+  rsvpCount?: number;
   organizerName: string;
   status: string;
   userRsvpStatus?: string;
+  hasRSVPed?: boolean;
   createdAt: string;
 }
 
@@ -301,7 +305,7 @@ export default function AlumniEventsPage() {
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Users className="h-4 w-4" />
                         <span>
-                          {event.currentAttendees}
+                          {event.rsvpCount || event.currentAttendees || 0}
                           {event.maxAttendees
                             ? ` / ${event.maxAttendees}`
                             : ""}{" "}
@@ -314,8 +318,9 @@ export default function AlumniEventsPage() {
                       <p className="text-sm text-muted-foreground">
                         By {event.organizerName}
                       </p>
-                      {event.userRsvpStatus === "going" ? (
+                      {event.userRsvpStatus === "going" || event.hasRSVPed ? (
                         <Button variant="outline" disabled>
+                          <CheckCircle className="h-4 w-4 mr-2" />
                           Already RSVP'd
                         </Button>
                       ) : (
@@ -323,12 +328,15 @@ export default function AlumniEventsPage() {
                           onClick={() => handleRSVP(event.id)}
                           disabled={
                             event.maxAttendees
-                              ? event.currentAttendees >= event.maxAttendees
+                              ? (event.rsvpCount ||
+                                  event.currentAttendees ||
+                                  0) >= event.maxAttendees
                               : false
                           }
                         >
                           {event.maxAttendees &&
-                          event.currentAttendees >= event.maxAttendees
+                          (event.rsvpCount || event.currentAttendees || 0) >=
+                            event.maxAttendees
                             ? "Full"
                             : "RSVP"}
                         </Button>

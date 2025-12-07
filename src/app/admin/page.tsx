@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoleLayout } from "@/components/layout/role-layout";
 import { Users, UserCheck, Clock, GraduationCap } from "lucide-react";
@@ -26,23 +32,36 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      
-      const pendingResponse = await fetch("/api/admin/pending-users?status=pending", {
+
+      // Fetch all stats from optimized API endpoint
+      const response = await fetch("/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      const pendingData = await pendingResponse.json();
-      const pendingCount = Array.isArray(pendingData.pendingUsers) ? pendingData.pendingUsers.length : 0;
 
-      setStats({
-        totalUsers: 7,
-        pendingApprovals: pendingCount,
-        students: 3,
-        alumni: 2,
-        faculty: 1,
-      });
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.stats);
+      } else {
+        console.error("Failed to fetch stats:", response.statusText);
+        // Fallback to default values
+        setStats({
+          totalUsers: 0,
+          pendingApprovals: 0,
+          students: 0,
+          alumni: 0,
+          faculty: 0,
+        });
+      }
     } catch (error) {
       console.error("Error fetching stats:", error);
+      // Fallback to default values
+      setStats({
+        totalUsers: 0,
+        pendingApprovals: 0,
+        students: 0,
+        alumni: 0,
+        faculty: 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -122,14 +141,18 @@ export default function AdminDashboard() {
             >
               <Card className="hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {stat.title}
+                  </CardTitle>
                   <div className={`p-2 rounded-lg ${stat.bgColor}`}>
                     <stat.icon className={`h-4 w-4 ${stat.color}`} />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stat.description}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -171,7 +194,9 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="font-medium">Manage Users</p>
-                  <p className="text-sm text-muted-foreground">View all users</p>
+                  <p className="text-sm text-muted-foreground">
+                    View all users
+                  </p>
                 </div>
               </a>
             </CardContent>

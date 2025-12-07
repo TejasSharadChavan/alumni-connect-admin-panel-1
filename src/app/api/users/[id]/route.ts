@@ -76,6 +76,11 @@ function sanitizeUser(user: any, includeAllFields: boolean = false) {
 
 // Helper function to validate URL format
 function isValidUrl(urlString: string): boolean {
+  // Allow base64 data URLs for images
+  if (urlString.startsWith("data:image/")) {
+    return true;
+  }
+
   try {
     const url = new URL(urlString);
     return url.protocol === "http:" || url.protocol === "https:";
@@ -216,6 +221,7 @@ export async function PUT(request: NextRequest) {
       "linkedinUrl",
       "githubUrl",
       "phone",
+      "department", // Allow users to update their own department
     ];
 
     // Admin-only updatable fields
@@ -224,7 +230,6 @@ export async function PUT(request: NextRequest) {
       "status",
       "branch",
       "cohort",
-      "department",
       "yearOfPassing",
       "email",
     ];

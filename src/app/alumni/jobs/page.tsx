@@ -286,16 +286,11 @@ export default function AlumniJobsPage() {
                       <p className="text-sm text-muted-foreground">
                         Posted by {job.postedByName}
                       </p>
-                      <div className="flex gap-2">
-                        <Link href={`/alumni/jobs/${job.id}/applicants`}>
-                          <Button variant="outline" size="sm">
-                            View Applicants
-                          </Button>
-                        </Link>
-                        <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/alumni/jobs/${job.id}`}>
                           View Details
-                        </Button>
-                      </div>
+                        </Link>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

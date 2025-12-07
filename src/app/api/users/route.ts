@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    
+
     // Get current user from token
     const { sessions } = await import("@/db/schema");
     const [session] = await db
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     // Build query conditions
     let conditions: any[] = [
       ne(users.id, currentUser.id), // Exclude current user
-      eq(users.status, "active"), // Only active users
+      or(eq(users.status, "active"), eq(users.status, "approved")), // Active or approved users
     ];
 
     if (role && role !== "all") {

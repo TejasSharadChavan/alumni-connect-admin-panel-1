@@ -117,12 +117,8 @@ export default function StudentMentorshipPage() {
       const token = localStorage.getItem("auth_token");
       if (!token) return;
 
-      const [mentorsRes, requestsRes, sessionsRes] = await Promise.all([
+      const [mentorsRes, requestsRes] = await Promise.all([
         fetch("/api/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch("/api/mentorship/request", {
-          method: "GET",
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch("/api/mentorship", {
@@ -149,12 +145,12 @@ export default function StudentMentorshipPage() {
       if (requestsRes.ok) {
         const requestsData = await requestsRes.json();
         setRequests(requestsData.requests || []);
+      } else {
+        console.error("Failed to fetch requests:", await requestsRes.text());
       }
 
-      if (sessionsRes.ok) {
-        const sessionsData = await sessionsRes.json();
-        setSessions(sessionsData.sessions || []);
-      }
+      // TODO: Fetch sessions from a separate endpoint when implemented
+      setSessions([]);
     } catch (error) {
       console.error("Failed to fetch mentorship data:", error);
       toast.error("Failed to load mentorship data");

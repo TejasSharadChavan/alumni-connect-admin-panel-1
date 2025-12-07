@@ -36,6 +36,7 @@ import {
   TrendingUp,
   Shield,
   DollarSign,
+  Target,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -63,8 +64,8 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll for new notifications every 10 seconds for faster updates
-    const interval = setInterval(fetchNotifications, 10000);
+    // Poll for new notifications every 60 seconds (reduced from 10s to ease database load)
+    const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -133,7 +134,11 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
       { icon: Users, label: "User Approvals", href: "/admin/approvals" },
       { icon: Users, label: "Manage Users", href: "/admin/users" },
       { icon: Shield, label: "Content Moderation", href: "/admin/content" },
-      { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+      {
+        icon: BarChart3,
+        label: "Platform Analytics",
+        href: "/admin/platform-analytics",
+      },
       { icon: GraduationCap, label: "Students", href: "/admin/students" },
       { icon: UserCircle, label: "Alumni", href: "/admin/alumni" },
       { icon: Briefcase, label: "Jobs", href: "/admin/jobs" },
@@ -151,17 +156,29 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
       { icon: Briefcase, label: "Jobs", href: "/student/jobs" },
       { icon: Calendar, label: "Events", href: "/student/events" },
       { icon: GraduationCap, label: "Mentorship", href: "/student/mentorship" },
+      { icon: Target, label: "Skill Gap", href: "/student/skill-gap" },
       { icon: FolderKanban, label: "Projects", href: "/student/projects" },
       { icon: MessageSquare, label: "Messages", href: "/student/messages" },
       { icon: UserCircle, label: "Profile", href: "/student/profile" },
     ],
     alumni: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/alumni" },
+      {
+        icon: BarChart3,
+        label: "Impact Analytics",
+        href: "/alumni/analytics-dashboard",
+      },
+      { icon: Users, label: "Student Engagement", href: "/alumni/analytics" },
       { icon: FileText, label: "Feed", href: "/feed" },
       { icon: Users, label: "Network", href: "/alumni/network" },
       { icon: Briefcase, label: "Jobs", href: "/alumni/jobs" },
       { icon: Calendar, label: "Events", href: "/alumni/events" },
       { icon: GraduationCap, label: "Mentorship", href: "/alumni/mentorship" },
+      {
+        icon: TrendingUp,
+        label: "Industry Skills",
+        href: "/alumni/industry-skills",
+      },
       { icon: Heart, label: "Donations", href: "/alumni/donations" },
       { icon: MessageSquare, label: "Messages", href: "/alumni/messages" },
       { icon: UserCircle, label: "Profile", href: "/alumni/profile" },
@@ -202,7 +219,7 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
             <Link href={`/${role}`} className="flex items-center gap-2">
               <GraduationCap className="h-6 w-6 text-primary" />
               <span className="font-bold text-lg hidden sm:inline-block">
-                Alumni Connect
+                AlumConnect
               </span>
             </Link>
             <Badge
@@ -341,8 +358,13 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:border-r lg:bg-muted/30">
           <nav className="flex-1 space-y-1 p-4">
             {navItems.map((item) => {
+              // Fix: Only match exact path or child routes, but not parent routes
+              // For dashboard (/alumni), only match exactly /alumni
+              // For other routes, match /alumni/analytics or /alumni/analytics/*
               const isActive =
-                pathname === item.href || pathname.startsWith(item.href + "/");
+                pathname === item.href ||
+                (item.href !== `/${role}` &&
+                  pathname.startsWith(item.href + "/"));
               return (
                 <Link
                   key={item.href}
@@ -382,14 +404,16 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
                 <div className="flex h-16 items-center border-b px-4">
                   <Link href={`/${role}`} className="flex items-center gap-2">
                     <GraduationCap className="h-6 w-6 text-primary" />
-                    <span className="font-bold text-lg">Alumni Connect</span>
+                    <span className="font-bold text-lg">AlumConnect</span>
                   </Link>
                 </div>
                 <nav className="flex-1 space-y-1 p-4">
                   {navItems.map((item) => {
+                    // Fix: Only match exact path or child routes, but not parent routes
                     const isActive =
                       pathname === item.href ||
-                      pathname.startsWith(item.href + "/");
+                      (item.href !== `/${role}` &&
+                        pathname.startsWith(item.href + "/"));
                     return (
                       <Link
                         key={item.href}

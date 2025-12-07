@@ -83,7 +83,7 @@ export default function StudentLayout({
                 className="flex items-center gap-2 font-semibold"
               >
                 <GraduationCap className="h-6 w-6 text-primary" />
-                <span className="hidden sm:inline-block">Alumni Connect</span>
+                <span className="hidden sm:inline-block">AlumConnect</span>
               </Link>
             </div>
 

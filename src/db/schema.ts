@@ -560,3 +560,37 @@ export const referralUsage = sqliteTable("referral_usage", {
   applicationId: integer("application_id").references(() => applications.id),
   usedAt: text("used_at").notNull(),
 });
+
+// Industry Skills - Alumni post current industry-required skills
+export const industrySkills = sqliteTable("industry_skills", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  postedBy: integer("posted_by")
+    .notNull()
+    .references(() => users.id),
+  skillName: text("skill_name").notNull(),
+  category: text("category").notNull(), // 'technical', 'soft_skill', 'tool', 'framework', 'language'
+  industry: text("industry").notNull(), // 'software', 'data_science', 'design', 'marketing', etc.
+  demandLevel: text("demand_level").notNull(), // 'high', 'medium', 'low'
+  description: text("description"),
+  relatedSkills: text("related_skills", { mode: "json" }), // JSON array
+  averageSalaryImpact: text("average_salary_impact"), // e.g., "+15%", "$10k-20k"
+  learningResources: text("learning_resources", { mode: "json" }), // JSON array of URLs
+  upvotes: integer("upvotes").default(0),
+  downvotes: integer("downvotes").default(0),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+// Industry Skill Votes - Track who voted on skills
+export const industrySkillVotes = sqliteTable("industry_skill_votes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  skillId: integer("skill_id")
+    .notNull()
+    .references(() => industrySkills.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  voteType: text("vote_type").notNull(), // 'upvote', 'downvote'
+  createdAt: text("created_at").notNull(),
+});

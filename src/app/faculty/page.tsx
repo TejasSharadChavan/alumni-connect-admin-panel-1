@@ -1,13 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Users, Calendar, FileCheck, TrendingUp, BarChart3, FileText, ArrowRight } from "lucide-react";
+import {
+  Users,
+  Calendar,
+  FileCheck,
+  TrendingUp,
+  BarChart3,
+  FileText,
+  ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -43,7 +57,9 @@ export default function FacultyDashboard() {
     upcomingEvents: 0,
     studentEngagement: "0%",
   });
-  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>(
+    []
+  );
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
@@ -58,19 +74,28 @@ export default function FacultyDashboard() {
       const token = localStorage.getItem("auth_token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Fetch users to count students in department
-      const usersRes = await fetch("/api/users", { headers });
-      const usersData = await usersRes.json();
-      const students = usersData.users?.filter((u: any) => 
-        u.role === "student" && u.branch === user.branch
-      ) || [];
+      // Fetch all data in parallel for faster loading
+      const [usersRes, eventsRes] = await Promise.all([
+        fetch("/api/users?role=student", { headers }).catch(() => null),
+        fetch("/api/events", { headers }).catch(() => null),
+      ]);
 
-      // Fetch events
-      const eventsRes = await fetch("/api/events", { headers });
-      const eventsData = await eventsRes.json();
+      // Parse responses in parallel
+      const [usersData, eventsData] = await Promise.all([
+        usersRes?.ok ? usersRes.json() : { users: [] },
+        eventsRes?.ok ? eventsRes.json() : { events: [] },
+      ]);
+
+      const students =
+        usersData.users?.filter(
+          (u: any) => u.role === "student" && u.branch === user.branch
+        ) || [];
+
       const allEvents = eventsData.events || [];
       const now = new Date();
-      const upcomingEvents = allEvents.filter((e: any) => new Date(e.startDate) > now);
+      const upcomingEvents = allEvents.filter(
+        (e: any) => new Date(e.startDate) > now
+      );
 
       // Placeholder for pending project approvals (would need a specific endpoint)
       const pendingProjectApprovals = 0;
@@ -104,7 +129,6 @@ export default function FacultyDashboard() {
       });
 
       setRecentActivities(activities.slice(0, 3));
-
     } catch (error) {
       console.error("Error fetching faculty dashboard data:", error);
       toast.error("Failed to load dashboard data");
@@ -115,7 +139,7 @@ export default function FacultyDashboard() {
 
   const formatTimeAgo = (dateString: string) => {
     if (!dateString) return "Recently";
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -123,9 +147,12 @@ export default function FacultyDashboard() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
-    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
-    if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    if (diffMins < 60)
+      return `${diffMins} ${diffMins === 1 ? "minute" : "minutes"} ago`;
+    if (diffHours < 24)
+      return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+    if (diffDays < 7)
+      return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
     return date.toLocaleDateString();
   };
 
@@ -227,7 +254,16 @@ export default function FacultyDashboard() {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.name?.split(' ')[1] ? user?.name?.split(' ')[0] + ' ' + user?.name?.split(' ')[1]?.charAt(0) + '.' : user?.name}! 👨‍🏫</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Welcome back,{" "}
+              {user?.name?.split(" ")[1]
+                ? user?.name?.split(" ")[0] +
+                  " " +
+                  user?.name?.split(" ")[1]?.charAt(0) +
+                  "."
+                : user?.name}
+              ! 👨‍🏫
+            </h1>
             <p className="text-muted-foreground mt-2">
               Overview of your department and student activities
             </p>
@@ -245,14 +281,18 @@ export default function FacultyDashboard() {
             >
               <Card className="hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {stat.title}
+                  </CardTitle>
                   <div className={`p-2 rounded-lg ${stat.bgColor}`}>
                     <stat.icon className={`h-4 w-4 ${stat.color}`} />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stat.description}
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -283,7 +323,9 @@ export default function FacultyDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{action.title}</p>
-                      <p className="text-sm text-muted-foreground">{action.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {action.description}
+                      </p>
                     </div>
                     <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </Link>
@@ -304,7 +346,9 @@ export default function FacultyDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Pending Approvals</CardTitle>
-                      <CardDescription>Projects awaiting your review</CardDescription>
+                      <CardDescription>
+                        Projects awaiting your review
+                      </CardDescription>
                     </div>
                     <Badge variant="secondary">{pendingApprovals.length}</Badge>
                   </div>
@@ -316,16 +360,25 @@ export default function FacultyDashboard() {
                     </p>
                   ) : (
                     pendingApprovals.map((approval) => (
-                      <div key={approval.id} className="p-4 rounded-lg border space-y-2">
+                      <div
+                        key={approval.id}
+                        className="p-4 rounded-lg border space-y-2"
+                      >
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{approval.studentName}</p>
                           <Badge variant="outline">{approval.branch}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{approval.projectName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {approval.projectName}
+                        </p>
                         <div className="flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground">{approval.submittedDate}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {approval.submittedDate}
+                          </p>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">Reject</Button>
+                            <Button size="sm" variant="outline">
+                              Reject
+                            </Button>
                             <Button size="sm">Approve</Button>
                           </div>
                         </div>
@@ -359,7 +412,9 @@ export default function FacultyDashboard() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm">{activity.text}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {activity.time}
+                          </p>
                         </div>
                       </div>
                     ))

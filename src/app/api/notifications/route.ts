@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { notifications, users, sessions, activityLog } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
-async function getAuthenticatedUser(request: NextRequest) {
+async function getAuthenticatedUser(request: NextRequest, retries = 3) {
   const authHeader = request.headers.get("authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -12,47 +12,69 @@ async function getAuthenticatedUser(request: NextRequest) {
 
   const token = authHeader.substring(7);
 
-  try {
-    const session = await db
-      .select({
-        userId: sessions.userId,
-        expiresAt: sessions.expiresAt,
-      })
-      .from(sessions)
-      .where(eq(sessions.token, token))
-      .limit(1);
+  // Retry logic for database connectivity issues
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const session = await db
+        .select({
+          userId: sessions.userId,
+          expiresAt: sessions.expiresAt,
+        })
+        .from(sessions)
+        .where(eq(sessions.token, token))
+        .limit(1);
 
-    if (session.length === 0) {
+      if (session.length === 0) {
+        return null;
+      }
+
+      const sessionData = session[0];
+      const expiresAt = new Date(sessionData.expiresAt);
+
+      if (expiresAt < new Date()) {
+        return null;
+      }
+
+      const user = await db
+        .select({
+          id: users.id,
+          role: users.role,
+          email: users.email,
+          name: users.name,
+        })
+        .from(users)
+        .where(eq(users.id, sessionData.userId))
+        .limit(1);
+
+      if (user.length === 0) {
+        return null;
+      }
+
+      return user[0]; // Success - return user
+    } catch (error: any) {
+      // Check if it's a 502 or network error
+      const is502Error =
+        error?.cause?.status === 502 ||
+        error?.code === "SERVER_ERROR" ||
+        error?.message?.includes("502");
+
+      if (is502Error && attempt < retries - 1) {
+        // Wait before retry (exponential backoff)
+        const waitTime = Math.pow(2, attempt) * 500; // 500ms, 1s, 2s
+        console.log(
+          `Database 502 error, retrying in ${waitTime}ms (attempt ${attempt + 1}/${retries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+        continue; // Retry
+      }
+
+      // Last attempt or non-502 error
+      console.error("Authentication error:", error);
       return null;
     }
-
-    const sessionData = session[0];
-    const expiresAt = new Date(sessionData.expiresAt);
-
-    if (expiresAt < new Date()) {
-      return null;
-    }
-
-    const user = await db
-      .select({
-        id: users.id,
-        role: users.role,
-        email: users.email,
-        name: users.name,
-      })
-      .from(users)
-      .where(eq(users.id, sessionData.userId))
-      .limit(1);
-
-    if (user.length === 0) {
-      return null;
-    }
-
-    return user[0];
-  } catch (error) {
-    console.error("Authentication error:", error);
-    return null;
   }
+
+  return null; // All retries failed
 }
 
 async function logActivity(

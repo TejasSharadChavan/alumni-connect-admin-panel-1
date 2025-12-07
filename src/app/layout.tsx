@@ -4,8 +4,9 @@ import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Alumni Connect Platform - Terna Engineering College",
-  description: "Connect with alumni, students, and faculty at Terna Engineering College",
+  title: "AlumConnect - Terna Engineering College",
+  description:
+    "Connect with alumni, students, and faculty at Terna Engineering College",
 };
 
 export default function RootLayout({

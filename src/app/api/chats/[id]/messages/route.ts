@@ -133,7 +133,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { content, messageType = "text", fileUrl } = body;
+    const { content, messageType = "text", fileUrl, imageUrl } = body;
 
     if (!content || content.trim() === "") {
       return NextResponse.json(
@@ -150,7 +150,8 @@ export async function POST(
         senderId: session.userId,
         content: content.trim(),
         messageType,
-        fileUrl,
+        fileUrl: fileUrl || null,
+        imageUrl: imageUrl || null,
         createdAt: new Date().toISOString(),
       })
       .returning();

@@ -86,6 +86,8 @@ export default function AlumniDashboard() {
     MentorshipRequest[]
   >([]);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [impactData, setImpactData] = useState<any[]>([]);
+  const [contributionData, setContributionData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -99,20 +101,42 @@ export default function AlumniDashboard() {
       const token = localStorage.getItem("auth_token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Fetch connections
-      let acceptedConnections: any[] = [];
-      try {
-        const connectionsRes = await fetch("/api/connections", { headers });
-        if (connectionsRes.ok) {
-          const connectionsData = await connectionsRes.json();
-          acceptedConnections =
-            connectionsData.connections?.filter(
-              (c: any) => c.status === "accepted"
-            ) || [];
-        }
-      } catch (error) {
-        console.error("Error fetching connections:", error);
-      }
+      // Fetch all data in parallel for faster loading
+      const [
+        connectionsRes,
+        mentorshipRes,
+        jobsRes,
+        donationsRes,
+        analyticsRes,
+      ] = await Promise.all([
+        fetch("/api/connections", { headers }).catch(() => null),
+        fetch("/api/mentorship", { headers }).catch(() => null),
+        fetch("/api/jobs", { headers }).catch(() => null),
+        fetch("/api/donations/stats", { headers }).catch(() => null),
+        fetch("/api/alumni/dashboard-analytics", { headers }).catch(() => null),
+      ]);
+
+      // Parse responses in parallel
+      const [
+        connectionsData,
+        mentorshipData,
+        jobsData,
+        donationsData,
+        analyticsData,
+      ] = await Promise.all([
+        connectionsRes?.ok ? connectionsRes.json() : { connections: [] },
+        mentorshipRes?.ok ? mentorshipRes.json() : { requests: [] },
+        jobsRes?.ok ? jobsRes.json() : { jobs: [] },
+        donationsRes?.ok
+          ? donationsRes.json()
+          : { userStats: { totalDonations: 0 } },
+        analyticsRes?.ok ? analyticsRes.json() : null,
+      ]);
+
+      const acceptedConnections =
+        connectionsData.connections?.filter(
+          (c: any) => c.status === "accepted"
+        ) || [];
 
       const networkGrowth =
         acceptedConnections.length > 10
@@ -123,82 +147,128 @@ export default function AlumniDashboard() {
               ? "+6%"
               : "+0%";
 
-      // Fetch mentorship requests
-      let activeMentorships: any[] = [];
-      try {
-        const mentorshipRes = await fetch("/api/mentorship", { headers });
-        if (mentorshipRes.ok) {
-          const mentorshipData = await mentorshipRes.json();
-          activeMentorships =
-            mentorshipData.requests?.filter(
-              (r: any) =>
-                r.mentorId === user.id &&
-                (r.status === "accepted" || r.status === "pending")
-            ) || [];
+      const activeMentorships =
+        mentorshipData.requests?.filter(
+          (r: any) =>
+            r.mentorId === user.id &&
+            (r.status === "accepted" || r.status === "pending")
+        ) || [];
+
+      const allJobs = jobsData.jobs || [];
+      const myJobs = allJobs.filter((j: any) => j.postedById === user.id);
+
+      const userTotalDonations = donationsData.userStats?.totalDonations || 0;
+
+      // Process analytics data
+      if (analyticsData) {
+        try {
+          // Set impact data with fallback
+          const monthlyImpact = analyticsData.analytics?.monthlyImpact || [];
+          setImpactData(
+            monthlyImpact.length > 0
+              ? monthlyImpact
+              : [
+                  { month: "Jul", mentees: 0, jobs: 0, donations: 0 },
+                  { month: "Aug", mentees: 0, jobs: 0, donations: 0 },
+                  { month: "Sep", mentees: 0, jobs: 0, donations: 0 },
+                  { month: "Oct", mentees: 0, jobs: 0, donations: 0 },
+                  { month: "Nov", mentees: 0, jobs: 0, donations: 0 },
+                  { month: "Dec", mentees: 0, jobs: 0, donations: 0 },
+                ]
+          );
+
+          // Set contribution data with fallback
+          const contributionBreakdown =
+            analyticsData.analytics?.contributionBreakdown || [];
+          setContributionData(
+            contributionBreakdown.length > 0
+              ? contributionBreakdown
+              : [
+                  { category: "Mentorship", value: 0 },
+                  { category: "Job Postings", value: 0 },
+                  { category: "Donations", value: 0 },
+                  { category: "Network", value: 0 },
+                ]
+          );
+          // Update stats with real data
+          setStats({
+            networkGrowth:
+              analyticsData.analytics?.networkGrowth || networkGrowth,
+            mentees:
+              analyticsData.analytics?.totals?.mentees ||
+              activeMentorships.filter((m: any) => m.status === "accepted")
+                .length,
+            jobsPosted: analyticsData.analytics?.totals?.jobs || myJobs.length,
+            totalDonations:
+              analyticsData.analytics?.totals?.donations || userTotalDonations,
+          });
+        } catch (error) {
+          console.error("Error processing analytics:", error);
+          // Fallback to calculated stats
+          setStats({
+            networkGrowth,
+            mentees: activeMentorships.filter(
+              (m: any) => m.status === "accepted"
+            ).length,
+            jobsPosted: myJobs.length,
+            totalDonations: userTotalDonations,
+          });
+          setImpactData([
+            { month: "Jul", mentees: 0, jobs: 0, donations: 0 },
+            { month: "Aug", mentees: 0, jobs: 0, donations: 0 },
+            { month: "Sep", mentees: 0, jobs: 0, donations: 0 },
+            { month: "Oct", mentees: 0, jobs: 0, donations: 0 },
+            { month: "Nov", mentees: 0, jobs: 0, donations: 0 },
+            { month: "Dec", mentees: 0, jobs: 0, donations: 0 },
+          ]);
+          setContributionData([
+            { category: "Mentorship", value: 0 },
+            { category: "Job Postings", value: 0 },
+            { category: "Donations", value: 0 },
+            { category: "Network", value: 0 },
+          ]);
         }
-      } catch (error) {
-        console.error("Error fetching mentorship:", error);
+      } else {
+        // No analytics data available
+        setStats({
+          networkGrowth,
+          mentees: activeMentorships.filter((m: any) => m.status === "accepted")
+            .length,
+          jobsPosted: myJobs.length,
+          totalDonations: userTotalDonations,
+        });
+        setImpactData([
+          { month: "Jul", mentees: 0, jobs: 0, donations: 0 },
+          { month: "Aug", mentees: 0, jobs: 0, donations: 0 },
+          { month: "Sep", mentees: 0, jobs: 0, donations: 0 },
+          { month: "Oct", mentees: 0, jobs: 0, donations: 0 },
+          { month: "Nov", mentees: 0, jobs: 0, donations: 0 },
+          { month: "Dec", mentees: 0, jobs: 0, donations: 0 },
+        ]);
+        setContributionData([
+          { category: "Mentorship", value: 0 },
+          { category: "Job Postings", value: 0 },
+          { category: "Donations", value: 0 },
+          { category: "Network", value: 0 },
+        ]);
       }
 
-      // Fetch jobs
-      let myJobs: any[] = [];
-      try {
-        const jobsRes = await fetch("/api/jobs", { headers });
-        if (jobsRes.ok) {
-          const jobsData = await jobsRes.json();
-          const allJobs = jobsData.jobs || [];
-          myJobs = allJobs.filter((j: any) => j.postedById === user.id);
-        }
-      } catch (error) {
-        console.error("Error fetching jobs:", error);
-      }
-
-      // Fetch donation stats
-      let userTotalDonations = 0;
-      try {
-        const donationsRes = await fetch("/api/donations/stats", { headers });
-        if (donationsRes.ok) {
-          const donationsData = await donationsRes.json();
-          userTotalDonations = donationsData.userStats?.totalDonations || 0;
-        }
-      } catch (error) {
-        console.error("Error fetching donations:", error);
-      }
-
-      setStats({
-        networkGrowth,
-        mentees: activeMentorships.filter((m: any) => m.status === "accepted")
-          .length,
-        jobsPosted: myJobs.length,
-        totalDonations: userTotalDonations,
-      });
-
-      // Get pending mentorship requests
-      let pendingRequests: any[] = [];
-      try {
-        const mentorshipRes = await fetch("/api/mentorship", { headers });
-        if (mentorshipRes.ok) {
-          const mentorshipData = await mentorshipRes.json();
-          pendingRequests =
-            mentorshipData.requests
-              ?.filter(
-                (r: any) => r.mentorId === user.id && r.status === "pending"
-              )
-              .slice(0, 2)
-              .map((r: any) => ({
-                id: r.id,
-                studentName: r.studentName || "Unknown Student",
-                studentBranch: r.studentBranch || "Unknown",
-                topic: r.topic,
-                createdAt: r.createdAt,
-              })) || [];
-        }
-      } catch (error) {
-        console.error("Error fetching pending requests:", error);
-      }
+      // Process mentorship requests (already fetched above)
+      const allMentorshipRequests = mentorshipData.requests || [];
+      const pendingRequests = allMentorshipRequests
+        .filter((r: any) => r.mentorId === user.id && r.status === "pending")
+        .slice(0, 2)
+        .map((r: any) => ({
+          id: r.id,
+          studentName: r.studentName || "Unknown Student",
+          studentBranch: r.studentBranch || "Unknown",
+          topic: r.topic,
+          createdAt: r.createdAt,
+        }));
 
       setMentorshipRequests(pendingRequests);
 
+      // Build activities from already fetched data
       const activities: Activity[] = [];
 
       myJobs.slice(0, 2).forEach((job: any) => {
@@ -210,30 +280,19 @@ export default function AlumniDashboard() {
         });
       });
 
-      // Get completed mentorship sessions
-      try {
-        const mentorshipRes = await fetch("/api/mentorship", { headers });
-        if (mentorshipRes.ok) {
-          const mentorshipData = await mentorshipRes.json();
-          const completedSessions =
-            mentorshipData.requests
-              ?.filter(
-                (r: any) => r.mentorId === user.id && r.status === "completed"
-              )
-              .slice(0, 1) || [];
+      // Get completed mentorship sessions from already fetched data
+      const completedSessions = allMentorshipRequests
+        .filter((r: any) => r.mentorId === user.id && r.status === "completed")
+        .slice(0, 1);
 
-          completedSessions.forEach((session: any) => {
-            activities.push({
-              text: `Completed mentorship session with ${session.studentName || "a student"}`,
-              time: formatTimeAgo(session.respondedAt),
-              icon: Users,
-              type: "mentorship",
-            });
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching completed sessions:", error);
-      }
+      completedSessions.forEach((session: any) => {
+        activities.push({
+          text: `Completed mentorship session with ${session.studentName || "a student"}`,
+          time: formatTimeAgo(session.respondedAt),
+          icon: Users,
+          type: "mentorship",
+        });
+      });
 
       if (userTotalDonations > 0) {
         activities.push({
@@ -320,40 +379,11 @@ export default function AlumniDashboard() {
     }
   };
 
-  // Chart data
-  const impactData = [
-    { month: "Jan", mentees: 1, jobs: 0, donations: 0 },
-    { month: "Feb", mentees: 2, jobs: 1, donations: 5000 },
-    { month: "Mar", mentees: 3, jobs: 2, donations: 5000 },
-    { month: "Apr", mentees: stats.mentees || 4, jobs: 3, donations: 10000 },
-    {
-      month: "May",
-      mentees: stats.mentees || 5,
-      jobs: stats.jobsPosted || 4,
-      donations: stats.totalDonations || 15000,
-    },
-    {
-      month: "Jun (Predicted)",
-      mentees: (stats.mentees || 5) + 2,
-      jobs: (stats.jobsPosted || 4) + 2,
-      donations: (stats.totalDonations || 15000) + 5000,
-    },
-  ];
+  // Chart data - now from database via API
+  // impactData and contributionData are set from fetchDashboardData
 
-  const contributionData = [
-    { category: "Mentorship", value: stats.mentees * 10 || 40 },
-    { category: "Job Postings", value: stats.jobsPosted * 8 || 32 },
-    { category: "Donations", value: stats.totalDonations / 1000 || 15 },
-    { category: "Events", value: 25 },
-  ];
-
-  const menteePerfData = [
-    { subject: "Technical Skills", current: 75, target: 90 },
-    { subject: "Communication", current: 85, target: 90 },
-    { subject: "Leadership", current: 70, target: 85 },
-    { subject: "Problem Solving", current: 80, target: 90 },
-    { subject: "Networking", current: 65, target: 80 },
-  ];
+  // Mentee performance data - removed as it's not tracked in database
+  // This would require a separate mentee evaluation system
 
   const COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b"];
 
@@ -670,34 +700,36 @@ export default function AlumniDashboard() {
           >
             <Card>
               <CardHeader>
-                <CardTitle>Mentee Performance Insights</CardTitle>
+                <CardTitle>Impact Summary</CardTitle>
                 <CardDescription>
-                  Average skill development of your mentees
+                  Your contribution to the community
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <RadarChart data={menteePerfData}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="subject" />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                    <Radar
-                      name="Current"
-                      dataKey="current"
-                      stroke="#3b82f6"
-                      fill="#3b82f6"
-                      fillOpacity={0.6}
-                    />
-                    <Radar
-                      name="Target"
-                      dataKey="target"
-                      stroke="#10b981"
-                      fill="#10b981"
-                      fillOpacity={0.3}
-                    />
-                    <Legend />
-                  </RadarChart>
-                </ResponsiveContainer>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Active Mentees</span>
+                  <span className="text-2xl font-bold text-blue-600">
+                    {stats.mentees}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Jobs Posted</span>
+                  <span className="text-2xl font-bold text-purple-600">
+                    {stats.jobsPosted}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Total Donations</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    ₹{stats.totalDonations.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Network Growth</span>
+                  <span className="text-2xl font-bold text-orange-600">
+                    {stats.networkGrowth}
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
