@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import {
-  jobs,
-  jobApplications,
-  activityLog,
-  users,
-  sessions,
-} from "@/db/schema";
+import { jobs, applications, activityLog, users, sessions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 async function getAuthenticatedUser(request: NextRequest) {
@@ -69,7 +63,7 @@ export async function DELETE(
     }
 
     // Delete applications first (cascade)
-    await db.delete(jobApplications).where(eq(jobApplications.jobId, jobId));
+    await db.delete(applications).where(eq(applications.jobId, jobId));
 
     // Delete the job
     await db.delete(jobs).where(eq(jobs.id, jobId));

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -28,23 +28,34 @@ export async function POST(
     });
 
     if (!user || user.role !== "faculty") {
-      return NextResponse.json({ error: "Only faculty can review submissions" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Only faculty can review submissions" },
+        { status: 403 }
+      );
     }
 
-    const submissionId = parseInt(params.id);
-    
+    const { id } = await params;
+    const submissionId = parseInt(id);
+
     const existing = await db.query.projectSubmissions.findFirst({
-      where: (projectSubmissions, { eq }) => eq(projectSubmissions.id, submissionId),
+      where: (projectSubmissions, { eq }) =>
+        eq(projectSubmissions.id, submissionId),
     });
 
     if (!existing) {
-      return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Submission not found" },
+        { status: 404 }
+      );
     }
 
     const body = await req.json();
     const { action, comments, grade } = body;
 
-    if (!action || !["approve", "reject", "request_revision"].includes(action)) {
+    if (
+      !action ||
+      !["approve", "reject", "request_revision"].includes(action)
+    ) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
@@ -67,7 +78,8 @@ export async function POST(
       updateData.grade = grade;
     }
 
-    const [updated] = await db.update(projectSubmissions)
+    const [updated] = await db
+      .update(projectSubmissions)
       .set(updateData)
       .where(eq(projectSubmissions.id, submissionId))
       .returning();
@@ -75,8 +87,10 @@ export async function POST(
     // Create notification for student
     const notificationMessages: Record<string, string> = {
       approve: "Your project submission has been approved!",
-      reject: "Your project submission was rejected. Please review the feedback.",
-      request_revision: "Your project submission needs revision. Please check the comments.",
+      reject:
+        "Your project submission was rejected. Please review the feedback.",
+      request_revision:
+        "Your project submission needs revision. Please check the comments.",
     };
 
     await db.insert(notifications).values({
@@ -92,6 +106,9 @@ export async function POST(
     return NextResponse.json({ submission: updated });
   } catch (error) {
     console.error("Error reviewing submission:", error);
-    return NextResponse.json({ error: "Failed to review submission" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to review submission" },
+      { status: 500 }
+    );
   }
 }
