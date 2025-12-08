@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { jobApplications, users, sessions } from "@/db/schema";
+import { applications, users, sessions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 async function getAuthenticatedUser(request: NextRequest) {
@@ -54,24 +54,24 @@ export async function GET(
     const jobId = parseInt(id);
 
     // Get all applications for this job with user details
-    const applications = await db
+    const jobApplications = await db
       .select({
-        id: jobApplications.id,
-        userId: jobApplications.userId,
+        id: applications.id,
+        userId: applications.applicantId,
         userName: users.name,
         userEmail: users.email,
-        status: jobApplications.status,
-        appliedAt: jobApplications.appliedAt,
-        coverLetter: jobApplications.coverLetter,
+        status: applications.status,
+        appliedAt: applications.appliedAt,
+        coverLetter: applications.coverLetter,
       })
-      .from(jobApplications)
-      .leftJoin(users, eq(jobApplications.userId, users.id))
-      .where(eq(jobApplications.jobId, jobId))
-      .orderBy(jobApplications.appliedAt);
+      .from(applications)
+      .leftJoin(users, eq(applications.applicantId, users.id))
+      .where(eq(applications.jobId, jobId))
+      .orderBy(applications.appliedAt);
 
     return NextResponse.json({
-      applications,
-      total: applications.length,
+      applications: jobApplications,
+      total: jobApplications.length,
     });
   } catch (error) {
     console.error("Error fetching applications:", error);
