@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
-  const { user, login } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/10 p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,7 +140,7 @@ export default function LoginPage() {
 
               <div className="text-center">
                 <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
-                  💡 <strong>Demo Credentials (Password: Password@123):</strong>
+                  💡 <strong>Demo Credentials (Password: password123):</strong>
                   <br />
                   Student: aarav.sharma@terna.ac.in
                   <br />
