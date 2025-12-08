@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       db
         .select({ count: sql<number>`count(*)` })
         .from(users)
-        .where(eq(users.status, "approved")),
+        .where(sql`${users.status} IN ('approved', 'active')`),
       db
         .select({ count: sql<number>`count(*)` })
         .from(users)
@@ -76,15 +76,21 @@ export async function GET(request: NextRequest) {
       db
         .select({ count: sql<number>`count(*)` })
         .from(users)
-        .where(sql`${users.role} = 'student' AND ${users.status} = 'approved'`),
+        .where(
+          sql`${users.role} = 'student' AND ${users.status} IN ('approved', 'active')`
+        ),
       db
         .select({ count: sql<number>`count(*)` })
         .from(users)
-        .where(sql`${users.role} = 'alumni' AND ${users.status} = 'approved'`),
+        .where(
+          sql`${users.role} = 'alumni' AND ${users.status} IN ('approved', 'active')`
+        ),
       db
         .select({ count: sql<number>`count(*)` })
         .from(users)
-        .where(sql`${users.role} = 'faculty' AND ${users.status} = 'approved'`),
+        .where(
+          sql`${users.role} = 'faculty' AND ${users.status} IN ('approved', 'active')`
+        ),
     ]);
 
     const stats = {

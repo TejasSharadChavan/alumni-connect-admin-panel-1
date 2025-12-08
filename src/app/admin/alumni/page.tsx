@@ -1,17 +1,45 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { UserCheck, Search, Eye, Briefcase, GraduationCap } from "lucide-react";
+import {
+  UserCheck,
+  Search,
+  Eye,
+  Briefcase,
+  GraduationCap,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { EditUserDialog } from "@/components/admin/EditUserDialog";
 
 interface Alumni {
   id: number;
@@ -29,6 +57,38 @@ export default function AlumniManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedAlumni, setSelectedAlumni] = useState<Alumni | null>(null);
+
+  const handleEditAlumni = (alumnus: Alumni) => {
+    setSelectedAlumni(alumnus);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteAlumni = async (alumniId: number, alumniName: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to deactivate ${alumniName}? This will set their status to inactive.`
+      )
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/admin/users/${alumniId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to deactivate alumni");
+
+      toast.success("Alumni deactivated successfully");
+      fetchAlumni();
+    } catch (error) {
+      console.error("Error deactivating alumni:", error);
+      toast.error("Failed to deactivate alumni");
+    }
+  };
 
   useEffect(() => {
     fetchAlumni();
@@ -58,13 +118,19 @@ export default function AlumniManagementPage() {
     const matchesSearch =
       alumnus.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       alumnus.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesBranch = branchFilter === "all" || alumnus.branch === branchFilter;
-    const matchesYear = yearFilter === "all" || alumnus.yearOfPassing?.toString() === yearFilter;
+    const matchesBranch =
+      branchFilter === "all" || alumnus.branch === branchFilter;
+    const matchesYear =
+      yearFilter === "all" || alumnus.yearOfPassing?.toString() === yearFilter;
     return matchesSearch && matchesBranch && matchesYear;
   });
 
-  const branches = Array.from(new Set(alumni.map((a) => a.branch).filter(Boolean)));
-  const years = Array.from(new Set(alumni.map((a) => a.yearOfPassing).filter(Boolean))).sort((a, b) => b - a);
+  const branches = Array.from(
+    new Set(alumni.map((a) => a.branch).filter(Boolean))
+  );
+  const years = Array.from(
+    new Set(alumni.map((a) => a.yearOfPassing).filter(Boolean))
+  ).sort((a, b) => b - a);
 
   const stats = {
     total: alumni.length,
@@ -76,14 +142,19 @@ export default function AlumniManagementPage() {
   return (
     <RoleLayout role="admin">
       <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-lg bg-primary/10">
               <UserCheck className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">Alumni Management</h1>
-              <p className="text-muted-foreground">View and manage registered alumni</p>
+              <p className="text-muted-foreground">
+                View and manage registered alumni
+              </p>
             </div>
           </div>
         </motion.div>
@@ -92,7 +163,9 @@ export default function AlumniManagementPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Alumni</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Alumni
+              </CardTitle>
               <UserCheck className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
@@ -117,7 +190,9 @@ export default function AlumniManagementPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Most Recent Batch</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Most Recent Batch
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.recentYear}</div>
@@ -129,7 +204,9 @@ export default function AlumniManagementPage() {
         <Card>
           <CardHeader>
             <CardTitle>Alumni Directory</CardTitle>
-            <CardDescription>Search and filter alumni by branch, year, or name</CardDescription>
+            <CardDescription>
+              Search and filter alumni by branch, year, or name
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -192,33 +269,65 @@ export default function AlumniManagementPage() {
                     </TableRow>
                   ) : filteredAlumni.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         No alumni found
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredAlumni.map((alumnus) => (
                       <TableRow key={alumnus.id}>
-                        <TableCell className="font-medium">{alumnus.name}</TableCell>
-                        <TableCell className="text-sm">{alumnus.email}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{alumnus.branch || "N/A"}</Badge>
+                        <TableCell className="font-medium">
+                          {alumnus.name}
                         </TableCell>
-                        <TableCell className="text-sm">{alumnus.yearOfPassing || "N/A"}</TableCell>
+                        <TableCell className="text-sm">
+                          {alumnus.email}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {alumnus.branch || "N/A"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {alumnus.yearOfPassing || "N/A"}
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                           {alumnus.headline || "No headline"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={alumnus.status === "active" ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              alumnus.status === "active"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
                             {alumnus.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="outline" asChild>
-                            <Link href={`/admin/alumni/${alumnus.id}`}>
-                              <Eye className="h-4 w-4" />
-                            </Link>
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditAlumni(alumnus)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() =>
+                                handleDeleteAlumni(alumnus.id, alumnus.name)
+                              }
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -229,6 +338,16 @@ export default function AlumniManagementPage() {
           </CardContent>
         </Card>
       </div>
+
+      <EditUserDialog
+        user={selectedAlumni}
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedAlumni(null);
+        }}
+        onSuccess={fetchAlumni}
+      />
     </RoleLayout>
   );
 }

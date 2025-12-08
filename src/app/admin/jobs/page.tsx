@@ -43,6 +43,9 @@ import {
   XCircle,
   Clock,
   TrendingUp,
+  Edit,
+  Trash2,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -55,9 +58,24 @@ interface Job {
   location: string;
   jobType: string;
   postedBy: string;
+  posterName?: string;
   status: string;
   createdAt: string;
   applicationsCount?: number;
+  description?: string;
+  requirements?: string;
+  salary?: string;
+  skills?: string[];
+}
+
+interface Application {
+  id: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  status: string;
+  appliedAt: string;
+  coverLetter?: string;
 }
 
 export default function JobsManagementPage() {
@@ -67,6 +85,9 @@ export default function JobsManagementPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [applicationsDialogOpen, setApplicationsDialogOpen] = useState(false);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loadingApplications, setLoadingApplications] = useState(false);
 
   useEffect(() => {
     fetchJobs();
@@ -82,18 +103,45 @@ export default function JobsManagementPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Parse skills if they're strings
-        const jobsWithParsedSkills = (data.jobs || []).map((job: any) => ({
-          ...job,
-          skills:
-            typeof job.skills === "string"
-              ? job.skills
-                ? JSON.parse(job.skills)
-                : []
-              : Array.isArray(job.skills)
-                ? job.skills
-                : [],
-        }));
+
+        // Parse skills and fetch application counts for each job
+        const jobsWithParsedSkills = await Promise.all(
+          (data.jobs || []).map(async (job: any) => {
+            // Fetch application count for this job
+            let applicationsCount = 0;
+            try {
+              const appResponse = await fetch(
+                `/api/admin/jobs/${job.id}/applications`,
+                {
+                  headers: { Authorization: `Bearer ${token}` },
+                }
+              );
+              if (appResponse.ok) {
+                const appData = await appResponse.json();
+                applicationsCount = appData.total || 0;
+              }
+            } catch (err) {
+              console.error(
+                `Error fetching applications for job ${job.id}:`,
+                err
+              );
+            }
+
+            return {
+              ...job,
+              applicationsCount,
+              skills:
+                typeof job.skills === "string"
+                  ? job.skills
+                    ? JSON.parse(job.skills)
+                    : []
+                  : Array.isArray(job.skills)
+                    ? job.skills
+                    : [],
+            };
+          })
+        );
+
         setJobs(jobsWithParsedSkills);
       }
     } catch (error) {
@@ -147,6 +195,54 @@ export default function JobsManagementPage() {
       }
     } catch (error) {
       toast.error("Failed to reject job");
+    }
+  };
+
+  const handleDelete = async (jobId: number, jobTitle: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${jobTitle}"? This will also delete all applications.`
+      )
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/admin/jobs/${jobId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to delete job");
+
+      toast.success("Job deleted successfully");
+      fetchJobs();
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      toast.error("Failed to delete job");
+    }
+  };
+
+  const handleViewApplications = async (job: Job) => {
+    setSelectedJob(job);
+    setApplicationsDialogOpen(true);
+    setLoadingApplications(true);
+
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/admin/jobs/${job.id}/applications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setApplications(data.applications || []);
+      }
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      toast.error("Failed to load applications");
+    } finally {
+      setLoadingApplications(false);
     }
   };
 
@@ -336,10 +432,20 @@ export default function JobsManagementPage() {
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => handleViewApplications(job)}
+                              title="View Applications"
+                            >
+                              <Users className="h-4 w-4 mr-1" />
+                              {job.applicationsCount || 0}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => {
                                 setSelectedJob(job);
                                 setViewDialogOpen(true);
                               }}
+                              title="View Details"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -350,6 +456,7 @@ export default function JobsManagementPage() {
                                   variant="default"
                                   className="bg-green-600 hover:bg-green-700"
                                   onClick={() => handleApprove(job.id)}
+                                  title="Approve"
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
                                 </Button>
@@ -357,11 +464,20 @@ export default function JobsManagementPage() {
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => handleReject(job.id)}
+                                  title="Reject"
                                 >
                                   <XCircle className="h-4 w-4" />
                                 </Button>
                               </>
                             )}
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(job.id, job.title)}
+                              title="Delete Job"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -419,6 +535,83 @@ export default function JobsManagementPage() {
               <Button
                 variant="outline"
                 onClick={() => setViewDialogOpen(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Applications Dialog */}
+        <Dialog
+          open={applicationsDialogOpen}
+          onOpenChange={setApplicationsDialogOpen}
+        >
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Applications for: {selectedJob?.title}</DialogTitle>
+              <DialogDescription>
+                View all applications for this job posting
+              </DialogDescription>
+            </DialogHeader>
+
+            {loadingApplications ? (
+              <div className="text-center py-8">Loading applications...</div>
+            ) : applications.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No applications yet
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Applicant</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Applied Date</TableHead>
+                      <TableHead>Cover Letter</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {applications.map((app) => (
+                      <TableRow key={app.id}>
+                        <TableCell className="font-medium">
+                          {app.userName}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {app.userEmail}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              app.status === "accepted"
+                                ? "default"
+                                : app.status === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {app.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(app.appliedAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-sm max-w-xs truncate">
+                          {app.coverLetter || "No cover letter"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setApplicationsDialogOpen(false)}
               >
                 Close
               </Button>

@@ -1,14 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Users as UsersIcon } from "lucide-react";
+import { Search, Users as UsersIcon, Edit } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { EditUserDialog } from "@/components/admin/EditUserDialog";
 
 interface User {
   id: number;
@@ -26,6 +41,13 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setEditDialogOpen(true);
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -35,63 +57,13 @@ export default function UsersPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
-      
-      // For now, we'll create a simple placeholder
-      // In a real app, you'd have a GET /api/admin/users endpoint
-      setUsers([
-        {
-          id: 1,
-          name: "Dr. Rajesh Kumar",
-          email: "admin@terna.ac.in",
-          role: "admin",
-          status: "active",
-          department: "Administration",
-        },
-        {
-          id: 2,
-          name: "Priya Sharma",
-          email: "priya.sharma@terna.ac.in",
-          role: "student",
-          status: "active",
-          branch: "Computer Engineering",
-          cohort: "2023-2024",
-        },
-        {
-          id: 3,
-          name: "Arjun Patel",
-          email: "arjun.patel@terna.ac.in",
-          role: "student",
-          status: "active",
-          branch: "Electronics Engineering",
-          cohort: "2024-2025",
-        },
-        {
-          id: 5,
-          name: "Rahul Kapoor",
-          email: "rahul.kapoor@gmail.com",
-          role: "alumni",
-          status: "active",
-          branch: "Computer Engineering",
-          yearOfPassing: 2020,
-        },
-        {
-          id: 6,
-          name: "Meera Joshi",
-          email: "meera.joshi@yahoo.com",
-          role: "alumni",
-          status: "active",
-          branch: "Electronics Engineering",
-          yearOfPassing: 2018,
-        },
-        {
-          id: 7,
-          name: "Prof. Amit Verma",
-          email: "amit.verma@terna.ac.in",
-          role: "faculty",
-          status: "active",
-          department: "Computer Engineering",
-        },
-      ]);
+      const response = await fetch("/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      }
     } catch (error) {
       console.error("Error fetching users:", error);
       toast.error("Failed to load users");
@@ -159,14 +131,23 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-        <p className="text-muted-foreground mt-2">View and manage all registered users</p>
+        <p className="text-muted-foreground mt-2">
+          View and manage all registered users
+        </p>
       </motion.div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -174,12 +155,18 @@ export default function UsersPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">{stats.active} active</p>
+              <p className="text-xs text-muted-foreground">
+                {stats.active} active
+              </p>
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Students</CardTitle>
@@ -192,7 +179,11 @@ export default function UsersPage() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Alumni</CardTitle>
@@ -205,7 +196,11 @@ export default function UsersPage() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Faculty</CardTitle>
@@ -220,13 +215,19 @@ export default function UsersPage() {
       </div>
 
       {/* Users Table */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>All Users ({filteredUsers.length})</CardTitle>
-                <CardDescription>Complete list of registered users</CardDescription>
+                <CardDescription>
+                  Complete list of registered users
+                </CardDescription>
               </div>
               <div className="relative w-72">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -249,6 +250,7 @@ export default function UsersPage() {
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Details</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -257,10 +259,15 @@ export default function UsersPage() {
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell className="text-sm">{user.email}</TableCell>
                       <TableCell>
-                        <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
+                        <Badge className={getRoleBadgeColor(user.role)}>
+                          {user.role}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={getStatusBadgeColor(user.status)}>
+                        <Badge
+                          variant="outline"
+                          className={getStatusBadgeColor(user.status)}
+                        >
                           {user.status}
                         </Badge>
                       </TableCell>
@@ -270,6 +277,16 @@ export default function UsersPage() {
                         {user.yearOfPassing && `Year: ${user.yearOfPassing}`}
                         {user.department && `Dept: ${user.department}`}
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -278,6 +295,16 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       </motion.div>
+
+      <EditUserDialog
+        user={selectedUser}
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedUser(null);
+        }}
+        onSuccess={fetchUsers}
+      />
     </div>
   );
 }

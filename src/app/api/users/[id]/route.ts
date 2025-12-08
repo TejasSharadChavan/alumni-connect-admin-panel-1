@@ -89,10 +89,13 @@ function isValidUrl(urlString: string): boolean {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    // Extract id from URL
-    const id = request.nextUrl.pathname.split("/")[3];
+    // Extract id from params
+    const { id } = await params;
 
     if (!id || isNaN(parseInt(id))) {
       return NextResponse.json(
@@ -150,10 +153,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    // Extract id from URL
-    const id = request.nextUrl.pathname.split("/")[3];
+    // Extract id from params
+    const { id } = await params;
 
     if (!id || isNaN(parseInt(id))) {
       return NextResponse.json(

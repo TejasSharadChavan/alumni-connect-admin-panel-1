@@ -1,15 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { Calendar, Search, Eye, CheckCircle2, XCircle, Clock, Users, MapPin } from "lucide-react";
+import {
+  Calendar,
+  Search,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Users,
+  MapPin,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
+import { CreateEventDialog } from "@/components/admin/CreateEventDialog";
 import { motion } from "framer-motion";
 
 interface Event {
@@ -31,6 +62,7 @@ export default function EventsManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -40,10 +72,9 @@ export default function EventsManagementPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch("/api/events", {
+      const response = await fetch("/api/admin/events", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.ok) {
         const data = await response.json();
         setEvents(data.events || []);
@@ -53,6 +84,31 @@ export default function EventsManagementPage() {
       toast.error("Failed to load events");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (eventId: number) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this event? All RSVPs will be cancelled and attendees will be notified."
+      )
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/admin/events/${eventId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to delete event");
+
+      toast.success("Event deleted successfully");
+      fetchEvents();
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast.error("Failed to delete event");
     }
   };
 
@@ -86,7 +142,11 @@ export default function EventsManagementPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ contentType: "event", contentId: eventId, reason: "Does not meet requirements" }),
+        body: JSON.stringify({
+          contentType: "event",
+          contentId: eventId,
+          reason: "Does not meet requirements",
+        }),
       });
 
       if (response.ok) {
@@ -99,13 +159,19 @@ export default function EventsManagementPage() {
   };
 
   const filteredEvents = events.filter((event) => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || event.status === statusFilter;
-    const matchesCategory = categoryFilter === "all" || event.category === categoryFilter;
+    const matchesSearch = event.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || event.status === statusFilter;
+    const matchesCategory =
+      categoryFilter === "all" || event.category === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const categories = Array.from(new Set(events.map((e) => e.category).filter(Boolean)));
+  const categories = Array.from(
+    new Set(events.map((e) => e.category).filter(Boolean))
+  );
 
   const stats = {
     total: events.length,
@@ -130,14 +196,19 @@ export default function EventsManagementPage() {
   return (
     <RoleLayout role="admin">
       <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-lg bg-primary/10">
               <Calendar className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">Events Management</h1>
-              <p className="text-muted-foreground">Manage events and registrations</p>
+              <p className="text-muted-foreground">
+                Manage events and registrations
+              </p>
             </div>
           </div>
         </motion.div>
@@ -146,7 +217,9 @@ export default function EventsManagementPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Events
+              </CardTitle>
               <Calendar className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
@@ -155,7 +228,9 @@ export default function EventsManagementPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pending Review
+              </CardTitle>
               <Clock className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
@@ -164,7 +239,9 @@ export default function EventsManagementPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Approved Events</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Approved Events
+              </CardTitle>
               <CheckCircle2 className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
@@ -173,7 +250,9 @@ export default function EventsManagementPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Attendees</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Attendees
+              </CardTitle>
               <Users className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
@@ -185,8 +264,16 @@ export default function EventsManagementPage() {
         {/* Events Table */}
         <Card>
           <CardHeader>
-            <CardTitle>All Events</CardTitle>
-            <CardDescription>Review and manage events</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>All Events</CardTitle>
+                <CardDescription>Review and manage events</CardDescription>
+              </div>
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Event
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -248,28 +335,39 @@ export default function EventsManagementPage() {
                     </TableRow>
                   ) : filteredEvents.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         No events found
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredEvents.map((event) => (
                       <TableRow key={event.id}>
-                        <TableCell className="font-medium">{event.title}</TableCell>
+                        <TableCell className="font-medium">
+                          {event.title}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{event.category}</Badge>
                         </TableCell>
                         <TableCell className="text-sm">
                           {new Date(event.startDate).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="text-sm">{event.location}</TableCell>
-                        <TableCell className="text-sm">{event.organizer}</TableCell>
+                        <TableCell className="text-sm">
+                          {event.location}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {event.organizer}
+                        </TableCell>
                         <TableCell className="text-center">
                           {event.attendeesCount || 0}
                           {event.maxAttendees && ` / ${event.maxAttendees}`}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusColor(event.status)}>{event.status}</Badge>
+                          <Badge variant={getStatusColor(event.status)}>
+                            {event.status}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -303,6 +401,12 @@ export default function EventsManagementPage() {
           </CardContent>
         </Card>
       </div>
+
+      <CreateEventDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={fetchEvents}
+      />
     </RoleLayout>
   );
 }

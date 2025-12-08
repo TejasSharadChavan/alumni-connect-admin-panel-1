@@ -1,16 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RoleLayout } from "@/components/layout/role-layout";
-import { FileText, Search, Eye, CheckCircle2, XCircle, Clock, TrendingUp, MessageSquare } from "lucide-react";
+import {
+  FileText,
+  Search,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  TrendingUp,
+  MessageSquare,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { ViewPostDetailsDialog } from "@/components/admin/ViewPostDetailsDialog";
 
 interface Post {
   id: number;
@@ -19,8 +49,15 @@ interface Post {
   category: string;
   status: string;
   createdAt: string;
-  reactionsCount?: number;
+  reactions?: {
+    like: number;
+    celebrate: number;
+    support: number;
+    insightful: number;
+  };
   commentsCount?: number;
+  userId?: number;
+  userName?: string;
 }
 
 export default function NewsManagementPage() {
@@ -29,6 +66,13 @@ export default function NewsManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [viewDetailsDialogOpen, setViewDetailsDialogOpen] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+
+  const handleViewDetails = (postId: number) => {
+    setSelectedPostId(postId);
+    setViewDetailsDialogOpen(true);
+  };
 
   useEffect(() => {
     fetchPosts();
@@ -44,13 +88,56 @@ export default function NewsManagementPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setPosts(data.posts || []);
+        // Map the API response to our Post interface
+        const mappedPosts = (data.posts || []).map((post: any) => ({
+          id: post.id,
+          content: post.content,
+          author: post.userName || "Unknown",
+          category: post.category || "general",
+          status: post.status || "approved",
+          createdAt: post.createdAt,
+          reactions: post.reactions || {
+            like: 0,
+            celebrate: 0,
+            support: 0,
+            insightful: 0,
+          },
+          commentsCount: post.commentsCount || 0,
+          userId: post.userId,
+          userName: post.userName,
+        }));
+        setPosts(mappedPosts);
       }
     } catch (error) {
       console.error("Error fetching posts:", error);
       toast.error("Failed to load posts");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (postId: number) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this post? This action cannot be undone."
+      )
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/admin/posts/${postId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to delete post");
+
+      toast.success("Post deleted successfully");
+      fetchPosts();
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast.error("Failed to delete post");
     }
   };
 
@@ -84,7 +171,11 @@ export default function NewsManagementPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ contentType: "post", contentId: postId, reason: "Does not meet community guidelines" }),
+        body: JSON.stringify({
+          contentType: "post",
+          contentId: postId,
+          reason: "Does not meet community guidelines",
+        }),
       });
 
       if (response.ok) {
@@ -97,19 +188,28 @@ export default function NewsManagementPage() {
   };
 
   const filteredPosts = posts.filter((post) => {
-    const matchesSearch = post.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || post.status === statusFilter;
-    const matchesCategory = categoryFilter === "all" || post.category === categoryFilter;
+    const matchesSearch = post.content
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || post.status === statusFilter;
+    const matchesCategory =
+      categoryFilter === "all" || post.category === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const categories = Array.from(new Set(posts.map((p) => p.category).filter(Boolean)));
+  const categories = Array.from(
+    new Set(posts.map((p) => p.category).filter(Boolean))
+  );
 
   const stats = {
     total: posts.length,
     pending: posts.filter((p) => p.status === "pending").length,
     approved: posts.filter((p) => p.status === "approved").length,
-    totalEngagement: posts.reduce((acc, p) => acc + (p.reactionsCount || 0) + (p.commentsCount || 0), 0),
+    totalEngagement: posts.reduce(
+      (acc, p) => acc + (p.reactionsCount || 0) + (p.commentsCount || 0),
+      0
+    ),
   };
 
   const getStatusColor = (status: string) => {
@@ -128,14 +228,19 @@ export default function NewsManagementPage() {
   return (
     <RoleLayout role="admin">
       <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-lg bg-primary/10">
               <FileText className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold">News & Posts Management</h1>
-              <p className="text-muted-foreground">Manage news articles and user posts</p>
+              <p className="text-muted-foreground">
+                Manage news articles and user posts
+              </p>
             </div>
           </div>
         </motion.div>
@@ -153,7 +258,9 @@ export default function NewsManagementPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pending Review
+              </CardTitle>
               <Clock className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
@@ -171,7 +278,9 @@ export default function NewsManagementPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Engagement</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Engagement
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
@@ -245,7 +354,10 @@ export default function NewsManagementPage() {
                     </TableRow>
                   ) : filteredPosts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         No posts found
                       </TableCell>
                     </TableRow>
@@ -253,23 +365,45 @@ export default function NewsManagementPage() {
                     filteredPosts.map((post) => (
                       <TableRow key={post.id}>
                         <TableCell className="font-medium max-w-md">
-                          <p className="truncate">{post.content.substring(0, 100)}...</p>
+                          <p className="truncate">
+                            {post.content.substring(0, 100)}...
+                          </p>
                         </TableCell>
                         <TableCell className="text-sm">{post.author}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{post.category}</Badge>
                         </TableCell>
                         <TableCell className="text-sm">
-                          <div className="flex items-center gap-2">
-                            <span>{post.reactionsCount || 0} ❤️</span>
-                            <span>{post.commentsCount || 0} 💬</span>
-                          </div>
+                          <button
+                            onClick={() => handleViewDetails(post.id)}
+                            className="flex flex-col gap-1 hover:bg-muted/50 p-2 rounded transition-colors text-left w-full"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span title="Likes">
+                                {post.reactions?.like || 0} 👍
+                              </span>
+                              <span title="Celebrate">
+                                {post.reactions?.celebrate || 0} 🎉
+                              </span>
+                              <span title="Support">
+                                {post.reactions?.support || 0} 💪
+                              </span>
+                              <span title="Insightful">
+                                {post.reactions?.insightful || 0} 💡
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {post.commentsCount || 0} comments • Click to view
+                            </div>
+                          </button>
                         </TableCell>
                         <TableCell className="text-sm">
                           {new Date(post.createdAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusColor(post.status)}>{post.status}</Badge>
+                          <Badge variant={getStatusColor(post.status)}>
+                            {post.status}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -292,6 +426,14 @@ export default function NewsManagementPage() {
                                 </Button>
                               </>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDelete(post.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -303,6 +445,15 @@ export default function NewsManagementPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ViewPostDetailsDialog
+        postId={selectedPostId}
+        open={viewDetailsDialogOpen}
+        onClose={() => {
+          setViewDetailsDialogOpen(false);
+          setSelectedPostId(null);
+        }}
+      />
     </RoleLayout>
   );
 }
