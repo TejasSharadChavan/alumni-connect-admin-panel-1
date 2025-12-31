@@ -5,17 +5,37 @@ import { eq, sql } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Verify session (similar to create-order)
+    const { sessions, users } = await import("@/db/schema");
+    const sessionResult = await db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.token, token))
+      .limit(1);
+
+    if (sessionResult.length === 0) {
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    const session = sessionResult[0];
+    const isExpired = new Date(session.expiresAt) <= new Date();
+    if (isExpired) {
+      return NextResponse.json({ error: "Session expired" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { 
+    const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      donationId 
+      donationId,
     } = body;
 
     // In production, verify signature using Razorpay SDK

@@ -128,94 +128,13 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
       .slice(0, 2);
   };
 
-  const navigationItems = {
-    admin: [
-      { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
-      { icon: Users, label: "User Approvals", href: "/admin/approvals" },
-      { icon: Users, label: "Manage Users", href: "/admin/users" },
-      { icon: Shield, label: "Content Moderation", href: "/admin/content" },
-      {
-        icon: BarChart3,
-        label: "Platform Analytics",
-        href: "/admin/platform-analytics",
-      },
-      { icon: GraduationCap, label: "Students", href: "/admin/students" },
-      { icon: UserCircle, label: "Alumni", href: "/admin/alumni" },
-      { icon: Briefcase, label: "Jobs", href: "/admin/jobs" },
-      { icon: Calendar, label: "Events", href: "/admin/events" },
-      { icon: DollarSign, label: "Campaigns", href: "/admin/campaigns" },
-      { icon: FolderKanban, label: "Projects", href: "/admin/projects" },
-      { icon: FileText, label: "News & Posts", href: "/admin/news" },
-      { icon: TrendingUp, label: "Reports", href: "/admin/reports" },
-      { icon: Brain, label: "AI Insights", href: "/admin/insights" },
-    ],
-    student: [
-      { icon: LayoutDashboard, label: "Dashboard", href: "/student" },
-      { icon: FileText, label: "Feed", href: "/feed" },
-      { icon: Users, label: "Network", href: "/student/network" },
-      { icon: Briefcase, label: "Jobs", href: "/student/jobs" },
-      { icon: Calendar, label: "Events", href: "/student/events" },
-      { icon: GraduationCap, label: "Mentorship", href: "/student/mentorship" },
-      { icon: Target, label: "Skill Gap", href: "/student/skill-gap" },
-      { icon: FolderKanban, label: "Projects", href: "/student/projects" },
-      { icon: MessageSquare, label: "Messages", href: "/student/messages" },
-      { icon: UserCircle, label: "Profile", href: "/student/profile" },
-    ],
-    alumni: [
-      { icon: LayoutDashboard, label: "Dashboard", href: "/alumni" },
-      {
-        icon: BarChart3,
-        label: "Impact Analytics",
-        href: "/alumni/analytics-dashboard",
-      },
-      { icon: Users, label: "Student Engagement", href: "/alumni/analytics" },
-      { icon: FileText, label: "Feed", href: "/feed" },
-      { icon: Users, label: "Network", href: "/alumni/network" },
-      { icon: Briefcase, label: "Jobs", href: "/alumni/jobs" },
-      { icon: Calendar, label: "Events", href: "/alumni/events" },
-      { icon: GraduationCap, label: "Mentorship", href: "/alumni/mentorship" },
-      {
-        icon: TrendingUp,
-        label: "Industry Skills",
-        href: "/alumni/industry-skills",
-      },
-      { icon: Heart, label: "Donations", href: "/alumni/donations" },
-      { icon: MessageSquare, label: "Messages", href: "/alumni/messages" },
-      { icon: UserCircle, label: "Profile", href: "/alumni/profile" },
-    ],
-    faculty: [
-      { icon: LayoutDashboard, label: "Dashboard", href: "/faculty" },
-      { icon: FileText, label: "Feed", href: "/feed" },
-      { icon: Users, label: "Network", href: "/faculty/network" },
-      { icon: Users, label: "Students", href: "/faculty/students" },
-      { icon: FileText, label: "Approvals", href: "/faculty/approvals" },
-      { icon: Calendar, label: "Events", href: "/faculty/events" },
-      { icon: GraduationCap, label: "Mentorship", href: "/faculty/mentorship" },
-      { icon: MessageSquare, label: "Messages", href: "/faculty/messages" },
-      { icon: UserCircle, label: "Profile", href: "/faculty/profile" },
-    ],
-  };
-
-  const navItems = navigationItems[role];
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
+          {/* Brand */}
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </Button>
             <Link href={`/${role}`} className="flex items-center gap-2">
               <GraduationCap className="h-6 w-6 text-primary" />
               <span className="font-bold text-lg hidden sm:inline-block">
@@ -229,6 +148,107 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
               {role}
             </Badge>
           </div>
+
+          {/* Secondary Navigation - Only unique features not in sidebar */}
+          <div className="hidden lg:flex items-center gap-1 flex-1 justify-center max-w-2xl mx-8">
+            {(() => {
+              // Only secondary/unique features that are NOT in the left sidebar
+              const secondaryNavItems = {
+                admin: [
+                  {
+                    icon: BarChart3,
+                    label: "Analytics",
+                    href: "/admin/platform-analytics",
+                  },
+                  {
+                    icon: Brain,
+                    label: "AI Insights",
+                    href: "/admin/insights",
+                  },
+                  {
+                    icon: TrendingUp,
+                    label: "Reports",
+                    href: "/admin/reports",
+                  },
+                  { icon: Shield, label: "Content", href: "/admin/content" },
+                ],
+                student: [
+                  {
+                    icon: Target,
+                    label: "Skill Gap",
+                    href: "/student/skill-gap",
+                  },
+                  {
+                    icon: TrendingUp,
+                    label: "Trends",
+                    href: "/student/trends",
+                  },
+                  {
+                    icon: FolderKanban,
+                    label: "Projects",
+                    href: "/student/projects",
+                  },
+                ],
+                alumni: [
+                  {
+                    icon: BarChart3,
+                    label: "Analytics",
+                    href: "/alumni/analytics-dashboard",
+                  },
+                  {
+                    icon: TrendingUp,
+                    label: "Industry Skills",
+                    href: "/alumni/industry-skills",
+                  },
+                  { icon: TrendingUp, label: "Trends", href: "/alumni/trends" },
+                  {
+                    icon: Heart,
+                    label: "Donations",
+                    href: "/alumni/donations",
+                  },
+                ],
+                faculty: [],
+              };
+
+              const secondaryItems = secondaryNavItems[role] || [];
+
+              return secondaryItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== `/${role}` &&
+                    pathname.startsWith(item.href + "/"));
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span className="hidden xl:inline">{item.label}</span>
+                  </Link>
+                );
+              });
+            })()}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            {sidebarOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </Button>
 
           <div className="flex items-center gap-2">
             {/* Notifications */}
@@ -354,36 +374,145 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
       </header>
 
       <div className="flex">
-        {/* Sidebar - Desktop */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:border-r lg:bg-muted/30">
+        {/* Left Sidebar - Desktop */}
+        <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:border-r lg:bg-muted/30">
           <nav className="flex-1 space-y-1 p-4">
-            {navItems.map((item) => {
-              // Fix: Only match exact path or child routes, but not parent routes
-              // For dashboard (/alumni), only match exactly /alumni
-              // For other routes, match /alumni/analytics or /alumni/analytics/*
-              const isActive =
-                pathname === item.href ||
-                (item.href !== `/${role}` &&
-                  pathname.startsWith(item.href + "/"));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
-              );
-            })}
+            {(() => {
+              // Primary navigation items for left sidebar
+              const primaryNavItems = {
+                admin: [
+                  { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
+                  { icon: Users, label: "Users", href: "/admin/users" },
+                  {
+                    icon: GraduationCap,
+                    label: "Students",
+                    href: "/admin/students",
+                  },
+                  { icon: UserCircle, label: "Alumni", href: "/admin/alumni" },
+                  { icon: Briefcase, label: "Jobs", href: "/admin/jobs" },
+                  { icon: Calendar, label: "Events", href: "/admin/events" },
+                  {
+                    icon: DollarSign,
+                    label: "Campaigns",
+                    href: "/admin/campaigns",
+                  },
+                  {
+                    icon: FolderKanban,
+                    label: "Projects",
+                    href: "/admin/projects",
+                  },
+                  {
+                    icon: FileText,
+                    label: "News & Posts",
+                    href: "/admin/news",
+                  },
+                ],
+                student: [
+                  {
+                    icon: LayoutDashboard,
+                    label: "Dashboard",
+                    href: "/student",
+                  },
+                  { icon: FileText, label: "Feed", href: "/feed" },
+                  { icon: Users, label: "Network", href: "/student/network" },
+                  { icon: Briefcase, label: "Jobs", href: "/student/jobs" },
+                  { icon: Calendar, label: "Events", href: "/student/events" },
+                  {
+                    icon: GraduationCap,
+                    label: "Mentorship",
+                    href: "/student/mentorship",
+                  },
+                  {
+                    icon: MessageSquare,
+                    label: "Messages",
+                    href: "/student/messages",
+                  },
+                  {
+                    icon: UserCircle,
+                    label: "Profile",
+                    href: "/student/profile",
+                  },
+                ],
+                alumni: [
+                  {
+                    icon: LayoutDashboard,
+                    label: "Dashboard",
+                    href: "/alumni",
+                  },
+                  { icon: FileText, label: "Feed", href: "/feed" },
+                  { icon: Users, label: "Network", href: "/alumni/network" },
+                  { icon: Briefcase, label: "Jobs", href: "/alumni/jobs" },
+                  { icon: Calendar, label: "Events", href: "/alumni/events" },
+                  {
+                    icon: GraduationCap,
+                    label: "Mentorship",
+                    href: "/alumni/mentorship",
+                  },
+                  {
+                    icon: MessageSquare,
+                    label: "Messages",
+                    href: "/alumni/messages",
+                  },
+                  {
+                    icon: UserCircle,
+                    label: "Profile",
+                    href: "/alumni/profile",
+                  },
+                ],
+                faculty: [
+                  {
+                    icon: LayoutDashboard,
+                    label: "Dashboard",
+                    href: "/faculty",
+                  },
+                  { icon: FileText, label: "Feed", href: "/feed" },
+                  { icon: Users, label: "Network", href: "/faculty/network" },
+                  { icon: Calendar, label: "Events", href: "/faculty/events" },
+                  {
+                    icon: GraduationCap,
+                    label: "Mentorship",
+                    href: "/faculty/mentorship",
+                  },
+                  {
+                    icon: MessageSquare,
+                    label: "Messages",
+                    href: "/faculty/messages",
+                  },
+                  {
+                    icon: UserCircle,
+                    label: "Profile",
+                    href: "/faculty/profile",
+                  },
+                ],
+              };
+
+              const primaryItems = primaryNavItems[role] || [];
+
+              return primaryItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== `/${role}` &&
+                    pathname.startsWith(item.href + "/"));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                  </Link>
+                );
+              });
+            })()}
           </nav>
         </aside>
 
-        {/* Sidebar - Mobile */}
+        {/* Mobile Sidebar */}
         <AnimatePresence>
           {sidebarOpen && (
             <>
@@ -399,7 +528,7 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed inset-y-0 left-0 z-50 w-64 border-r bg-background lg:hidden"
+                className="fixed inset-y-0 left-0 z-50 w-72 border-r bg-background lg:hidden"
               >
                 <div className="flex h-16 items-center border-b px-4">
                   <Link href={`/${role}`} className="flex items-center gap-2">
@@ -408,28 +537,218 @@ export function RoleLayout({ children, role }: RoleLayoutProps) {
                   </Link>
                 </div>
                 <nav className="flex-1 space-y-1 p-4">
-                  {navItems.map((item) => {
-                    // Fix: Only match exact path or child routes, but not parent routes
-                    const isActive =
-                      pathname === item.href ||
-                      (item.href !== `/${role}` &&
-                        pathname.startsWith(item.href + "/"));
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          isActive
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-muted"
-                        }`}
-                      >
-                        <item.icon className="h-5 w-5" />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
+                  {(() => {
+                    // Mobile navigation - same as desktop but in sidebar format
+                    const allNavItems = {
+                      admin: [
+                        {
+                          icon: LayoutDashboard,
+                          label: "Dashboard",
+                          href: "/admin",
+                        },
+                        { icon: Users, label: "Users", href: "/admin/users" },
+                        {
+                          icon: GraduationCap,
+                          label: "Students",
+                          href: "/admin/students",
+                        },
+                        {
+                          icon: UserCircle,
+                          label: "Alumni",
+                          href: "/admin/alumni",
+                        },
+                        { icon: Briefcase, label: "Jobs", href: "/admin/jobs" },
+                        {
+                          icon: Calendar,
+                          label: "Events",
+                          href: "/admin/events",
+                        },
+                        {
+                          icon: BarChart3,
+                          label: "Analytics",
+                          href: "/admin/platform-analytics",
+                        },
+                        {
+                          icon: Brain,
+                          label: "AI Insights",
+                          href: "/admin/insights",
+                        },
+                        {
+                          icon: Shield,
+                          label: "Content",
+                          href: "/admin/content",
+                        },
+                      ],
+                      student: [
+                        {
+                          icon: LayoutDashboard,
+                          label: "Dashboard",
+                          href: "/student",
+                        },
+                        { icon: FileText, label: "Feed", href: "/feed" },
+                        {
+                          icon: Users,
+                          label: "Network",
+                          href: "/student/network",
+                        },
+                        {
+                          icon: Briefcase,
+                          label: "Jobs",
+                          href: "/student/jobs",
+                        },
+                        {
+                          icon: Calendar,
+                          label: "Events",
+                          href: "/student/events",
+                        },
+                        {
+                          icon: GraduationCap,
+                          label: "Mentorship",
+                          href: "/student/mentorship",
+                        },
+                        {
+                          icon: Target,
+                          label: "Skill Gap",
+                          href: "/student/skill-gap",
+                        },
+                        {
+                          icon: TrendingUp,
+                          label: "Trends",
+                          href: "/student/trends",
+                        },
+                        {
+                          icon: MessageSquare,
+                          label: "Messages",
+                          href: "/student/messages",
+                        },
+                        {
+                          icon: UserCircle,
+                          label: "Profile",
+                          href: "/student/profile",
+                        },
+                      ],
+                      alumni: [
+                        {
+                          icon: LayoutDashboard,
+                          label: "Dashboard",
+                          href: "/alumni",
+                        },
+                        { icon: FileText, label: "Feed", href: "/feed" },
+                        {
+                          icon: Users,
+                          label: "Network",
+                          href: "/alumni/network",
+                        },
+                        {
+                          icon: Briefcase,
+                          label: "Jobs",
+                          href: "/alumni/jobs",
+                        },
+                        {
+                          icon: Calendar,
+                          label: "Events",
+                          href: "/alumni/events",
+                        },
+                        {
+                          icon: GraduationCap,
+                          label: "Mentorship",
+                          href: "/alumni/mentorship",
+                        },
+                        {
+                          icon: BarChart3,
+                          label: "Analytics",
+                          href: "/alumni/analytics-dashboard",
+                        },
+                        {
+                          icon: TrendingUp,
+                          label: "Trends",
+                          href: "/alumni/trends",
+                        },
+                        {
+                          icon: Heart,
+                          label: "Donations",
+                          href: "/alumni/donations",
+                        },
+                        {
+                          icon: MessageSquare,
+                          label: "Messages",
+                          href: "/alumni/messages",
+                        },
+                        {
+                          icon: UserCircle,
+                          label: "Profile",
+                          href: "/alumni/profile",
+                        },
+                      ],
+                      faculty: [
+                        {
+                          icon: LayoutDashboard,
+                          label: "Dashboard",
+                          href: "/faculty",
+                        },
+                        { icon: FileText, label: "Feed", href: "/feed" },
+                        {
+                          icon: Users,
+                          label: "Network",
+                          href: "/faculty/network",
+                        },
+                        {
+                          icon: Calendar,
+                          label: "Events",
+                          href: "/faculty/events",
+                        },
+                        {
+                          icon: Users,
+                          label: "Students",
+                          href: "/faculty/students",
+                        },
+                        {
+                          icon: FileText,
+                          label: "Approvals",
+                          href: "/faculty/approvals",
+                        },
+                        {
+                          icon: GraduationCap,
+                          label: "Mentorship",
+                          href: "/faculty/mentorship",
+                        },
+                        {
+                          icon: MessageSquare,
+                          label: "Messages",
+                          href: "/faculty/messages",
+                        },
+                        {
+                          icon: UserCircle,
+                          label: "Profile",
+                          href: "/faculty/profile",
+                        },
+                      ],
+                    };
+
+                    const mobileItems = allNavItems[role] || [];
+
+                    return mobileItems.map((item) => {
+                      const isActive =
+                        pathname === item.href ||
+                        (item.href !== `/${role}` &&
+                          pathname.startsWith(item.href + "/"));
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            isActive
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-muted"
+                          }`}
+                        >
+                          <item.icon className="h-5 w-5" />
+                          {item.label}
+                        </Link>
+                      );
+                    });
+                  })()}
                 </nav>
               </motion.aside>
             </>

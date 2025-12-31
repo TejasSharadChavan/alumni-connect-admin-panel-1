@@ -79,16 +79,27 @@ export const RazorpayButton = ({
       });
 
       if (!orderResponse.ok) {
-        throw new Error("Failed to create order");
+        const errorData = await orderResponse.json();
+        console.error("Create order error:", errorData);
+        throw new Error(errorData.error || "Failed to create order");
       }
 
       const orderData = await orderResponse.json();
+      console.log("Order created successfully:", orderData);
 
       // Get user info
       const userResponse = await fetch("/api/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!userResponse.ok) {
+        const errorData = await userResponse.json();
+        console.error("User fetch error:", errorData);
+        throw new Error("Failed to get user information");
+      }
+
       const userData = await userResponse.json();
+      console.log("User data fetched:", userData.user?.name);
 
       // Initialize Razorpay
       const options = {
@@ -108,19 +119,22 @@ export const RazorpayButton = ({
         handler: async function (response: any) {
           try {
             // Verify payment
-            const verifyResponse = await fetch("/api/payments/razorpay/verify", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                donationId: orderData.donationId,
-              }),
-            });
+            const verifyResponse = await fetch(
+              "/api/payments/razorpay/verify",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  donationId: orderData.donationId,
+                }),
+              }
+            );
 
             if (verifyResponse.ok) {
               toast.success("Payment successful! Thank you for your donation.");

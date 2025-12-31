@@ -28,42 +28,56 @@ export function AIAssistant({ context, suggestions = [] }: AIAssistantProps) {
 
   const generateAIResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
-    
+
     // Network insights
-    if (lowerMessage.includes("network") || lowerMessage.includes("connection")) {
+    if (
+      lowerMessage.includes("network") ||
+      lowerMessage.includes("connection")
+    ) {
       return "📊 Based on your network data:\n\n• You have strong connections in Computer Science (45%)\n• Consider connecting with more alumni in your field\n• Your network has grown 23% this month\n• Top recommendation: Connect with Dr. Priya Joshi for AI/ML mentorship";
     }
-    
+
     // Career insights
-    if (lowerMessage.includes("job") || lowerMessage.includes("career") || lowerMessage.includes("opportunity")) {
+    if (
+      lowerMessage.includes("job") ||
+      lowerMessage.includes("career") ||
+      lowerMessage.includes("opportunity")
+    ) {
       return "💼 Career Insights:\n\n• 8 new job postings match your skills\n• Your profile views increased by 34% this week\n• Top skills in demand: React, Node.js, AI/ML\n• Recommended: Update your resume and apply to Google SDE role";
     }
-    
+
     // Skills analysis
     if (lowerMessage.includes("skill") || lowerMessage.includes("improve")) {
       return "🎯 Skills Analysis:\n\n• Current top skills: JavaScript, React, Python\n• Trending skills you should learn: AI/ML, Cloud Computing\n• 5 workshops available this month\n• Recommendation: Enroll in the upcoming AI workshop by Prof. Joshi";
     }
-    
+
     // Activity insights
-    if (lowerMessage.includes("activity") || lowerMessage.includes("engagement")) {
+    if (
+      lowerMessage.includes("activity") ||
+      lowerMessage.includes("engagement")
+    ) {
       return "📈 Activity Insights:\n\n• Your engagement score: 87/100 (Excellent!)\n• Most active times: Weekday evenings\n• 12 posts this month (↑ 40%)\n• Your posts get 3.2x more engagement than average";
     }
-    
+
     // Predictions
-    if (lowerMessage.includes("predict") || lowerMessage.includes("future") || lowerMessage.includes("trend")) {
+    if (
+      lowerMessage.includes("predict") ||
+      lowerMessage.includes("future") ||
+      lowerMessage.includes("trend")
+    ) {
       return "🔮 Predictive Analytics:\n\n• Network growth projection: +45 connections in 3 months\n• Job application success rate: 68% (above average)\n• Predicted next connection: Alumni from Google\n• Trending topics: AI/ML, Cloud, Web3";
     }
-    
+
     // Events
     if (lowerMessage.includes("event") || lowerMessage.includes("workshop")) {
       return "📅 Event Recommendations:\n\n• 3 upcoming events match your interests\n• AI/ML Workshop (This Saturday) - Highly recommended!\n• Alumni Meetup next week\n• Career Fair in 2 weeks - 15+ companies attending";
     }
-    
+
     // Mentorship
     if (lowerMessage.includes("mentor") || lowerMessage.includes("guidance")) {
       return "🎓 Mentorship Insights:\n\n• 8 mentors available in your field\n• Recommended: Connect with Rahul Agarwal (Google SDE)\n• Average response time: 2 days\n• Success rate: 85% of requests accepted";
     }
-    
+
     // General help
     return "✨ I'm your AI assistant! I can help you with:\n\n• Network analysis & growth predictions\n• Career opportunities & job insights\n• Skills recommendations\n• Activity & engagement tracking\n• Event suggestions\n• Mentorship connections\n\nTry asking: 'Show my network insights' or 'Predict my growth'";
   };
@@ -137,7 +151,8 @@ export function AIAssistant({ context, suggestions = [] }: AIAssistantProps) {
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                       <Bot className="h-12 w-12 mb-4 text-primary" />
                       <p className="text-sm">
-                        Hi! I'm your AI assistant. Ask me anything about your network, career, or activities!
+                        Hi! I'm your AI assistant. Ask me anything about your
+                        network, career, or activities!
                       </p>
                       {suggestions.length > 0 && (
                         <div className="mt-4 space-y-2 w-full">

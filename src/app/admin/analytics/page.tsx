@@ -1,11 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RoleLayout } from "@/components/layout/role-layout";
-import { BarChart3, Users, TrendingUp, Activity, Calendar, Briefcase, MessageSquare, Heart } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  BarChart3,
+  Users,
+  TrendingUp,
+  Activity,
+  Calendar,
+  Briefcase,
+  MessageSquare,
+  Heart,
+} from "lucide-react";
 import { motion } from "framer-motion";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("7d");
@@ -84,189 +114,234 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <RoleLayout role="admin">
-      <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <BarChart3 className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-                <p className="text-muted-foreground">Comprehensive platform insights and metrics</p>
-              </div>
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-lg bg-primary/10">
+              <BarChart3 className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+              <p className="text-muted-foreground">
+                Comprehensive platform insights and metrics
+              </p>
             </div>
           </div>
-        </motion.div>
-
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className={`text-xs ${stat.trend === "up" ? "text-green-600" : "text-red-600"} flex items-center gap-1 mt-1`}>
-                    <TrendingUp className="h-3 w-3" />
-                    {stat.change} from last period
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
         </div>
+      </motion.div>
 
-        {/* User Growth Chart */}
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p
+                  className={`text-xs ${stat.trend === "up" ? "text-green-600" : "text-red-600"} flex items-center gap-1 mt-1`}
+                >
+                  <TrendingUp className="h-3 w-3" />
+                  {stat.change} from last period
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* User Growth Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>User Growth Trends</CardTitle>
+          <CardDescription>
+            Total users, new registrations, and active users over time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={350}>
+            <AreaChart data={userGrowthData}>
+              <defs>
+                <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey="users"
+                stroke="#3b82f6"
+                fillOpacity={1}
+                fill="url(#colorUsers)"
+                name="Total Users"
+              />
+              <Area
+                type="monotone"
+                dataKey="activeUsers"
+                stroke="#10b981"
+                fillOpacity={1}
+                fill="url(#colorActive)"
+                name="Active Users"
+              />
+              <Line
+                type="monotone"
+                dataKey="newUsers"
+                stroke="#f59e0b"
+                strokeWidth={2}
+                name="New Users"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Engagement Metrics */}
         <Card>
           <CardHeader>
-            <CardTitle>User Growth Trends</CardTitle>
-            <CardDescription>Total users, new registrations, and active users over time</CardDescription>
+            <CardTitle>Platform Engagement</CardTitle>
+            <CardDescription>
+              User activity across different features
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={userGrowthData}>
-                <defs>
-                  <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={engagementData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis dataKey="activity" />
                 <YAxis />
                 <Tooltip />
-                <Legend />
-                <Area type="monotone" dataKey="users" stroke="#3b82f6" fillOpacity={1} fill="url(#colorUsers)" name="Total Users" />
-                <Area type="monotone" dataKey="activeUsers" stroke="#10b981" fillOpacity={1} fill="url(#colorActive)" name="Active Users" />
-                <Line type="monotone" dataKey="newUsers" stroke="#f59e0b" strokeWidth={2} name="New Users" />
-              </AreaChart>
+                <Bar dataKey="count" fill="#8b5cf6" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Engagement Metrics */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Engagement</CardTitle>
-              <CardDescription>User activity across different features</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={engagementData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="activity" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#8b5cf6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Role Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>User Role Distribution</CardTitle>
-              <CardDescription>Breakdown by user type</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={roleDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.name}: ${entry.value}`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {roleDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Feature Usage */}
+        {/* Role Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Feature Adoption Rates</CardTitle>
-            <CardDescription>Percentage of users actively using each feature</CardDescription>
+            <CardTitle>User Role Distribution</CardTitle>
+            <CardDescription>Breakdown by user type</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {featureUsage.map((feature) => (
-                <div key={feature.feature} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{feature.feature}</span>
-                    <span className="text-sm text-muted-foreground">{feature.usage}%</span>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-2">
-                    <div
-                      className="bg-primary h-2 rounded-full transition-all"
-                      style={{ width: `${feature.usage}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={roleDistribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={(entry) => `${entry.name}: ${entry.value}`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {roleDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        {/* Key Metrics Summary */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Avg. Session Duration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">18m 42s</div>
-              <p className="text-xs text-muted-foreground mt-1">↑ 12% from last week</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3,547</div>
-              <p className="text-xs text-muted-foreground mt-1">↑ 23% from last week</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹2,45,000</div>
-              <p className="text-xs text-muted-foreground mt-1">↑ 8% from last month</p>
-            </CardContent>
-          </Card>
-        </div>
       </div>
-    </RoleLayout>
+
+      {/* Feature Usage */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Feature Adoption Rates</CardTitle>
+          <CardDescription>
+            Percentage of users actively using each feature
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {featureUsage.map((feature) => (
+              <div key={feature.feature} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{feature.feature}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {feature.usage}%
+                  </span>
+                </div>
+                <div className="w-full bg-secondary rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all"
+                    style={{ width: `${feature.usage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Key Metrics Summary */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Avg. Session Duration
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">18m 42s</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              ↑ 12% from last week
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3,547</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              ↑ 23% from last week
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Total Donations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹2,45,000</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              ↑ 8% from last month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

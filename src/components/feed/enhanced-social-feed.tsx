@@ -6,7 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Share2, ThumbsUp, Award, Send, Image as ImageIcon, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  ThumbsUp,
+  Award,
+  Send,
+  Image as ImageIcon,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -39,10 +50,18 @@ interface EnhancedSocialFeedProps {
   onShare: (postId: string) => Promise<void>;
 }
 
-export function EnhancedSocialFeed({ posts, onCreatePost, onReact, onComment, onShare }: EnhancedSocialFeedProps) {
+export function EnhancedSocialFeed({
+  posts,
+  onCreatePost,
+  onReact,
+  onComment,
+  onShare,
+}: EnhancedSocialFeedProps) {
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [imagePreviewIndex, setImagePreviewIndex] = useState<number | null>(null);
+  const [imagePreviewIndex, setImagePreviewIndex] = useState<number | null>(
+    null
+  );
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
   const [commentContent, setCommentContent] = useState("");
 
@@ -100,7 +119,7 @@ export function EnhancedSocialFeed({ posts, onCreatePost, onReact, onComment, on
             onChange={(e) => setNewPostContent(e.target.value)}
             className="min-h-24"
           />
-          
+
           {selectedImages.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {selectedImages.map((img, idx) => (
@@ -114,7 +133,11 @@ export function EnhancedSocialFeed({ posts, onCreatePost, onReact, onComment, on
                     size="icon"
                     variant="destructive"
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => setSelectedImages(selectedImages.filter((_, i) => i !== idx))}
+                    onClick={() =>
+                      setSelectedImages(
+                        selectedImages.filter((_, i) => i !== idx)
+                      )
+                    }
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -128,7 +151,10 @@ export function EnhancedSocialFeed({ posts, onCreatePost, onReact, onComment, on
               <ImageIcon className="h-4 w-4 mr-2" />
               Add Images
             </Button>
-            <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>
+            <Button
+              onClick={handleCreatePost}
+              disabled={!newPostContent.trim()}
+            >
               <Send className="h-4 w-4 mr-2" />
               Post
             </Button>
@@ -156,7 +182,9 @@ export function EnhancedSocialFeed({ posts, onCreatePost, onReact, onComment, on
                     </Avatar>
                     <div className="flex-1">
                       <h4 className="font-semibold">{post.author.name}</h4>
-                      <p className="text-sm text-muted-foreground">{post.author.headline}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {post.author.headline}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(post.timestamp).toLocaleDateString()} at{" "}
                         {new Date(post.timestamp).toLocaleTimeString()}
@@ -268,7 +296,11 @@ export function EnhancedSocialFeed({ posts, onCreatePost, onReact, onComment, on
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setActiveCommentId(activeCommentId === post.id ? null : post.id)}
+                      onClick={() =>
+                        setActiveCommentId(
+                          activeCommentId === post.id ? null : post.id
+                        )
+                      }
                       className="flex-1"
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
@@ -300,7 +332,10 @@ export function EnhancedSocialFeed({ posts, onCreatePost, onReact, onComment, on
                           onChange={(e) => setCommentContent(e.target.value)}
                           className="min-h-20"
                         />
-                        <Button onClick={() => handleComment(post.id)} disabled={!commentContent.trim()}>
+                        <Button
+                          onClick={() => handleComment(post.id)}
+                          disabled={!commentContent.trim()}
+                        >
                           <Send className="h-4 w-4" />
                         </Button>
                       </motion.div>

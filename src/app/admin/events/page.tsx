@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   Calendar,
   Search,
@@ -194,7 +193,7 @@ export default function EventsManagementPage() {
   };
 
   return (
-    <RoleLayout role="admin">
+    <>
       <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -213,8 +212,8 @@ export default function EventsManagementPage() {
           </div>
         </motion.div>
 
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -259,10 +258,10 @@ export default function EventsManagementPage() {
               <div className="text-2xl font-bold">{stats.totalAttendees}</div>
             </CardContent>
           </Card>
-        </div>
+      </div>
 
-        {/* Events Table */}
-        <Card>
+      {/* Events Table */}
+      <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -407,6 +406,7 @@ export default function EventsManagementPage() {
         onClose={() => setCreateDialogOpen(false)}
         onSuccess={fetchEvents}
       />
-    </RoleLayout>
+      </div>
+    </>
   );
 }

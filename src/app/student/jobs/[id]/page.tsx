@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   MapPin,
   Building2,
@@ -36,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ResumeUpload } from "@/components/resume-upload";
+import { ResumeAnalyzer } from "@/components/resume-analyzer";
 
 interface Job {
   id: number;
@@ -67,6 +67,8 @@ export default function JobDetailsPage() {
   const [resumeUrl, setResumeUrl] = useState("");
   const [resumeFilename, setResumeFilename] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [resumeAnalysis, setResumeAnalysis] = useState<any>(null);
+  const [showAnalyzer, setShowAnalyzer] = useState(false);
 
   useEffect(() => {
     fetchJobDetails();
@@ -77,23 +79,55 @@ export default function JobDetailsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem("auth_token");
+      console.log("Fetching job details for ID:", jobId);
       const response = await fetch(`/api/jobs/${jobId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log("API response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
-        // Parse skills if string
-        let parsedSkills = data.skills;
-        if (typeof data.skills === "string") {
-          try {
-            parsedSkills = JSON.parse(data.skills);
-          } catch (e) {
-            parsedSkills = [];
+        console.log("API response data:", data);
+        if (data.success) {
+          // Parse skills if string
+          let parsedSkills = data.skills;
+          if (typeof data.skills === "string") {
+            try {
+              parsedSkills = JSON.parse(data.skills);
+            } catch (e) {
+              parsedSkills = [];
+            }
           }
+
+          // Create job object from the API response
+          const jobData = {
+            id: data.id,
+            title: data.title,
+            company: data.company,
+            description: data.description,
+            location: data.location,
+            jobType: data.jobType,
+            salary: data.salary,
+            skills: parsedSkills || [],
+            branch: data.branch,
+            createdAt: data.createdAt,
+            postedBy: data.postedBy || data.postedByName || "Unknown",
+            status: data.status,
+            matchScore: data.matchScore,
+          };
+
+          setJob(jobData);
+          console.log("Job data set successfully:", jobData);
+        } else {
+          console.error("API returned success: false", data);
+          toast.error("Job not found");
+          router.push("/student/jobs");
         }
-        setJob({ ...data, skills: parsedSkills });
       } else {
+        console.error("API request failed with status:", response.status);
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Error response:", errorData);
         toast.error("Job not found");
         router.push("/student/jobs");
       }
@@ -142,6 +176,7 @@ export default function JobDetailsPage() {
           coverLetter: coverLetter.trim() || undefined,
           resumeUrl,
           referralCode: referralCode.trim() || undefined,
+          aiAnalysis: resumeAnalysis,
         }),
       });
 
@@ -179,218 +214,226 @@ export default function JobDetailsPage() {
 
   if (loading) {
     return (
-      <RoleLayout role="student">
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-96 w-full" />
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+          <span className="text-sm text-muted-foreground">
+            Loading job details...
+          </span>
         </div>
-      </RoleLayout>
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
     );
   }
 
   if (!job) {
     return (
-      <RoleLayout role="student">
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Job not found</p>
-          <Button onClick={() => router.push("/student/jobs")} className="mt-4">
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Job not found or failed to load</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Job ID: {jobId} | Check console for details
+        </p>
+        <div className="flex gap-2 justify-center mt-4">
+          <Button onClick={() => router.push("/student/jobs")}>
             Back to Jobs
           </Button>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </div>
-      </RoleLayout>
+      </div>
     );
   }
 
   return (
-    <RoleLayout role="student">
-      <div className="space-y-6">
-        {/* Back Button */}
-        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Jobs
-        </Button>
+    <div className="space-y-6">
+      {/* Back Button */}
+      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Jobs
+      </Button>
 
-        {/* Job Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
-                  <CardTitle className="text-3xl mb-2">{job.title}</CardTitle>
-                  <CardDescription className="text-lg flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    {job.company}
-                  </CardDescription>
-                </div>
-                <div className="flex flex-col gap-2 items-end">
-                  {job.matchScore !== undefined && job.matchScore > 0 && (
-                    <Badge
-                      variant="default"
-                      className={`text-lg px-4 py-2 ${
-                        job.matchScore >= 80
-                          ? "bg-green-600"
-                          : job.matchScore >= 60
-                            ? "bg-blue-600"
-                            : "bg-orange-600"
-                      }`}
-                    >
-                      {job.matchScore}% Match
-                    </Badge>
-                  )}
+      {/* Job Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex-1">
+                <CardTitle className="text-3xl mb-2">{job.title}</CardTitle>
+                <CardDescription className="text-lg flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  {job.company}
+                </CardDescription>
+              </div>
+              <div className="flex flex-col gap-2 items-end">
+                {job.matchScore !== undefined && job.matchScore > 0 && (
                   <Badge
-                    variant={
-                      job.jobType === "internship" ? "secondary" : "default"
-                    }
-                    className="text-base px-3 py-1"
+                    variant="default"
+                    className={`text-lg px-4 py-2 ${
+                      job.matchScore >= 80
+                        ? "bg-green-600"
+                        : job.matchScore >= 60
+                          ? "bg-blue-600"
+                          : "bg-orange-600"
+                    }`}
                   >
-                    {job.jobType}
+                    {job.matchScore}% Match
                   </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Job Details */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-muted-foreground" />
-                  <span>{job.location}</span>
-                </div>
-                {job.salary && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-muted-foreground" />
-                    <span>{job.salary}</span>
-                  </div>
                 )}
+                <Badge
+                  variant={
+                    job.jobType === "internship" ? "secondary" : "default"
+                  }
+                  className="text-base px-3 py-1"
+                >
+                  {job.jobType}
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Job Details */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-muted-foreground" />
+                <span>{job.location}</span>
+              </div>
+              {job.salary && (
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                  <span>Posted {formatDate(job.createdAt)}</span>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <h3 className="text-xl font-semibold mb-3">Job Description</h3>
-                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {job.description}
-                </p>
-              </div>
-
-              {/* Skills */}
-              {job.skills && job.skills.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">
-                    Required Skills
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {job.skills.map((skill, i) => (
-                      <Badge
-                        key={i}
-                        variant="secondary"
-                        className="text-sm px-3 py-1"
-                      >
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
+                  <DollarSign className="h-5 w-5 text-muted-foreground" />
+                  <span>{job.salary}</span>
                 </div>
               )}
-
-              {/* Apply Button */}
-              <div className="pt-4">
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="lg"
-                      className="w-full md:w-auto"
-                      disabled={hasApplied}
-                      variant={hasApplied ? "secondary" : "default"}
-                    >
-                      <Briefcase className="h-5 w-5 mr-2" />
-                      {hasApplied ? "Already Applied" : "Apply Now"}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{job.title}</DialogTitle>
-                      <DialogDescription>
-                        {job.company} • {job.location}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-base font-semibold">
-                          Resume *
-                        </Label>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Upload your resume (PDF, DOC, or DOCX, max 5MB)
-                        </p>
-                        <ResumeUpload
-                          onUpload={(url, filename) => {
-                            setResumeUrl(url);
-                            setResumeFilename(filename);
-                          }}
-                          currentResume={resumeUrl}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="referralCode">
-                          Referral Code (Optional)
-                        </Label>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Have a referral code from an alumni? Enter it here
-                        </p>
-                        <Input
-                          id="referralCode"
-                          placeholder="e.g., GOOGLE-ABC123"
-                          value={referralCode}
-                          onChange={(e) =>
-                            setReferralCode(e.target.value.toUpperCase())
-                          }
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="coverLetter">
-                          Cover Letter (Optional)
-                        </Label>
-                        <Textarea
-                          id="coverLetter"
-                          placeholder="Tell the employer why you're a great fit for this role..."
-                          value={coverLetter}
-                          onChange={(e) => setCoverLetter(e.target.value)}
-                          rows={6}
-                        />
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setDialogOpen(false)}
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={handleApply}
-                          disabled={applying || !resumeUrl}
-                          className="flex-1"
-                        >
-                          {applying ? "Submitting..." : "Submit Application"}
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                <span>Posted {formatDate(job.createdAt)}</span>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    </RoleLayout>
+            </div>
+
+            {/* Description */}
+            <div>
+              <h3 className="text-xl font-semibold mb-3">Job Description</h3>
+              <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                {job.description}
+              </p>
+            </div>
+
+            {/* Skills */}
+            {job.skills && job.skills.length > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-3">Required Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {job.skills.map((skill, i) => (
+                    <Badge
+                      key={i}
+                      variant="secondary"
+                      className="text-sm px-3 py-1"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Apply Button */}
+            <div className="pt-4">
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    size="lg"
+                    className="w-full md:w-auto"
+                    disabled={hasApplied}
+                    variant={hasApplied ? "secondary" : "default"}
+                  >
+                    <Briefcase className="h-5 w-5 mr-2" />
+                    {hasApplied ? "Already Applied" : "Apply Now"}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{job.title}</DialogTitle>
+                    <DialogDescription>
+                      {job.company} • {job.location}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-base font-semibold">
+                        Resume Analysis *
+                      </Label>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Upload your resume for AI-powered job matching analysis
+                      </p>
+                      <ResumeAnalyzer
+                        jobId={parseInt(jobId)}
+                        onAnalysisComplete={(analysis) => {
+                          setResumeAnalysis(analysis);
+                          // Auto-set resume URL when analysis completes
+                          setResumeUrl("analyzed");
+                        }}
+                        debugMode={process.env.NODE_ENV === "development"}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="referralCode">
+                        Referral Code (Optional)
+                      </Label>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Have a referral code from an alumni? Enter it here
+                      </p>
+                      <Input
+                        id="referralCode"
+                        placeholder="e.g., GOOGLE-ABC123"
+                        value={referralCode}
+                        onChange={(e) =>
+                          setReferralCode(e.target.value.toUpperCase())
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="coverLetter">
+                        Cover Letter (Optional)
+                      </Label>
+                      <Textarea
+                        id="coverLetter"
+                        placeholder="Tell the employer why you're a great fit for this role..."
+                        value={coverLetter}
+                        onChange={(e) => setCoverLetter(e.target.value)}
+                        rows={6}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setDialogOpen(false)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleApply}
+                        disabled={applying || !resumeUrl}
+                        className="flex-1"
+                      >
+                        {applying ? "Submitting..." : "Submit Application"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   );
 }

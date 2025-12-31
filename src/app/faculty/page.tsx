@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   Users,
   Calendar,
@@ -31,6 +30,10 @@ interface DashboardStats {
   pendingApprovals: number;
   upcomingEvents: number;
   studentEngagement: string;
+  approvalRate?: string;
+  avgReviewTime?: string;
+  monthlyProjects?: number;
+  qualityScore?: string;
 }
 
 interface PendingApproval {
@@ -56,6 +59,10 @@ export default function FacultyDashboard() {
     pendingApprovals: 0,
     upcomingEvents: 0,
     studentEngagement: "0%",
+    approvalRate: "0%",
+    avgReviewTime: "N/A",
+    monthlyProjects: 0,
+    qualityScore: "N/A",
   });
   const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>(
     []
@@ -75,21 +82,31 @@ export default function FacultyDashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       // Fetch all data in parallel for faster loading
-      const [usersRes, eventsRes] = await Promise.all([
+      const [usersRes, eventsRes, projectsRes] = await Promise.all([
         fetch("/api/users?role=student", { headers }).catch(() => null),
         fetch("/api/events", { headers }).catch(() => null),
+        fetch("/api/project-submissions", { headers }).catch(() => null),
       ]);
 
       // Parse responses in parallel
-      const [usersData, eventsData] = await Promise.all([
+      const [usersData, eventsData, projectsData] = await Promise.all([
         usersRes?.ok ? usersRes.json() : { users: [] },
         eventsRes?.ok ? eventsRes.json() : { events: [] },
+        projectsRes?.ok ? projectsRes.json() : { submissions: [] },
       ]);
 
-      const students =
-        usersData.users?.filter(
-          (u: any) => u.role === "student" && u.branch === user.branch
-        ) || [];
+      // Filter students by faculty branch and validate data
+      const students = (usersData.users || []).filter((student: any) => {
+        return (
+          student.role === "student" &&
+          student.branch === user.branch &&
+          student.status === "active" &&
+          student.name &&
+          student.email &&
+          student.branch &&
+          student.cohort
+        );
+      });
 
       const allEvents = eventsData.events || [];
       const now = new Date();
@@ -97,38 +114,166 @@ export default function FacultyDashboard() {
         (e: any) => new Date(e.startDate) > now
       );
 
-      // Placeholder for pending project approvals (would need a specific endpoint)
-      const pendingProjectApprovals = 0;
+      // Filter project submissions for faculty's branch students
+      const allSubmissions = projectsData.submissions || [];
+      const branchSubmissions = allSubmissions.filter(
+        (submission: any) => submission.submitterBranch === user.branch
+      );
 
-      // Calculate student engagement (simplified)
-      const engagementRate = students.length > 0 ? "92%" : "0%";
+      // Get pending project approvals for faculty's branch
+      const pendingProjectApprovals = branchSubmissions.filter(
+        (submission: any) => submission.status === "pending"
+      ).length;
+
+      // Calculate student engagement based on recent activity
+      const activeStudents = students.filter((student: any) => {
+        const lastSeen = student.lastSeen ? new Date(student.lastSeen) : null;
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return lastSeen && lastSeen > weekAgo;
+      });
+
+      const engagementRate =
+        students.length > 0
+          ? Math.round((activeStudents.length / students.length) * 100) + "%"
+          : "0%";
+
+      // Calculate KPI metrics
+      const approvedSubmissions = branchSubmissions.filter(
+        (s) => s.status === "approved"
+      );
+      const rejectedSubmissions = branchSubmissions.filter(
+        (s) => s.status === "rejected"
+      );
+      const totalReviewed =
+        approvedSubmissions.length + rejectedSubmissions.length;
+
+      const approvalRate =
+        totalReviewed > 0
+          ? Math.round((approvedSubmissions.length / totalReviewed) * 100) + "%"
+          : "0%";
+
+      // Calculate average review time
+      const reviewedWithTime = branchSubmissions.filter(
+        (s) => s.reviewedAt && s.submittedAt
+      );
+
+      let avgReviewTime = "N/A";
+      if (reviewedWithTime.length > 0) {
+        const totalHours = reviewedWithTime.reduce(
+          (sum: number, submission: any) => {
+            const submitted = new Date(submission.submittedAt);
+            const reviewed = new Date(submission.reviewedAt);
+            const hours =
+              (reviewed.getTime() - submitted.getTime()) / (1000 * 60 * 60);
+            return sum + hours;
+          },
+          0
+        );
+        const avgHours = Math.round(totalHours / reviewedWithTime.length);
+        avgReviewTime =
+          avgHours < 24 ? `${avgHours}h` : `${Math.round(avgHours / 24)}d`;
+      }
+
+      // Monthly projects count
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const monthlyProjects = branchSubmissions.filter((submission: any) => {
+        const submittedDate = new Date(submission.submittedAt);
+        return (
+          submittedDate.getMonth() === currentMonth &&
+          submittedDate.getFullYear() === currentYear
+        );
+      }).length;
+
+      // Quality score based on approval rate and student feedback
+      const qualityScore =
+        totalReviewed > 0
+          ? `${Math.round((approvedSubmissions.length / totalReviewed) * 100)}/100`
+          : "N/A";
 
       setStats({
         studentsMonitored: students.length,
         pendingApprovals: pendingProjectApprovals,
         upcomingEvents: upcomingEvents.length,
         studentEngagement: engagementRate,
+        approvalRate,
+        avgReviewTime,
+        monthlyProjects,
+        qualityScore,
       });
 
-      // Placeholder pending approvals
-      setPendingApprovals([]);
+      // Set pending approvals with actual data from project submissions
+      const approvals = branchSubmissions
+        .filter((submission: any) => submission.status === "pending")
+        .slice(0, 5)
+        .map((submission: any) => ({
+          id: submission.id,
+          studentName: submission.submitterName || "Unknown Student",
+          projectName: submission.title || "Untitled Project",
+          branch: submission.submitterBranch || user.branch,
+          submittedDate: submission.submittedAt
+            ? formatTimeAgo(submission.submittedAt)
+            : "Recently",
+        }));
 
-      // Build recent activities
+      setPendingApprovals(approvals);
+
+      // Build recent activities with more comprehensive data
       const activities: Activity[] = [];
 
-      // Recent events organized
-      allEvents.slice(0, 1).forEach((event: any) => {
-        if (event.organizerId === user.id) {
+      // Recent events organized by faculty
+      allEvents
+        .filter((event: any) => event.organizerId === user.id)
+        .slice(0, 2)
+        .forEach((event: any) => {
           activities.push({
             text: `Organized ${event.title}`,
             time: formatTimeAgo(event.createdAt),
             icon: Calendar,
             type: "event",
           });
-        }
+        });
+
+      // Recent project approvals
+      if (approvals.length > 0) {
+        activities.push({
+          text: `${approvals.length} projects awaiting approval`,
+          time: "Pending",
+          icon: FileCheck,
+          type: "approval",
+        });
+      }
+
+      // Recent approvals given
+      const recentApprovals = branchSubmissions
+        .filter((s) => s.reviewedAt && s.reviewedBy === user.id)
+        .sort(
+          (a, b) =>
+            new Date(b.reviewedAt).getTime() - new Date(a.reviewedAt).getTime()
+        )
+        .slice(0, 2);
+
+      recentApprovals.forEach((approval: any) => {
+        activities.push({
+          text: `${approval.status === "approved" ? "Approved" : "Reviewed"} "${approval.title}"`,
+          time: formatTimeAgo(approval.reviewedAt),
+          icon: FileCheck,
+          type: "review",
+        });
       });
 
-      setRecentActivities(activities.slice(0, 3));
+      // Student engagement activity
+      if (activeStudents.length > 0) {
+        activities.push({
+          text: `${activeStudents.length} students active this week`,
+          time: "This week",
+          icon: Users,
+          type: "engagement",
+        });
+      }
+
+      setRecentActivities(activities.slice(0, 4));
     } catch (error) {
       console.error("Error fetching faculty dashboard data:", error);
       toast.error("Failed to load dashboard data");
@@ -226,180 +371,257 @@ export default function FacultyDashboard() {
     },
   ];
 
+  const handleApproveProject = async (projectId: number) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(
+        `/api/project-submissions/${projectId}/review`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            action: "approve",
+            comments: "Project approved by faculty",
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Project approved successfully!");
+        fetchDashboardData(); // Refresh data
+      } else {
+        toast.error("Failed to approve project");
+      }
+    } catch (error) {
+      console.error("Error approving project:", error);
+      toast.error("Failed to approve project");
+    }
+  };
+
+  const handleRejectProject = async (projectId: number) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(
+        `/api/project-submissions/${projectId}/review`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            action: "reject",
+            comments: "Project needs improvement",
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Project rejected");
+        fetchDashboardData(); // Refresh data
+      } else {
+        toast.error("Failed to reject project");
+      }
+    } catch (error) {
+      console.error("Error rejecting project:", error);
+      toast.error("Failed to reject project");
+    }
+  };
+
   if (loading) {
     return (
-      <RoleLayout role="faculty">
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-          <div className="grid gap-6 md:grid-cols-2">
-            <Skeleton className="h-96" />
-            <Skeleton className="h-96" />
+      <div className="space-y-4">
+        <Skeleton className="h-16 w-full" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-80 lg:col-span-1" />
+          <div className="lg:col-span-2 space-y-4">
+            <Skeleton className="h-64" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <Skeleton className="h-48" />
+              <Skeleton className="h-48" />
+            </div>
           </div>
         </div>
-      </RoleLayout>
+      </div>
     );
   }
 
   return (
-    <RoleLayout role="faculty">
-      <div className="space-y-6">
+    <div className="space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome back, {user?.name}! 👨‍🏫
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Overview of your department and student activities
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {statsConfig.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 + index * 0.1 }}
+          >
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.description}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Quick Actions - Takes 1 column */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="lg:col-span-1"
         >
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome back,{" "}
-              {user?.name?.split(" ")[1]
-                ? user?.name?.split(" ")[0] +
-                  " " +
-                  user?.name?.split(" ")[1]?.charAt(0) +
-                  "."
-                : user?.name}
-              ! 👨‍🏫
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Overview of your department and student activities
-            </p>
-          </div>
+          <Card className="h-fit">
+            <CardHeader className="pb-4">
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Common administrative tasks</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.title}
+                  href={action.href}
+                  className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors group"
+                >
+                  <div className={`p-2 rounded-lg ${action.bgColor}`}>
+                    <action.icon className={`h-4 w-4 ${action.color}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{action.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {action.description}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {statsConfig.map((stat, index) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 + index * 0.1 }}
-            >
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stat.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Quick Actions */}
+        {/* Right Column - Takes 2 columns */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Pending Approvals */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
           >
             <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common administrative tasks</CardDescription>
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Pending Approvals</CardTitle>
+                    <CardDescription>
+                      Projects awaiting your review
+                    </CardDescription>
+                  </div>
+                  <Badge variant="secondary">{pendingApprovals.length}</Badge>
+                </div>
               </CardHeader>
-              <CardContent className="grid gap-3">
-                {quickActions.map((action) => (
-                  <Link
-                    key={action.title}
-                    href={action.href}
-                    className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent transition-colors group"
-                  >
-                    <div className={`p-2 rounded-lg ${action.bgColor}`}>
-                      <action.icon className={`h-5 w-5 ${action.color}`} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{action.title}</p>
+              <CardContent className="space-y-3">
+                {pendingApprovals.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    No pending approvals at the moment
+                  </p>
+                ) : (
+                  pendingApprovals.map((approval) => (
+                    <div
+                      key={approval.id}
+                      className="p-3 rounded-lg border space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-sm">
+                          {approval.studentName}
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          {approval.branch}
+                        </Badge>
+                      </div>
                       <p className="text-sm text-muted-foreground">
-                        {action.description}
+                        {approval.projectName}
                       </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">
+                          {approval.submittedDate}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRejectProject(approval.id)}
+                            className="h-7 px-3 text-xs"
+                          >
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleApproveProject(approval.id)}
+                            className="h-7 px-3 text-xs"
+                          >
+                            Approve
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                  </Link>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Pending Approvals & Recent Activity */}
-          <div className="space-y-6">
+          {/* Bottom Row - Recent Activity and KPI Metrics */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Recent Activity */}
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-            >
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Pending Approvals</CardTitle>
-                      <CardDescription>
-                        Projects awaiting your review
-                      </CardDescription>
-                    </div>
-                    <Badge variant="secondary">{pendingApprovals.length}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {pendingApprovals.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No pending approvals at the moment
-                    </p>
-                  ) : (
-                    pendingApprovals.map((approval) => (
-                      <div
-                        key={approval.id}
-                        className="p-4 rounded-lg border space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">{approval.studentName}</p>
-                          <Badge variant="outline">{approval.branch}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {approval.projectName}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground">
-                            {approval.submittedDate}
-                          </p>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
-                              Reject
-                            </Button>
-                            <Button size="sm">Approve</Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.7 }}
             >
-              <Card>
-                <CardHeader>
+              <Card className="h-fit">
+                <CardHeader className="pb-4">
                   <CardTitle>Recent Activity</CardTitle>
                   <CardDescription>Your latest actions</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   {recentActivities.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       No recent activity to display
@@ -407,10 +629,10 @@ export default function FacultyDashboard() {
                   ) : (
                     recentActivities.map((activity, index) => (
                       <div key={index} className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-muted">
-                          <activity.icon className="h-4 w-4" />
+                        <div className="p-2 rounded-lg bg-muted shrink-0">
+                          <activity.icon className="h-3 w-3" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="text-sm">{activity.text}</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             {activity.time}
@@ -422,9 +644,53 @@ export default function FacultyDashboard() {
                 </CardContent>
               </Card>
             </motion.div>
+
+            {/* KPI Metrics */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+            >
+              <Card className="h-fit">
+                <CardHeader className="pb-4">
+                  <CardTitle>Approval KPIs</CardTitle>
+                  <CardDescription>
+                    Performance metrics for approvals
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Approval Rate</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      {stats.approvalRate || "0%"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Avg Review Time</span>
+                    <span className="text-sm font-semibold text-blue-600">
+                      {stats.avgReviewTime || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Projects This Month
+                    </span>
+                    <span className="text-sm font-semibold text-purple-600">
+                      {stats.monthlyProjects || "0"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Quality Score</span>
+                    <span className="text-sm font-semibold text-orange-600">
+                      {stats.qualityScore || "N/A"}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </div>
-    </RoleLayout>
+    </div>
   );
 }

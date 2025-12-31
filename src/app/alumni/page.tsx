@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   Briefcase,
   Calendar,
@@ -462,427 +461,421 @@ export default function AlumniDashboard() {
 
   if (loading) {
     return (
-      <RoleLayout role="alumni">
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-          <div className="grid gap-6 md:grid-cols-2">
-            <Skeleton className="h-96" />
-            <Skeleton className="h-96" />
-          </div>
+      <div className="space-y-6">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
         </div>
-      </RoleLayout>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
     );
   }
 
   return (
-    <RoleLayout role="alumni">
-      <div className="space-y-6 pb-20">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome back, {user?.name?.split(" ")[0]}! 🎓
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Thank you for staying connected with Terna Engineering College
-            </p>
-          </div>
-        </motion.div>
+    <div className="space-y-6 pb-20">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome back, {user?.name?.split(" ")[0]}! 🎓
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Thank you for staying connected with Terna Engineering College
+          </p>
+        </div>
+      </motion.div>
 
-        {/* AI Insights Panel */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <Card className="border-2 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/50 dark:to-blue-950/50">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-lg bg-gradient-to-br from-green-600 to-blue-600">
-                    <Brain className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      AI Impact Insights{" "}
-                      <Sparkles className="h-4 w-4 text-yellow-500" />
-                    </CardTitle>
-                    <CardDescription>
-                      Measuring your contribution to the alumni community
-                    </CardDescription>
+      {/* AI Insights Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <Card className="border-2 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/50 dark:to-blue-950/50">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-gradient-to-br from-green-600 to-blue-600">
+                  <Brain className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    AI Impact Insights{" "}
+                    <Sparkles className="h-4 w-4 text-yellow-500" />
+                  </CardTitle>
+                  <CardDescription>
+                    Measuring your contribution to the alumni community
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="p-4 rounded-lg bg-white/50 dark:bg-background/50 border">
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">Growing Influence</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Your mentorship increased student placement rates by 35%.
+                      Keep up the great work!
+                    </p>
                   </div>
                 </div>
               </div>
+              <div className="p-4 rounded-lg bg-white/50 dark:bg-background/50 border">
+                <div className="flex items-start gap-3">
+                  <Award className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">Top Contributor</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      You're in the top 10% of active alumni this month. Your{" "}
+                      {stats.jobsPosted} job posts helped {stats.jobsPosted * 3}{" "}
+                      students!
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-white/50 dark:bg-background/50 border">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="h-5 w-5 text-purple-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">Predicted Impact</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      At your current pace, you'll mentor 2 more students this
+                      month. Aim for 5 to unlock achievement!
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-white/50 dark:bg-background/50 border">
+                <div className="flex items-start gap-3">
+                  <Heart className="h-5 w-5 text-red-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">Community Recognition</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Your contributions earned 250 community points. Next
+                      milestone at 500 points!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {statsConfig.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
+          >
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.description}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Impact Over Time</CardTitle>
+              <CardDescription>
+                Track your contributions with predictions
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="p-4 rounded-lg bg-white/50 dark:bg-background/50 border">
-                  <div className="flex items-start gap-3">
-                    <TrendingUp className="h-5 w-5 text-green-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">Growing Influence</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Your mentorship increased student placement rates by
-                        35%. Keep up the great work!
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 rounded-lg bg-white/50 dark:bg-background/50 border">
-                  <div className="flex items-start gap-3">
-                    <Award className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">Top Contributor</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        You're in the top 10% of active alumni this month. Your{" "}
-                        {stats.jobsPosted} job posts helped{" "}
-                        {stats.jobsPosted * 3} students!
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 rounded-lg bg-white/50 dark:bg-background/50 border">
-                  <div className="flex items-start gap-3">
-                    <Sparkles className="h-5 w-5 text-purple-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">Predicted Impact</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        At your current pace, you'll mentor 2 more students this
-                        month. Aim for 5 to unlock achievement!
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 rounded-lg bg-white/50 dark:bg-background/50 border">
-                  <div className="flex items-start gap-3">
-                    <Heart className="h-5 w-5 text-red-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">
-                        Community Recognition
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Your contributions earned 250 community points. Next
-                        milestone at 500 points!
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={impactData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="mentees"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Mentees"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="jobs"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    name="Jobs Posted"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>Contribution Breakdown</CardTitle>
+              <CardDescription>
+                Your engagement across categories
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={contributionData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.category}: ${entry.value}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {contributionData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Mentee Performance & Quick Actions */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>Impact Summary</CardTitle>
+              <CardDescription>
+                Your contribution to the community
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Active Mentees</span>
+                <span className="text-2xl font-bold text-blue-600">
+                  {stats.mentees}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Jobs Posted</span>
+                <span className="text-2xl font-bold text-purple-600">
+                  {stats.jobsPosted}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total Donations</span>
+                <span className="text-2xl font-bold text-green-600">
+                  ₹{stats.totalDonations.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Network Growth</span>
+                <span className="text-2xl font-bold text-orange-600">
+                  {stats.networkGrowth}
+                </span>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {statsConfig.map((stat, index) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
-            >
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.9 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>
+                Ways to contribute to the community
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.title}
+                  href={action.href}
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent transition-colors group"
+                >
+                  <div className={`p-2 rounded-lg ${action.bgColor}`}>
+                    <action.icon className={`h-5 w-5 ${action.color}`} />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stat.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{action.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {action.description}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
 
-        {/* Charts Section */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Impact Over Time</CardTitle>
-                <CardDescription>
-                  Track your contributions with predictions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={impactData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="mentees"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                      name="Mentees"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="jobs"
-                      stroke="#8b5cf6"
-                      strokeWidth={2}
-                      name="Jobs Posted"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Contribution Breakdown</CardTitle>
-                <CardDescription>
-                  Your engagement across categories
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={contributionData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={(entry) => `${entry.category}: ${entry.value}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {contributionData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Mentee Performance & Quick Actions */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Impact Summary</CardTitle>
-                <CardDescription>
-                  Your contribution to the community
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Active Mentees</span>
-                  <span className="text-2xl font-bold text-blue-600">
-                    {stats.mentees}
-                  </span>
+      {/* Mentorship Requests & Recent Activity */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 1.0 }}
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Mentorship Requests</CardTitle>
+                  <CardDescription>
+                    Students seeking your guidance
+                  </CardDescription>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Jobs Posted</span>
-                  <span className="text-2xl font-bold text-purple-600">
-                    {stats.jobsPosted}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Total Donations</span>
-                  <span className="text-2xl font-bold text-green-600">
-                    ₹{stats.totalDonations.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Network Growth</span>
-                  <span className="text-2xl font-bold text-orange-600">
-                    {stats.networkGrowth}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.9 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>
-                  Ways to contribute to the community
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3">
-                {quickActions.map((action) => (
-                  <Link
-                    key={action.title}
-                    href={action.href}
-                    className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent transition-colors group"
+                <Badge variant="secondary">{mentorshipRequests.length}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {mentorshipRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No pending mentorship requests
+                </p>
+              ) : (
+                mentorshipRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="p-4 rounded-lg border space-y-2"
                   >
-                    <div className={`p-2 rounded-lg ${action.bgColor}`}>
-                      <action.icon className={`h-5 w-5 ${action.color}`} />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+                          {request.studentName
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </div>
+                        <div>
+                          <p className="font-medium">{request.studentName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {request.studentBranch}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm">{request.topic}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {formatTimeAgo(request.createdAt)}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeclineMentorship(request.id)}
+                        >
+                          Decline
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAcceptMentorship(request.id)}
+                        >
+                          Accept
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 1.1 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your latest contributions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {recentActivities.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No recent activity. Start by posting a job or accepting
+                  mentorship requests!
+                </p>
+              ) : (
+                recentActivities.map((activity, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-muted">
+                      <activity.icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium">{action.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {action.description}
+                      <p className="text-sm">{activity.text}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {activity.time}
                       </p>
                     </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                  </Link>
-                ))}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Mentorship Requests & Recent Activity */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 1.0 }}
-          >
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Mentorship Requests</CardTitle>
-                    <CardDescription>
-                      Students seeking your guidance
-                    </CardDescription>
                   </div>
-                  <Badge variant="secondary">{mentorshipRequests.length}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {mentorshipRequests.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No pending mentorship requests
-                  </p>
-                ) : (
-                  mentorshipRequests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="p-4 rounded-lg border space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
-                            {request.studentName
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </div>
-                          <div>
-                            <p className="font-medium">{request.studentName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {request.studentBranch}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-sm">{request.topic}</p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground">
-                          {formatTimeAgo(request.createdAt)}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeclineMentorship(request.id)}
-                          >
-                            Decline
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleAcceptMentorship(request.id)}
-                          >
-                            Accept
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 1.1 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your latest contributions</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentActivities.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No recent activity. Start by posting a job or accepting
-                    mentorship requests!
-                  </p>
-                ) : (
-                  recentActivities.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-muted">
-                        <activity.icon className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm">{activity.text}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {activity.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* AI Assistant */}
-        <AIAssistant role="alumni" userStats={stats} />
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
-    </RoleLayout>
+
+      {/* AI Assistant */}
+      <AIAssistant role="alumni" userStats={stats} />
+    </div>
   );
 }

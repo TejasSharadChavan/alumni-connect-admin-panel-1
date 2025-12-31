@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Industry Trends Search</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .result {
+        border: 1px solid #ccc;
+        margin: 10px 0;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      .title {
+        font-weight: bold;
+        color: #333;
+      }
+      .summary {
+        color: #666;
+        margin: 10px 0;
+      }
+      .meta {
+        font-size: 12px;
+        color: #999;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      #loading {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Industry Trends Search Test</h1>
+
+    <div>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search for AI, React, Python..."
+        style="width: 300px; padding: 10px"
+      />
+      <button onclick="testRegularSearch()">Regular Search</button>
+      <button onclick="testAISearch()">AI Search</button>
+      <button onclick="testLoadAll()">Load All</button>
+    </div>
+
+    <div id="loading">Loading...</div>
+    <div id="results"></div>
+
+    <script>
+      const API_BASE = "http://localhost:3000/api/industry-trends";
+      const AUTH_TOKEN = "test-token"; // You can replace this with a real token
+
+      async function testRegularSearch() {
+        const query =
+          document.getElementById("searchInput").value || "technology";
+        showLoading(true);
+
+        try {
+          const response = await fetch(
+            `${API_BASE}?query=${encodeURIComponent(query)}&limit=5`,
+            {
+              headers: { Authorization: `Bearer ${AUTH_TOKEN}` },
+            }
+          );
+
+          const data = await response.json();
+          displayResults(
+            data.data.trends,
+            `Regular Search Results for "${query}"`
+          );
+        } catch (error) {
+          displayError("Regular search failed: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function testAISearch() {
+        const query = document.getElementById("searchInput").value || "AI";
+        showLoading(true);
+
+        try {
+          const response = await fetch(`${API_BASE}/ai-search`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${AUTH_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query }),
+          });
+
+          const data = await response.json();
+          displayResults(data.data.trends, `AI Search Results for "${query}"`);
+        } catch (error) {
+          displayError("AI search failed: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function testLoadAll() {
+        showLoading(true);
+
+        try {
+          const response = await fetch(`${API_BASE}?limit=10`, {
+            headers: { Authorization: `Bearer ${AUTH_TOKEN}` },
+          });
+
+          const data = await response.json();
+          displayResults(data.data.trends, "All Latest Trends");
+        } catch (error) {
+          displayError("Load all failed: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      function displayResults(trends, title) {
+        const resultsDiv = document.getElementById("results");
+
+        if (!trends || trends.length === 0) {
+          resultsDiv.innerHTML = `<h2>${title}</h2><p>No results found.</p>`;
+          return;
+        }
+
+        let html = `<h2>${title} (${trends.length} results)</h2>`;
+
+        trends.forEach((trend) => {
+          html += `
+                    <div class="result">
+                        <div class="title">${trend.title}</div>
+                        <div class="summary">${trend.summary}</div>
+                        <div class="meta">
+                            Category: ${trend.category} | 
+                            Source: ${trend.source} | 
+                            Date: ${trend.date} | 
+                            Tags: ${trend.tags.join(", ")} |
+                            Trending: ${trend.trending ? "Yes" : "No"} |
+                            Score: ${trend.relevanceScore}
+                        </div>
+                        <a href="${trend.url}" target="_blank">Read More</a>
+                    </div>
+                `;
+        });
+
+        resultsDiv.innerHTML = html;
+      }
+
+      function displayError(message) {
+        document.getElementById("results").innerHTML =
+          `<div style="color: red;">Error: ${message}</div>`;
+      }
+
+      function showLoading(show) {
+        document.getElementById("loading").style.display = show
+          ? "block"
+          : "none";
+      }
+
+      // Load all trends on page load
+      window.onload = () => testLoadAll();
+    </script>
+  </body>
+</html>

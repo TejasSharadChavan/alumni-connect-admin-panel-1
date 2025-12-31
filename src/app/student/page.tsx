@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   Briefcase,
   Calendar,
@@ -260,251 +259,247 @@ export default function StudentDashboard() {
 
   if (loading) {
     return (
-      <RoleLayout role="student">
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-          <div className="grid gap-6 md:grid-cols-2">
-            <Skeleton className="h-96" />
-            <Skeleton className="h-96" />
-          </div>
+      <div className="space-y-6">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
         </div>
-      </RoleLayout>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
     );
   }
 
   return (
-    <RoleLayout role="student">
-      <div className="space-y-6">
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome back, {user?.name?.split(" ")[0]}! 👋
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Here's what's happening with your profile today
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Profile Completion Banner */}
+      {(() => {
+        const calculateProfileCompletion = () => {
+          if (!user) return 20;
+          let score = 20; // Base score for having an account
+          if (user.headline) score += 15;
+          if (user.bio) score += 20;
+          if (user.skills && user.skills.length > 0) {
+            score += 10 * Math.min(user.skills.length, 3);
+          }
+          if (user.linkedinUrl) score += 10;
+          if (user.githubUrl) score += 10;
+          if (user.profileImageUrl) score += 15;
+          return Math.min(100, score);
+        };
+
+        const completionScore = calculateProfileCompletion();
+
+        // Only show banner if profile is not 100% complete
+        if (completionScore >= 100) return null;
+
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/50 dark:border-blue-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-lg bg-blue-500/10">
+                      <TrendingUp className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">
+                        Complete Your Profile
+                      </CardTitle>
+                      <CardDescription>
+                        Your profile is {completionScore}% complete. Add more
+                        details to stand out!
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Button asChild>
+                    <Link href="/student/profile">Complete Profile</Link>
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
+          </motion.div>
+        );
+      })()}
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {statsConfig.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
+          >
+            <Card className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stat.change}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Quick Actions */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome back, {user?.name?.split(" ")[0]}! 👋
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Here's what's happening with your profile today
-            </p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>
+                Get started with these common tasks
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.title}
+                  href={action.href}
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent transition-colors group"
+                >
+                  <div className={`p-2 rounded-lg ${action.bgColor}`}>
+                    <action.icon className={`h-5 w-5 ${action.color}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{action.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {action.description}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
         </motion.div>
 
-        {/* Profile Completion Banner */}
-        {(() => {
-          const calculateProfileCompletion = () => {
-            if (!user) return 20;
-            let score = 20; // Base score for having an account
-            if (user.headline) score += 15;
-            if (user.bio) score += 20;
-            if (user.skills && user.skills.length > 0) {
-              score += 10 * Math.min(user.skills.length, 3);
-            }
-            if (user.linkedinUrl) score += 10;
-            if (user.githubUrl) score += 10;
-            if (user.profileImageUrl) score += 15;
-            return Math.min(100, score);
-          };
-
-          const completionScore = calculateProfileCompletion();
-
-          // Only show banner if profile is not 100% complete
-          if (completionScore >= 100) return null;
-
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-            >
-              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/50 dark:border-blue-800">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-lg bg-blue-500/10">
-                        <TrendingUp className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">
-                          Complete Your Profile
-                        </CardTitle>
-                        <CardDescription>
-                          Your profile is {completionScore}% complete. Add more
-                          details to stand out!
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <Button asChild>
-                      <Link href="/student/profile">Complete Profile</Link>
-                    </Button>
-                  </div>
-                </CardHeader>
-              </Card>
-            </motion.div>
-          );
-        })()}
-
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {statsConfig.map((stat, index) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 + index * 0.1 }}
-            >
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stat.change}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Quick Actions */}
+        {/* Recommended Mentors & Recent Activity */}
+        <div className="space-y-6">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
           >
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle>Recommended Mentors</CardTitle>
                 <CardDescription>
-                  Get started with these common tasks
+                  Alumni who can guide your career
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-3">
-                {quickActions.map((action) => (
-                  <Link
-                    key={action.title}
-                    href={action.href}
-                    className="flex items-center gap-4 p-4 rounded-lg border hover:bg-accent transition-colors group"
-                  >
-                    <div className={`p-2 rounded-lg ${action.bgColor}`}>
-                      <action.icon className={`h-5 w-5 ${action.color}`} />
+              <CardContent className="space-y-4">
+                {recommendedMentors.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No mentor recommendations available yet
+                  </p>
+                ) : (
+                  recommendedMentors.map((mentor) => (
+                    <div
+                      key={mentor.id}
+                      className="flex items-center justify-between p-4 rounded-lg border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">
+                          {mentor.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </div>
+                        <div>
+                          <p className="font-medium">{mentor.name}</p>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {mentor.role}
+                          </p>
+                          {mentor.expertise && (
+                            <Badge variant="outline" className="mt-1 text-xs">
+                              {mentor.expertise}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href="/student/network">Connect</Link>
+                      </Button>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{action.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {action.description}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                  </Link>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Recommended Mentors & Recent Activity */}
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recommended Mentors</CardTitle>
-                  <CardDescription>
-                    Alumni who can guide your career
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {recommendedMentors.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No mentor recommendations available yet
-                    </p>
-                  ) : (
-                    recommendedMentors.map((mentor) => (
-                      <div
-                        key={mentor.id}
-                        className="flex items-center justify-between p-4 rounded-lg border"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">
-                            {mentor.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </div>
-                          <div>
-                            <p className="font-medium">{mentor.name}</p>
-                            <p className="text-sm text-muted-foreground capitalize">
-                              {mentor.role}
-                            </p>
-                            {mentor.expertise && (
-                              <Badge variant="outline" className="mt-1 text-xs">
-                                {mentor.expertise}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <Button size="sm" variant="outline" asChild>
-                          <Link href="/student/network">Connect</Link>
-                        </Button>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Your latest actions</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {recentActivities.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No recent activity yet. Start by exploring jobs or events!
+                  </p>
+                ) : (
+                  recentActivities.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-muted">
+                        <activity.icon className="h-4 w-4" />
                       </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Your latest actions</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {recentActivities.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No recent activity yet. Start by exploring jobs or events!
-                    </p>
-                  ) : (
-                    recentActivities.map((activity, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-muted">
-                          <activity.icon className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm">{activity.text}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {activity.time}
-                          </p>
-                        </div>
+                      <div className="flex-1">
+                        <p className="text-sm">{activity.text}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {activity.time}
+                        </p>
                       </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
-    </RoleLayout>
+    </div>
   );
 }

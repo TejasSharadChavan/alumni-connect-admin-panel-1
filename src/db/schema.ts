@@ -176,6 +176,13 @@ export const applications = sqliteTable("applications", {
     .references(() => users.id),
   resumeUrl: text("resume_url"),
   coverLetter: text("cover_letter"),
+  resumeSummary: text("resume_summary"), // AI-generated resume summary
+  matchingScore: integer("matching_score"), // 0-100 score based on job match
+  skillsMatch: text("skills_match", { mode: "json" }), // JSON array of matched skills
+  experienceMatch: text("experience_match"), // Experience level match analysis
+  strengthsWeaknesses: text("strengths_weaknesses", { mode: "json" }), // JSON object with strengths and weaknesses
+  aiAnalysis: text("ai_analysis", { mode: "json" }), // Complete AI analysis data
+  referralCode: text("referral_code"), // Referral code used
   status: text("status").notNull().default("applied"), // 'applied', 'screening', 'interview', 'rejected', 'accepted'
   appliedAt: text("applied_at").notNull(),
   updatedAt: text("updated_at").notNull(),
@@ -536,6 +543,7 @@ export const referrals = sqliteTable("referrals", {
   alumniId: integer("alumni_id")
     .notNull()
     .references(() => users.id),
+  jobId: integer("job_id").references(() => jobs.id), // Link to specific job (optional)
   code: text("code").notNull().unique(),
   company: text("company").notNull(),
   position: text("position").notNull(),

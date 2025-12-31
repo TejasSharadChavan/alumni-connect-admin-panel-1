@@ -1,14 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'student' | 'alumni' | 'faculty';
+  role: "admin" | "student" | "alumni" | "faculty";
   status: string;
   branch?: string;
   cohort?: string;
@@ -39,21 +39,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
       if (!token) {
         setLoading(false);
         return;
       }
 
-      const response = await fetch('/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` },
+      const response = await fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
         const data = await response.json();
         // Parse skills if they're a JSON string
         let parsedSkills = data.user.skills;
-        if (typeof data.user.skills === 'string') {
+        if (typeof data.user.skills === "string") {
           try {
             parsedSkills = JSON.parse(data.user.skills);
           } catch (e) {
@@ -65,12 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setUser({ ...data.user, skills: parsedSkills });
       } else {
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem("auth_token");
         setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('auth_token');
+      console.error("Auth check failed:", error);
+      localStorage.removeItem("auth_token");
       setUser(null);
     } finally {
       setLoading(false);
@@ -79,19 +79,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem("auth_token", data.token);
         // Parse skills if they're a JSON string
         let parsedSkills = data.user.skills;
-        if (typeof data.user.skills === 'string') {
+        if (typeof data.user.skills === "string") {
           try {
             parsedSkills = JSON.parse(data.user.skills);
           } catch (e) {
@@ -102,42 +102,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           parsedSkills = [];
         }
         setUser({ ...data.user, skills: parsedSkills });
-        toast.success('Login successful!');
-        
+        toast.success("Login successful!");
+
         // Redirect based on role
-        const redirectPath = data.user.role === 'admin' ? '/admin' :
-                            data.user.role === 'student' ? '/student' :
-                            data.user.role === 'alumni' ? '/alumni' :
-                            data.user.role === 'faculty' ? '/faculty' : '/';
+        const redirectPath =
+          data.user.role === "admin"
+            ? "/admin"
+            : data.user.role === "student"
+              ? "/student"
+              : data.user.role === "alumni"
+                ? "/alumni"
+                : data.user.role === "faculty"
+                  ? "/faculty"
+                  : "/";
         router.push(redirectPath);
         return true;
       } else {
-        toast.error(data.error || 'Login failed');
+        toast.error(data.error || "Login failed");
         return false;
       }
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Login failed. Please try again.');
+      console.error("Login error:", error);
+      toast.error("Login failed. Please try again.");
       return false;
     }
   };
 
   const logout = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
       if (token) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
         });
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem("auth_token");
       setUser(null);
-      toast.success('Logged out successfully');
-      router.push('/login');
+      toast.success("Logged out successfully");
+      router.push("/login");
     }
   };
 
@@ -155,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

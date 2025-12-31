@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
-import { RoleLayout } from "@/components/layout/role-layout";
 import { ImageUpload } from "@/components/profile/image-upload";
 import {
   User,
@@ -190,347 +189,334 @@ export default function StudentProfilePage() {
 
   if (loading) {
     return (
-      <RoleLayout role="student">
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </RoleLayout>
+      <div className="space-y-6">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
     );
   }
 
   return (
-    <RoleLayout role="student">
-      <div className="space-y-6 max-w-4xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-              <p className="text-muted-foreground mt-2">
-                Manage your personal information and portfolio
-              </p>
-            </div>
-            {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleCancel}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={saving}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            )}
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage your personal information and portfolio
+            </p>
           </div>
-        </motion.div>
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleCancel}>
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          )}
+        </div>
+      </motion.div>
 
-        {/* Profile Completeness */}
+      {/* Profile Completeness */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile Completeness</CardTitle>
+            <CardDescription>
+              Complete your profile to stand out to recruiters and alumni
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Progress</span>
+                <span className="font-semibold">{profileCompleteness()}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${profileCompleteness()}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Profile Picture Upload */}
+      {isEditing && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
         >
           <Card>
             <CardHeader>
-              <CardTitle>Profile Completeness</CardTitle>
+              <CardTitle>Profile Picture</CardTitle>
               <CardDescription>
-                Complete your profile to stand out to recruiters and alumni
+                Upload a professional photo to make your profile stand out
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Progress</span>
-                  <span className="font-semibold">
-                    {profileCompleteness()}%
-                  </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${profileCompleteness()}%` }}
-                  />
-                </div>
-              </div>
+              <ImageUpload
+                currentImageUrl={formData.profileImageUrl}
+                userName={formData.name}
+                onImageUpdate={handleImageUpdate}
+              />
             </CardContent>
           </Card>
         </motion.div>
+      )}
 
-        {/* Profile Picture Upload */}
-        {isEditing && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.15 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Picture</CardTitle>
-                <CardDescription>
-                  Upload a professional photo to make your profile stand out
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ImageUpload
-                  currentImageUrl={formData.profileImageUrl}
-                  userName={formData.name}
-                  onImageUpdate={handleImageUpdate}
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Profile Picture & Basic Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>
-                Your basic profile information (some fields cannot be changed)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Profile Picture */}
-              {!isEditing && (
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-3xl overflow-hidden">
-                    {formData.profileImageUrl ? (
-                      <img
-                        src={formData.profileImageUrl}
-                        alt={formData.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      formData.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
+      {/* Profile Picture & Basic Info */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+            <CardDescription>
+              Your basic profile information (some fields cannot be changed)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Profile Picture */}
+            {!isEditing && (
+              <div className="flex items-center gap-6">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-3xl overflow-hidden">
+                  {formData.profileImageUrl ? (
+                    <img
+                      src={formData.profileImageUrl}
+                      alt={formData.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    formData.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{formData.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {formData.branch && (
+                      <span className="capitalize">{formData.branch}</span>
                     )}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{formData.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {formData.branch && (
-                        <span className="capitalize">{formData.branch}</span>
-                      )}
-                      {formData.cohort && <span> • {formData.cohort}</span>}
-                    </p>
-                    <Badge variant="secondary" className="mt-2 capitalize">
-                      {user?.role}
-                    </Badge>
-                  </div>
-                </div>
-              )}
-
-              {/* Read-only fields */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Full Name
-                  </Label>
-                  <Input value={formData.name} disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </Label>
-                  <Input value={formData.email} disabled />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Branch
-                  </Label>
-                  <Input
-                    value={formData.branch}
-                    disabled
-                    className="capitalize"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Cohort</Label>
-                  <Input value={formData.cohort} disabled />
+                    {formData.cohort && <span> • {formData.cohort}</span>}
+                  </p>
+                  <Badge variant="secondary" className="mt-2 capitalize">
+                    {user?.role}
+                  </Badge>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            )}
 
-        {/* Professional Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>Professional Information</CardTitle>
-              <CardDescription>
-                Tell others about your expertise and interests
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="headline" className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
-                  Headline
-                </Label>
-                <Input
-                  id="headline"
-                  name="headline"
-                  placeholder="e.g., Computer Science Student | Web Developer | ML Enthusiast"
-                  value={formData.headline}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  name="bio"
-                  placeholder="Tell us about yourself, your interests, and your goals..."
-                  rows={6}
-                  value={formData.bio}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                />
-              </div>
-
+            {/* Read-only fields */}
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <Award className="h-4 w-4" />
-                  Skills
+                  <User className="h-4 w-4" />
+                  Full Name
                 </Label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add a skill (e.g., React, Python, Machine Learning)"
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddSkill();
-                      }
-                    }}
-                    disabled={!isEditing}
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleAddSkill}
-                    disabled={!isEditing || !newSkill.trim()}
-                  >
-                    Add
-                  </Button>
-                </div>
-                {formData.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {formData.skills.map((skill, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="text-sm"
-                      >
-                        {skill}
-                        {isEditing && (
-                          <button
-                            onClick={() => handleRemoveSkill(skill)}
-                            className="ml-2 hover:text-destructive"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                <Input value={formData.name} disabled />
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Social Links */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>Social Links</CardTitle>
-              <CardDescription>
-                Connect your professional social media accounts
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label
-                  htmlFor="linkedinUrl"
-                  className="flex items-center gap-2"
+                <Label className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email
+                </Label>
+                <Input value={formData.email} disabled />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Branch
+                </Label>
+                <Input
+                  value={formData.branch}
+                  disabled
+                  className="capitalize"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Cohort</Label>
+                <Input value={formData.cohort} disabled />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Professional Info */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Professional Information</CardTitle>
+            <CardDescription>
+              Tell others about your expertise and interests
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="headline" className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Headline
+              </Label>
+              <Input
+                id="headline"
+                name="headline"
+                placeholder="e.g., Computer Science Student | Web Developer | ML Enthusiast"
+                value={formData.headline}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                name="bio"
+                placeholder="Tell us about yourself, your interests, and your goals..."
+                rows={6}
+                value={formData.bio}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                Skills
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a skill (e.g., React, Python, Machine Learning)"
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddSkill();
+                    }
+                  }}
+                  disabled={!isEditing}
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddSkill}
+                  disabled={!isEditing || !newSkill.trim()}
                 >
-                  <Linkedin className="h-4 w-4" />
-                  LinkedIn URL
-                </Label>
-                <Input
-                  id="linkedinUrl"
-                  name="linkedinUrl"
-                  type="url"
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  value={formData.linkedinUrl}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                />
+                  Add
+                </Button>
               </div>
+              {formData.skills.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.skills.map((skill, index) => (
+                    <Badge key={index} variant="secondary" className="text-sm">
+                      {skill}
+                      {isEditing && (
+                        <button
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="ml-2 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-              <div className="space-y-2">
-                <Label htmlFor="githubUrl" className="flex items-center gap-2">
-                  <Github className="h-4 w-4" />
-                  GitHub URL
-                </Label>
-                <Input
-                  id="githubUrl"
-                  name="githubUrl"
-                  type="url"
-                  placeholder="https://github.com/yourusername"
-                  value={formData.githubUrl}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+      {/* Social Links */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Social Links</CardTitle>
+            <CardDescription>
+              Connect your professional social media accounts
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="linkedinUrl" className="flex items-center gap-2">
+                <Linkedin className="h-4 w-4" />
+                LinkedIn URL
+              </Label>
+              <Input
+                id="linkedinUrl"
+                name="linkedinUrl"
+                type="url"
+                placeholder="https://linkedin.com/in/yourprofile"
+                value={formData.linkedinUrl}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+              />
+            </div>
 
-        {/* Save Button (mobile view) */}
-        {isEditing && (
-          <div className="md:hidden flex gap-2">
-            <Button variant="outline" onClick={handleCancel} className="flex-1">
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={saving} className="flex-1">
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
-        )}
-      </div>
-    </RoleLayout>
+            <div className="space-y-2">
+              <Label htmlFor="githubUrl" className="flex items-center gap-2">
+                <Github className="h-4 w-4" />
+                GitHub URL
+              </Label>
+              <Input
+                id="githubUrl"
+                name="githubUrl"
+                type="url"
+                placeholder="https://github.com/yourusername"
+                value={formData.githubUrl}
+                onChange={handleInputChange}
+                disabled={!isEditing}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Save Button (mobile view) */}
+      {isEditing && (
+        <div className="md:hidden flex gap-2">
+          <Button variant="outline" onClick={handleCancel} className="flex-1">
+            <X className="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving} className="flex-1">
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

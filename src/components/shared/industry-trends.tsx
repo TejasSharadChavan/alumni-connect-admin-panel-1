@@ -31,7 +31,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+// Removed framer-motion for faster loading
 
 interface Trend {
   id: number;
@@ -58,37 +58,59 @@ interface TrendsData {
 
 export function IndustryTrends() {
   const [data, setData] = useState<TrendsData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false for faster initial render
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
-    fetchTrends();
+    // Add a small delay to allow UI to render first
+    const timer = setTimeout(() => {
+      fetchTrends();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory]);
 
   const fetchTrends = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("auth_token");
+      console.log(
+        "🔍 Fetching trends with token:",
+        token ? "✓ Present" : "✗ Missing"
+      );
+
       const params = new URLSearchParams({
         query: searchQuery,
         category: selectedCategory,
         limit: "20",
       });
 
+      console.log("🔍 API URL:", `/api/industry-trends?${params}`);
+      console.log("🔍 Search params:", {
+        query: searchQuery,
+        category: selectedCategory,
+      });
+
       const response = await fetch(`/api/industry-trends?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log("🔍 Response status:", response.status);
+
       if (response.ok) {
         const result = await response.json();
+        console.log("🔍 API Response:", result);
         setData(result.data);
+        toast.success(`Loaded ${result.data.trends.length} trends`);
       } else {
-        toast.error("Failed to load industry trends");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("🔍 API Error:", errorData);
+        toast.error(`Failed to load trends: ${response.status}`);
       }
     } catch (error) {
-      console.error("Error fetching trends:", error);
+      console.error("🔍 Fetch Error:", error);
       toast.error("Failed to load industry trends");
     } finally {
       setLoading(false);
@@ -106,12 +128,11 @@ export function IndustryTrends() {
 
     const query = searchInput.trim();
 
-    // Try AI search first if OpenAI is configured
-    const openaiKey = process.env.NEXT_PUBLIC_OPENAI_KEY;
-    if (openaiKey && query.length > 2) {
+    // Try AI search first for longer queries
+    if (query.length > 2) {
       await performAISearch(query);
     } else {
-      // Use regular search
+      // Use regular search for short queries
       console.log("Using regular search for:", query);
       setSearchQuery(query);
     }
@@ -121,16 +142,11 @@ export function IndustryTrends() {
     try {
       setLoading(true);
       const token = localStorage.getItem("auth_token");
-
-      // Check if OpenAI is configured
-      const openaiConfigured =
-        process.env.NEXT_PUBLIC_OPENAI_ENABLED === "true";
-
-      if (!openaiConfigured) {
-        console.log("AI search not configured, using regular search");
-        setSearchQuery(query);
-        return;
-      }
+      console.log(
+        "🤖 AI Search with token:",
+        token ? "✓ Present" : "✗ Missing"
+      );
+      console.log("🤖 AI Search query:", query);
 
       toast.info("🤖 AI is searching for latest news...");
 
@@ -143,8 +159,12 @@ export function IndustryTrends() {
         body: JSON.stringify({ query }),
       });
 
+      console.log("🤖 AI Response status:", response.status);
+
       if (response.ok) {
         const result = await response.json();
+        console.log("🤖 AI Response:", result);
+
         if (
           result.data &&
           result.data.trends &&
@@ -164,21 +184,20 @@ export function IndustryTrends() {
           toast.success(`✨ Found ${result.data.total} articles using AI`);
         } else {
           // No results from AI, use regular search
-          console.log("AI returned no results, using regular search");
+          console.log("🤖 AI returned no results, using regular search");
           setSearchQuery(query);
         }
       } else {
         // Fallback to regular search
         const errorData = await response.json().catch(() => ({}));
-        console.log("AI search failed:", errorData);
+        console.log("🤖 AI search failed:", errorData);
         setSearchQuery(query);
       }
     } catch (error) {
-      console.error("AI search error:", error);
+      console.error("🤖 AI search error:", error);
       // Fallback to regular search
       setSearchQuery(query);
       toast.info("Using regular search");
-      toast.error("AI search unavailable, using regular search");
     } finally {
       setLoading(false);
     }
@@ -249,11 +268,7 @@ export function IndustryTrends() {
   return (
     <div className="space-y-6">
       {/* Header with Search */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg p-6 text-white"
-      >
+      <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg p-6 text-white">
         <div className="flex items-start gap-4">
           <div className="p-3 bg-white/20 rounded-lg backdrop-blur">
             <TrendingUp className="h-6 w-6" />
@@ -295,7 +310,7 @@ export function IndustryTrends() {
             </form>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Trending Topics */}
       {data && data.trendingTopics.length > 0 && (
@@ -367,105 +382,97 @@ export function IndustryTrends() {
 
           {/* Trends Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AnimatePresence mode="popLayout">
-              {data?.trends.map((trend, index) => {
-                const CategoryIcon = getCategoryIcon(trend.category);
-                return (
-                  <motion.div
-                    key={trend.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ delay: index * 0.05 }}
+            {data?.trends.map((trend, index) => {
+              const CategoryIcon = getCategoryIcon(trend.category);
+              return (
+                <div key={trend.id}>
+                  <Card
+                    className="h-full hover:shadow-lg transition-shadow cursor-pointer group"
+                    onClick={() =>
+                      window.open(trend.url, "_blank", "noopener,noreferrer")
+                    }
                   >
-                    <Card
-                      className="h-full hover:shadow-lg transition-shadow cursor-pointer group"
-                      onClick={() =>
-                        window.open(trend.url, "_blank", "noopener,noreferrer")
-                      }
-                    >
-                      <CardContent className="p-0">
-                        {/* Image */}
-                        <div className="relative h-48 overflow-hidden rounded-t-lg">
-                          <img
-                            src={trend.image}
-                            alt={trend.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          {trend.trending && (
-                            <Badge className="absolute top-2 right-2 bg-red-500">
-                              <TrendingUp className="h-3 w-3 mr-1" />
-                              Trending
+                    <CardContent className="p-0">
+                      {/* Image */}
+                      <div className="relative h-48 overflow-hidden rounded-t-lg">
+                        <img
+                          src={trend.image}
+                          alt={trend.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {trend.trending && (
+                          <Badge className="absolute top-2 right-2 bg-red-500">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            Trending
+                          </Badge>
+                        )}
+                        <div className="absolute bottom-2 left-2">
+                          <Badge
+                            variant="secondary"
+                            className="bg-black/60 text-white backdrop-blur"
+                          >
+                            <CategoryIcon className="h-3 w-3 mr-1" />
+                            {trend.category}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-4 space-y-3">
+                        <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">
+                          {trend.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {trend.summary}
+                        </p>
+
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-1">
+                          {trend.tags.slice(0, 3).map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                          {trend.tags.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{trend.tags.length - 3}
                             </Badge>
                           )}
-                          <div className="absolute bottom-2 left-2">
-                            <Badge
-                              variant="secondary"
-                              className="bg-black/60 text-white backdrop-blur"
-                            >
-                              <CategoryIcon className="h-3 w-3 mr-1" />
-                              {trend.category}
-                            </Badge>
-                          </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="p-4 space-y-3">
-                          <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-                            {trend.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {trend.summary}
-                          </p>
-
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-1">
-                            {trend.tags.slice(0, 3).map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                            {trend.tags.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{trend.tags.length - 3}
-                              </Badge>
-                            )}
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {formatDate(trend.date)}
                           </div>
-
-                          {/* Footer */}
-                          <div className="flex items-center justify-between pt-2 border-t">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {formatDate(trend.date)}
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(
-                                  trend.url,
-                                  "_blank",
-                                  "noopener,noreferrer"
-                                );
-                              }}
-                            >
-                              Read More
-                              <ExternalLink className="h-3 w-3 ml-1" />
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(
+                                trend.url,
+                                "_blank",
+                                "noopener,noreferrer"
+                              );
+                            }}
+                          >
+                            Read More
+                            <ExternalLink className="h-3 w-3 ml-1" />
+                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })}
           </div>
 
           {/* No Results */}

@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   Users,
   Search,
@@ -761,310 +760,301 @@ export default function StudentNetworkPage() {
 
   if (loading) {
     return (
-      <RoleLayout role="student">
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <div className="grid gap-6 md:grid-cols-2">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-80" />
-            ))}
-          </div>
+      <div className="space-y-6">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid gap-6 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-80" />
+          ))}
         </div>
-      </RoleLayout>
+      </div>
     );
   }
 
   return (
-    <RoleLayout role="student">
-      <div className="space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-              My Network
-              <Badge
-                variant="default"
-                className="bg-gradient-to-r from-blue-600 to-purple-600"
-              >
-                <Brain className="h-3 w-3 mr-1" />
-                AI-Powered
-              </Badge>
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Connect with students, alumni, and faculty using ML-powered
-              recommendations
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{connections.length}</p>
-                  <p className="text-sm text-muted-foreground">
-                    My Connections
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950">
-                  <UserPlus className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{pendingRequests.length}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Pending Requests
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
-                  <Brain className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {mlRecommendations.length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">AI Matches</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            My Network
+            <Badge
+              variant="default"
+              className="bg-gradient-to-r from-blue-600 to-purple-600"
+            >
+              <Brain className="h-3 w-3 mr-1" />
+              AI-Powered
+            </Badge>
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Connect with students, alumni, and faculty using ML-powered
+            recommendations
+          </p>
         </div>
+      </motion.div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="ai-matches">
-              <Brain className="h-4 w-4 mr-2" />
-              AI Matches ({mlRecommendations.length})
-            </TabsTrigger>
-            <TabsTrigger value="discover">Discover</TabsTrigger>
-            <TabsTrigger value="connections">
-              Connections ({connections.length})
-            </TabsTrigger>
-            <TabsTrigger value="requests">
-              Requests ({pendingRequests.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* AI Matches Tab */}
-          <TabsContent value="ai-matches" className="space-y-6">
-            <Card className="border-2 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-yellow-500" />
-                  AI-Powered Alumni Recommendations
-                </CardTitle>
-                <CardDescription>
-                  Machine learning analyzed your profile and found these top
-                  alumni matches based on skills, branch, experience, and
-                  activity
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            {mlLoading ? (
-              <div className="grid gap-6 md:grid-cols-2">
-                {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-[500px]" />
-                ))}
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
-            ) : mlRecommendations.length === 0 ? (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      No AI recommendations available yet. Complete your profile
-                      to get personalized matches!
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2">
-                {mlRecommendations.map((rec, index) => (
-                  <motion.div
-                    key={rec.alumni_id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                  >
-                    <MLMatchCard recommendation={rec} />
-                  </motion.div>
-                ))}
+              <div>
+                <p className="text-2xl font-bold">{connections.length}</p>
+                <p className="text-sm text-muted-foreground">My Connections</p>
               </div>
-            )}
-          </TabsContent>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950">
+                <UserPlus className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{pendingRequests.length}</p>
+                <p className="text-sm text-muted-foreground">
+                  Pending Requests
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
+                <Brain className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{mlRecommendations.length}</p>
+                <p className="text-sm text-muted-foreground">AI Matches</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Discover Tab */}
-          <TabsContent value="discover" className="space-y-6">
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="ai-matches">
+            <Brain className="h-4 w-4 mr-2" />
+            AI Matches ({mlRecommendations.length})
+          </TabsTrigger>
+          <TabsTrigger value="discover">Discover</TabsTrigger>
+          <TabsTrigger value="connections">
+            Connections ({connections.length})
+          </TabsTrigger>
+          <TabsTrigger value="requests">
+            Requests ({pendingRequests.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* AI Matches Tab */}
+        <TabsContent value="ai-matches" className="space-y-6">
+          <Card className="border-2 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+                AI-Powered Alumni Recommendations
+              </CardTitle>
+              <CardDescription>
+                Machine learning analyzed your profile and found these top
+                alumni matches based on skills, branch, experience, and activity
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          {mlLoading ? (
+            <div className="grid gap-6 md:grid-cols-2">
+              {[1, 2].map((i) => (
+                <Skeleton key={i} className="h-[500px]" />
+              ))}
+            </div>
+          ) : mlRecommendations.length === 0 ? (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  Filters
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search people..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                  <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="student">Students</SelectItem>
-                      <SelectItem value="alumni">Alumni</SelectItem>
-                      <SelectItem value="faculty">Faculty</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={branchFilter} onValueChange={setBranchFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Branch" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Branches</SelectItem>
-                      <SelectItem value="computer">
-                        Computer Engineering
-                      </SelectItem>
-                      <SelectItem value="electronics">
-                        Electronics Engineering
-                      </SelectItem>
-                      <SelectItem value="mechanical">
-                        Mechanical Engineering
-                      </SelectItem>
-                      <SelectItem value="civil">Civil Engineering</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <CardContent className="py-12">
+                <div className="text-center">
+                  <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    No AI recommendations available yet. Complete your profile
+                    to get personalized matches!
+                  </p>
                 </div>
               </CardContent>
             </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {mlRecommendations.map((rec, index) => (
+                <motion.div
+                  key={rec.alumni_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                >
+                  <MLMatchCard recommendation={rec} />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-            {filteredUsers.length === 0 ? (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      No users found matching your criteria
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2">
-                {filteredUsers.map((user, index) => (
-                  <motion.div
-                    key={user.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                  >
-                    <UserCard user={user} />
-                  </motion.div>
-                ))}
+        {/* Discover Tab */}
+        <TabsContent value="discover" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search people..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="student">Students</SelectItem>
+                    <SelectItem value="alumni">Alumni</SelectItem>
+                    <SelectItem value="faculty">Faculty</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={branchFilter} onValueChange={setBranchFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Branches</SelectItem>
+                    <SelectItem value="computer">
+                      Computer Engineering
+                    </SelectItem>
+                    <SelectItem value="electronics">
+                      Electronics Engineering
+                    </SelectItem>
+                    <SelectItem value="mechanical">
+                      Mechanical Engineering
+                    </SelectItem>
+                    <SelectItem value="civil">Civil Engineering</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </TabsContent>
+            </CardContent>
+          </Card>
 
-          {/* Connections Tab */}
-          <TabsContent value="connections" className="space-y-6">
-            {connections.length === 0 ? (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      You haven't connected with anyone yet
-                    </p>
-                    <Button
-                      className="mt-4"
-                      onClick={() => setActiveTab("ai-matches")}
-                    >
-                      View AI Matches
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2">
-                {connections.map((user, index) => (
-                  <motion.div
-                    key={user.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                  >
-                    <UserCard
-                      user={user}
-                      showActions={false}
-                      showMessageButton={true}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+          {filteredUsers.length === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    No users found matching your criteria
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {filteredUsers.map((user, index) => (
+                <motion.div
+                  key={user.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                >
+                  <UserCard user={user} />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-          {/* Requests Tab */}
-          <TabsContent value="requests" className="space-y-6">
-            {pendingRequests.length === 0 ? (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      No pending connection requests
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2">
-                {pendingRequests.map((user, index) => (
-                  <motion.div
-                    key={user.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
+        {/* Connections Tab */}
+        <TabsContent value="connections" className="space-y-6">
+          {connections.length === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    You haven't connected with anyone yet
+                  </p>
+                  <Button
+                    className="mt-4"
+                    onClick={() => setActiveTab("ai-matches")}
                   >
-                    <UserCard user={user} />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </RoleLayout>
+                    View AI Matches
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {connections.map((user, index) => (
+                <motion.div
+                  key={user.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                >
+                  <UserCard
+                    user={user}
+                    showActions={false}
+                    showMessageButton={true}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Requests Tab */}
+        <TabsContent value="requests" className="space-y-6">
+          {pendingRequests.length === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center">
+                  <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    No pending connection requests
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {pendingRequests.map((user, index) => (
+                <motion.div
+                  key={user.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                >
+                  <UserCard user={user} />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   ArrowLeft,
   Briefcase,
@@ -50,6 +49,7 @@ export default function AlumniJobDetailsPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchJobDetails();
@@ -75,31 +75,51 @@ export default function AlumniJobDetailsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        toast.error("Please login to view job details");
+        router.push("/login");
+        return;
+      }
+
+      console.log("Fetching job details for ID:", jobId);
       const response = await fetch(`/api/jobs/${jobId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log("Response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
-        const jobData = {
-          ...data.job,
-          skills:
-            typeof data.job.skills === "string"
-              ? data.job.skills
-                ? JSON.parse(data.job.skills)
-                : []
-              : Array.isArray(data.job.skills)
+        console.log("Job data received:", data);
+
+        if (data.success && data.job) {
+          const jobData = {
+            ...data.job,
+            skills:
+              typeof data.job.skills === "string"
                 ? data.job.skills
-                : [],
-        };
-        setJob(jobData);
+                  ? JSON.parse(data.job.skills)
+                  : []
+                : Array.isArray(data.job.skills)
+                  ? data.job.skills
+                  : [],
+          };
+          setJob(jobData);
+        } else {
+          console.error("Invalid job data structure:", data);
+          toast.error("Invalid job data received");
+          router.push("/alumni/jobs");
+        }
       } else {
-        toast.error("Failed to load job details");
+        const errorText = await response.text();
+        console.error("API Error:", response.status, errorText);
+        toast.error(`Failed to load job details: ${response.status}`);
         router.push("/alumni/jobs");
       }
     } catch (error) {
       console.error("Error fetching job details:", error);
-      toast.error("Failed to load job details");
+      toast.error("Network error while loading job details");
       router.push("/alumni/jobs");
     } finally {
       setLoading(false);
@@ -138,121 +158,128 @@ export default function AlumniJobDetailsPage() {
 
   if (loading) {
     return (
-      <RoleLayout role="alumni">
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </RoleLayout>
+      <div className="space-y-6">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
     );
   }
 
-  if (!job) {
+  if (!job && !loading) {
     return (
-      <RoleLayout role="alumni">
-        <div className="text-center py-12">
-          <p>Job not found</p>
+      <div className="text-center py-12">
+        <div className="space-y-4">
+          <Briefcase className="h-16 w-16 mx-auto text-muted-foreground" />
+          <h2 className="text-2xl font-semibold">Job Not Found</h2>
+          <p className="text-muted-foreground">
+            {error ||
+              "The job you're looking for doesn't exist or has been removed."}
+          </p>
+          <div className="space-x-4">
+            <Button variant="outline" onClick={() => router.back()}>
+              Go Back
+            </Button>
+            <Button asChild>
+              <Link href="/alumni/jobs">Browse Jobs</Link>
+            </Button>
+          </div>
         </div>
-      </RoleLayout>
+      </div>
     );
   }
 
   return (
-    <RoleLayout role="alumni">
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Jobs
-        </Button>
+    <div className="space-y-6">
+      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Jobs
+      </Button>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="space-y-2 flex-1">
-                <div className="flex items-center gap-3">
-                  <Briefcase className="h-6 w-6 text-primary" />
-                  <CardTitle className="text-3xl">{job.title}</CardTitle>
-                </div>
-                <CardDescription className="text-xl font-medium">
-                  {job.company}
-                </CardDescription>
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="space-y-2 flex-1">
+              <div className="flex items-center gap-3">
+                <Briefcase className="h-6 w-6 text-primary" />
+                <CardTitle className="text-3xl">{job.title}</CardTitle>
               </div>
-              <Badge
-                className={`${getJobTypeColor(job.jobType)} text-white capitalize`}
-              >
-                {job.jobType}
-              </Badge>
+              <CardDescription className="text-xl font-medium">
+                {job.company}
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Job Meta Info */}
-            <div className="flex flex-wrap gap-6 text-muted-foreground border-b pb-4">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                <span>{job.location}</span>
-              </div>
-              {job.salary && (
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  <span>{job.salary}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                <span>Posted {formatTimeAgo(job.createdAt)}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                <span>Posted by {job.postedByName}</span>
-              </div>
+            <Badge
+              className={`${getJobTypeColor(job.jobType)} text-white capitalize`}
+            >
+              {job.jobType}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Job Meta Info */}
+          <div className="flex flex-wrap gap-6 text-muted-foreground border-b pb-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              <span>{job.location}</span>
             </div>
+            {job.salary && (
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                <span>{job.salary}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              <span>Posted {formatTimeAgo(job.createdAt)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <span>Posted by {job.postedByName}</span>
+            </div>
+          </div>
 
-            {/* Description */}
+          {/* Description */}
+          <div>
+            <h3 className="text-xl font-semibold mb-3">Job Description</h3>
+            <p className="text-muted-foreground whitespace-pre-wrap">
+              {job.description}
+            </p>
+          </div>
+
+          {/* Skills */}
+          {job.skills && job.skills.length > 0 && (
             <div>
-              <h3 className="text-xl font-semibold mb-3">Job Description</h3>
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {job.description}
-              </p>
+              <h3 className="text-xl font-semibold mb-3">Required Skills</h3>
+              <div className="flex flex-wrap gap-2">
+                {job.skills.map((skill, idx) => (
+                  <Badge key={idx} variant="outline" className="text-sm">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
             </div>
+          )}
 
-            {/* Skills */}
-            {job.skills && job.skills.length > 0 && (
-              <div>
-                <h3 className="text-xl font-semibold mb-3">Required Skills</h3>
-                <div className="flex flex-wrap gap-2">
-                  {job.skills.map((skill, idx) => (
-                    <Badge key={idx} variant="outline" className="text-sm">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+          {/* Branch */}
+          {job.branch && (
+            <div>
+              <h3 className="text-xl font-semibold mb-3">Branch/Department</h3>
+              <p className="text-muted-foreground">{job.branch}</p>
+            </div>
+          )}
 
-            {/* Branch */}
-            {job.branch && (
-              <div>
-                <h3 className="text-xl font-semibold mb-3">
-                  Branch/Department
-                </h3>
-                <p className="text-muted-foreground">{job.branch}</p>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            {isJobOwner && (
-              <div className="pt-4 border-t">
-                <Button asChild className="w-full sm:w-auto">
-                  <Link href={`/alumni/jobs/${job.id}/applicants`}>
-                    <Users className="h-4 w-4 mr-2" />
-                    View Applicants
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </RoleLayout>
+          {/* Action Buttons */}
+          {isJobOwner && (
+            <div className="pt-4 border-t">
+              <Button asChild className="w-full sm:w-auto">
+                <Link href={`/alumni/jobs/${job.id}/applicants`}>
+                  <Users className="h-4 w-4 mr-2" />
+                  View Applicants
+                </Link>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

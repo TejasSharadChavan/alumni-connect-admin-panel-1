@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Heart, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { RazorpayButton } from "@/components/payments/razorpay-button";
+import { MockPaymentButton } from "@/components/payments/mock-payment-button";
 
 interface DonationFormProps {
   campaignId?: string;
@@ -17,7 +24,11 @@ interface DonationFormProps {
   onSuccess?: () => void;
 }
 
-export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationFormProps) {
+export function DonationForm({
+  campaignId,
+  campaignTitle,
+  onSuccess,
+}: DonationFormProps) {
   const [amount, setAmount] = useState("");
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
@@ -31,7 +42,7 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
     setCustomAmount("");
     setMessage("");
     setIsAnonymous(false);
-    
+
     onSuccess?.();
   };
 
@@ -107,7 +118,10 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
             checked={isAnonymous}
             onCheckedChange={(checked) => setIsAnonymous(checked as boolean)}
           />
-          <Label htmlFor="anonymous" className="text-sm font-normal cursor-pointer">
+          <Label
+            htmlFor="anonymous"
+            className="text-sm font-normal cursor-pointer"
+          >
             Make this donation anonymous
           </Label>
         </div>
@@ -118,11 +132,25 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
             <strong>Secure Payment via Razorpay</strong>
           </p>
           <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-            Your payment is processed securely. We accept UPI, Cards, Net Banking, and Wallets.
+            Your payment is processed securely. We accept UPI, Cards, Net
+            Banking, and Wallets.
           </p>
         </div>
 
-        {/* Razorpay Payment Button */}
+        {/* Payment Button - Using Mock for Demo */}
+        <MockPaymentButton
+          amount={finalAmount}
+          campaignId={campaignId ? parseInt(campaignId) : undefined}
+          message={message}
+          onSuccess={handleSuccess}
+          disabled={!finalAmount || finalAmount < 100}
+          className="w-full"
+        >
+          <Heart className="mr-2 h-4 w-4" />
+          Donate ₹{(finalAmount || 0).toLocaleString()}
+        </MockPaymentButton>
+
+        {/* Alternative: Use Real Razorpay (uncomment when keys are configured)
         <RazorpayButton
           amount={finalAmount}
           campaignId={campaignId ? parseInt(campaignId) : undefined}
@@ -134,9 +162,11 @@ export function DonationForm({ campaignId, campaignTitle, onSuccess }: DonationF
           <Heart className="mr-2 h-4 w-4" />
           Donate ₹{(finalAmount || 0).toLocaleString()}
         </RazorpayButton>
+        */}
 
         <p className="text-xs text-muted-foreground text-center">
-          By donating, you agree to our terms and conditions. All donations are non-refundable.
+          By donating, you agree to our terms and conditions. All donations are
+          non-refundable.
         </p>
       </CardContent>
     </Card>

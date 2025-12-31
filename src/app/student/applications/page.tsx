@@ -11,7 +11,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   MapPin,
   Building,
@@ -109,145 +108,133 @@ export default function ApplicationsPage() {
   const rejectedCount = filterApplications("rejected").length;
 
   if (loading) {
-    return (
-      <RoleLayout role="student">
-        <div className="text-center py-12">Loading applications...</div>
-      </RoleLayout>
-    );
+    return <div className="text-center py-12">Loading applications...</div>;
   }
 
   return (
-    <RoleLayout role="student">
-      <div className="space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-bold mb-2">My Applications</h1>
-          <p className="text-muted-foreground">
-            Track your job applications and their status
-          </p>
-        </motion.div>
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="text-3xl font-bold mb-2">My Applications</h1>
+        <p className="text-muted-foreground">
+          Track your job applications and their status
+        </p>
+      </motion.div>
 
-        {/* Summary Stats */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
-                  <Briefcase className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{applications.length}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Total Applications
-                  </p>
-                </div>
+      {/* Summary Stats */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
+                <Briefcase className="h-6 w-6 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950">
-                  <Clock className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{appliedCount}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Pending Review
-                  </p>
-                </div>
+              <div>
+                <p className="text-2xl font-bold">{applications.length}</p>
+                <p className="text-sm text-muted-foreground">
+                  Total Applications
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{acceptedCount}</p>
-                  <p className="text-sm text-muted-foreground">Accepted</p>
-                </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950">
+                <Clock className="h-6 w-6 text-orange-600" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950">
-                  <XCircle className="h-6 w-6 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{rejectedCount}</p>
-                  <p className="text-sm text-muted-foreground">Rejected</p>
-                </div>
+              <div>
+                <p className="text-2xl font-bold">{appliedCount}</p>
+                <p className="text-sm text-muted-foreground">Pending Review</p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Applications Tabs */}
-        <Tabs defaultValue="all" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="all">All ({applications.length})</TabsTrigger>
-            <TabsTrigger value="applied">Applied ({appliedCount})</TabsTrigger>
-            <TabsTrigger value="interview">
-              Interview ({interviewCount})
-            </TabsTrigger>
-            <TabsTrigger value="accepted">
-              Accepted ({acceptedCount})
-            </TabsTrigger>
-            <TabsTrigger value="rejected">
-              Rejected ({rejectedCount})
-            </TabsTrigger>
-          </TabsList>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{acceptedCount}</p>
+                <p className="text-sm text-muted-foreground">Accepted</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="all">
-            <ApplicationsList
-              applications={applications}
-              getStatusColor={getStatusColor}
-              getStatusText={getStatusText}
-            />
-          </TabsContent>
-          <TabsContent value="applied">
-            <ApplicationsList
-              applications={filterApplications("applied")}
-              getStatusColor={getStatusColor}
-              getStatusText={getStatusText}
-            />
-          </TabsContent>
-          <TabsContent value="interview">
-            <ApplicationsList
-              applications={filterApplications("interview")}
-              getStatusColor={getStatusColor}
-              getStatusText={getStatusText}
-            />
-          </TabsContent>
-          <TabsContent value="accepted">
-            <ApplicationsList
-              applications={filterApplications("accepted")}
-              getStatusColor={getStatusColor}
-              getStatusText={getStatusText}
-            />
-          </TabsContent>
-          <TabsContent value="rejected">
-            <ApplicationsList
-              applications={filterApplications("rejected")}
-              getStatusColor={getStatusColor}
-              getStatusText={getStatusText}
-            />
-          </TabsContent>
-        </Tabs>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950">
+                <XCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{rejectedCount}</p>
+                <p className="text-sm text-muted-foreground">Rejected</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </RoleLayout>
+
+      {/* Applications Tabs */}
+      <Tabs defaultValue="all" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="all">All ({applications.length})</TabsTrigger>
+          <TabsTrigger value="applied">Applied ({appliedCount})</TabsTrigger>
+          <TabsTrigger value="interview">
+            Interview ({interviewCount})
+          </TabsTrigger>
+          <TabsTrigger value="accepted">Accepted ({acceptedCount})</TabsTrigger>
+          <TabsTrigger value="rejected">Rejected ({rejectedCount})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all">
+          <ApplicationsList
+            applications={applications}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+          />
+        </TabsContent>
+        <TabsContent value="applied">
+          <ApplicationsList
+            applications={filterApplications("applied")}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+          />
+        </TabsContent>
+        <TabsContent value="interview">
+          <ApplicationsList
+            applications={filterApplications("interview")}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+          />
+        </TabsContent>
+        <TabsContent value="accepted">
+          <ApplicationsList
+            applications={filterApplications("accepted")}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+          />
+        </TabsContent>
+        <TabsContent value="rejected">
+          <ApplicationsList
+            applications={filterApplications("rejected")}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
 

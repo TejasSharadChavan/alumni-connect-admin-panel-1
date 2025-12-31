@@ -44,11 +44,24 @@ export async function GET(request: NextRequest) {
     // Build query conditions
     let conditions: any[] = [
       ne(users.id, currentUser.id), // Exclude current user
-      or(eq(users.status, "active"), eq(users.status, "approved")), // Active or approved users
+      ne(users.status, "inactive"), // Exclude inactive users
+      ne(users.status, "rejected"), // Exclude rejected users
     ];
 
     if (role && role !== "all") {
       conditions.push(eq(users.role, role));
+
+      // Additional validation for students
+      if (role === "student") {
+        conditions.push(
+          and(
+            ne(users.name, ""), // Must have name
+            ne(users.email, ""), // Must have email
+            ne(users.branch, ""), // Must have branch
+            ne(users.cohort, "") // Must have cohort
+          )
+        );
+      }
     }
 
     if (branch && branch !== "all") {

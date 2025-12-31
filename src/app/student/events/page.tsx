@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   Calendar,
   MapPin,
@@ -184,16 +183,14 @@ export default function StudentEventsPage() {
 
   if (loading) {
     return (
-      <RoleLayout role="student">
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-80" />
-            ))}
-          </div>
+      <div className="space-y-6">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-80" />
+          ))}
         </div>
-      </RoleLayout>
+      </div>
     );
   }
 
@@ -201,240 +198,230 @@ export default function StudentEventsPage() {
   const myRSVPs = events.filter((e) => e.hasRSVP || e.hasRSVPed);
 
   return (
-    <RoleLayout role="student">
-      <div className="space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Events</h1>
-            <p className="text-muted-foreground mt-2">
-              Discover and register for workshops, webinars, and networking
-              events
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search events..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Select
-                  value={categoryFilter}
-                  onValueChange={setCategoryFilter}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="workshop">Workshop</SelectItem>
-                    <SelectItem value="webinar">Webinar</SelectItem>
-                    <SelectItem value="meetup">Meetup</SelectItem>
-                    <SelectItem value="conference">Conference</SelectItem>
-                    <SelectItem value="social">Social</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={timeFilter} onValueChange={setTimeFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Events</SelectItem>
-                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="past">Past</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950">
-                  <Calendar className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{upcomingEvents.length}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Upcoming Events
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
-                  <Check className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{myRSVPs.length}</p>
-                  <p className="text-sm text-muted-foreground">My RSVPs</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{filteredEvents.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Events</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Events</h1>
+          <p className="text-muted-foreground mt-2">
+            Discover and register for workshops, webinars, and networking events
+          </p>
         </div>
+      </motion.div>
 
-        {/* Event Listings */}
-        {filteredEvents.length === 0 ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  No events found matching your criteria
-                </p>
+      {/* Filters */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search events..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredEvents.map((event, index) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-              >
-                <Card className="h-full hover:shadow-lg transition-shadow flex flex-col">
-                  {event.imageUrl && (
-                    <div className="h-48 w-full overflow-hidden rounded-t-lg">
-                      <img
-                        src={event.imageUrl}
-                        alt={event.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <CardHeader className="flex-grow">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <CardTitle className="text-xl line-clamp-2">
-                          {event.title}
-                        </CardTitle>
-                        <CardDescription className="mt-2 line-clamp-2">
-                          {event.description}
-                        </CardDescription>
-                      </div>
-                      <Badge
-                        variant={
-                          event.category === "workshop"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {event.category}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        {formatDate(event.startDate)}
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        {formatTime(event.startDate)} -{" "}
-                        {formatTime(event.endDate)}
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        {event.location}
-                      </div>
-                      {event.isPaid && event.price && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <DollarSign className="h-4 w-4" />
-                          {event.price}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        {(event as any).rsvpCount || event.attendeeCount || 0}
-                        {event.maxAttendees
-                          ? ` / ${event.maxAttendees}`
-                          : ""}{" "}
-                        attendees
-                      </div>
-                    </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="workshop">Workshop</SelectItem>
+                  <SelectItem value="webinar">Webinar</SelectItem>
+                  <SelectItem value="meetup">Meetup</SelectItem>
+                  <SelectItem value="conference">Conference</SelectItem>
+                  <SelectItem value="social">Social</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={timeFilter} onValueChange={setTimeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Time" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Events</SelectItem>
+                  <SelectItem value="upcoming">Upcoming</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="past">Past</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-                    {event.hasRSVP || (event as any).hasRSVPed ? (
-                      <Button className="w-full" disabled>
-                        <Check className="h-4 w-4 mr-2" />
-                        Already Registered
-                      </Button>
-                    ) : !isEventUpcoming(event.startDate) ? (
-                      <Button className="w-full" variant="secondary" disabled>
-                        Event Ended
-                      </Button>
-                    ) : event.maxAttendees &&
-                      ((event as any).rsvpCount || event.attendeeCount || 0) >=
-                        event.maxAttendees ? (
-                      <Button className="w-full" variant="secondary" disabled>
-                        Event Full
-                      </Button>
-                    ) : (
-                      <Button
-                        className="w-full"
-                        onClick={() => handleRSVP(event.id)}
-                        disabled={rsvpingEventId === event.id}
-                      >
-                        {rsvpingEventId === event.id
-                          ? "Registering..."
-                          : "RSVP Now"}
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        )}
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950">
+                <Calendar className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{upcomingEvents.length}</p>
+                <p className="text-sm text-muted-foreground">Upcoming Events</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950">
+                <Check className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{myRSVPs.length}</p>
+                <p className="text-sm text-muted-foreground">My RSVPs</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{filteredEvents.length}</p>
+                <p className="text-sm text-muted-foreground">Total Events</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </RoleLayout>
+
+      {/* Event Listings */}
+      {filteredEvents.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                No events found matching your criteria
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredEvents.map((event, index) => (
+            <motion.div
+              key={event.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.05 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-shadow flex flex-col">
+                {event.imageUrl && (
+                  <div className="h-48 w-full overflow-hidden rounded-t-lg">
+                    <img
+                      src={event.imageUrl}
+                      alt={event.title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
+                <CardHeader className="flex-grow">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <CardTitle className="text-xl line-clamp-2">
+                        {event.title}
+                      </CardTitle>
+                      <CardDescription className="mt-2 line-clamp-2">
+                        {event.description}
+                      </CardDescription>
+                    </div>
+                    <Badge
+                      variant={
+                        event.category === "workshop" ? "default" : "secondary"
+                      }
+                    >
+                      {event.category}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      {formatDate(event.startDate)}
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      {formatTime(event.startDate)} -{" "}
+                      {formatTime(event.endDate)}
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      {event.location}
+                    </div>
+                    {event.isPaid && event.price && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <DollarSign className="h-4 w-4" />
+                        {event.price}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      {(event as any).rsvpCount || event.attendeeCount || 0}
+                      {event.maxAttendees
+                        ? ` / ${event.maxAttendees}`
+                        : ""}{" "}
+                      attendees
+                    </div>
+                  </div>
+
+                  {event.hasRSVP || (event as any).hasRSVPed ? (
+                    <Button className="w-full" disabled>
+                      <Check className="h-4 w-4 mr-2" />
+                      Already Registered
+                    </Button>
+                  ) : !isEventUpcoming(event.startDate) ? (
+                    <Button className="w-full" variant="secondary" disabled>
+                      Event Ended
+                    </Button>
+                  ) : event.maxAttendees &&
+                    ((event as any).rsvpCount || event.attendeeCount || 0) >=
+                      event.maxAttendees ? (
+                    <Button className="w-full" variant="secondary" disabled>
+                      Event Full
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full"
+                      onClick={() => handleRSVP(event.id)}
+                      disabled={rsvpingEventId === event.id}
+                    >
+                      {rsvpingEventId === event.id
+                        ? "Registering..."
+                        : "RSVP Now"}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

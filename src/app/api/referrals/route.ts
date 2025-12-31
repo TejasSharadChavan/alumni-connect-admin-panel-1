@@ -1,32 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { referrals, users } from "@/db/schema";
+import { referrals, users, jobs } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 // Get user's referrals
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "");
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user from token
-    const [session] = await db
+    // Find session by token
+    const { sessions } = await import("@/db/schema");
+    const sessionResult = await db
       .select()
-      .from(users)
-      .where(eq(users.id, parseInt(token)))
+      .from(sessions)
+      .where(eq(sessions.token, token))
       .limit(1);
 
-    if (!session) {
+    if (sessionResult.length === 0) {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    // Get user's referrals
+    const session = sessionResult[0];
+
+    // Check if session is expired
+    const isExpired = new Date(session.expiresAt) <= new Date();
+    if (isExpired) {
+      return NextResponse.json({ error: "Session expired" }, { status: 401 });
+    }
+
+    // Get user by userId
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.userId))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const user = userResult[0];
+
+    // Get user's referrals (without job information for now - until migration is done)
     const userReferrals = await db
       .select()
       .from(referrals)
-      .where(eq(referrals.alumniId, session.id))
+      .where(eq(referrals.alumniId, user.id))
       .orderBy(desc(referrals.createdAt));
 
     return NextResponse.json({
@@ -45,19 +69,47 @@ export async function GET(request: NextRequest) {
 // Create new referral
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "");
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
+
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user from token
-    const [user] = await db
+    // Find session by token
+    const { sessions } = await import("@/db/schema");
+    const sessionResult = await db
       .select()
-      .from(users)
-      .where(eq(users.id, parseInt(token)))
+      .from(sessions)
+      .where(eq(sessions.token, token))
       .limit(1);
 
-    if (!user || user.role !== "alumni") {
+    if (sessionResult.length === 0) {
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    const session = sessionResult[0];
+
+    // Check if session is expired
+    const isExpired = new Date(session.expiresAt) <= new Date();
+    if (isExpired) {
+      return NextResponse.json({ error: "Session expired" }, { status: 401 });
+    }
+
+    // Get user by userId
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.userId))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const user = userResult[0];
+
+    if (user.role !== "alumni") {
       return NextResponse.json(
         { error: "Only alumni can create referrals" },
         { status: 403 }
@@ -65,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { company, position, description, maxUses, expiresAt } = body;
+    const { jobId, company, position, description, maxUses, expiresAt } = body;
 
     if (!company || !position) {
       return NextResponse.json(
@@ -73,6 +125,28 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Job validation temporarily disabled until migration is complete
+    // TODO: Re-enable after adding job_id column to referrals table
+    /*
+    if (jobId) {
+      const jobResult = await db
+        .select()
+        .from(jobs)
+        .where(and(eq(jobs.id, jobId), eq(jobs.postedById, user.id)))
+        .limit(1);
+
+      if (jobResult.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Job not found or you don't have permission to create referrals for this job",
+          },
+          { status: 403 }
+        );
+      }
+    }
+    */
 
     // Generate unique referral code
     const companyCode = company
@@ -82,11 +156,12 @@ export async function POST(request: NextRequest) {
     const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
     const code = `${companyCode}-${randomCode}`;
 
-    // Create referral
+    // Create referral (without jobId for now - until migration is done)
     const [referral] = await db
       .insert(referrals)
       .values({
         alumniId: user.id,
+        // jobId: jobId || null, // Commented out until migration
         code,
         company,
         position,

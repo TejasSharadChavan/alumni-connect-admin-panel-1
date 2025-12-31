@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   UserCheck,
   Search,
@@ -140,8 +139,7 @@ export default function AlumniManagementPage() {
   };
 
   return (
-    <RoleLayout role="admin">
-      <div className="space-y-6">
+    <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -348,6 +346,5 @@ export default function AlumniManagementPage() {
         }}
         onSuccess={fetchAlumni}
       />
-    </RoleLayout>
   );
 }

@@ -7,8 +7,12 @@ import {
   jobs,
   donations,
   connections,
+  referrals,
+  events,
+  applications,
+  notifications,
 } from "@/db/schema";
-import { eq, and, gte, sql, count } from "drizzle-orm";
+import { eq, and, gte, sql, count, or } from "drizzle-orm";
 
 async function getCurrentUser(request: NextRequest) {
   const authHeader = request.headers.get("Authorization");
@@ -50,7 +54,87 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get date 6 months ago
+    console.log(`Fetching analytics for alumni user ID: ${user.id}`);
+
+    // Get current totals first (for debugging)
+    const [
+      totalJobsResult,
+      totalConnectionsResult,
+      totalReferralsResult,
+      totalMentorshipResult,
+      totalDonationsResult,
+      totalEventsResult,
+      totalApplicationsResult,
+    ] = await Promise.all([
+      // Jobs posted by this alumni
+      db
+        .select({ count: count() })
+        .from(jobs)
+        .where(eq(jobs.postedById, user.id)),
+
+      // Connections (both directions)
+      db
+        .select({ count: count() })
+        .from(connections)
+        .where(
+          and(
+            or(
+              eq(connections.requesterId, user.id),
+              eq(connections.responderId, user.id)
+            ),
+            eq(connections.status, "accepted")
+          )
+        ),
+
+      // Referrals created
+      db
+        .select({ count: count() })
+        .from(referrals)
+        .where(eq(referrals.alumniId, user.id)),
+
+      // Mentorship requests where this user is the mentor
+      db
+        .select({ count: count() })
+        .from(mentorshipRequests)
+        .where(eq(mentorshipRequests.mentorId, user.id)),
+
+      // Donations made by this user
+      db
+        .select({
+          total: sql<number>`COALESCE(SUM(${donations.amount}), 0)`,
+          count: count(),
+        })
+        .from(donations)
+        .where(eq(donations.donorId, user.id)),
+
+      // Events organized by this alumni
+      db
+        .select({ count: count() })
+        .from(events)
+        .where(eq(events.organizerId, user.id)),
+
+      // Applications to jobs posted by this alumni
+      db
+        .select({ count: count() })
+        .from(applications)
+        .innerJoin(jobs, eq(applications.jobId, jobs.id))
+        .where(eq(jobs.postedById, user.id)),
+    ]);
+
+    const currentTotals = {
+      jobs: totalJobsResult[0]?.count || 0,
+      connections: totalConnectionsResult[0]?.count || 0,
+      referrals: totalReferralsResult[0]?.count || 0,
+      mentorship: totalMentorshipResult[0]?.count || 0,
+      donations: Number(totalDonationsResult[0]?.total) || 0,
+      donationCount: totalDonationsResult[0]?.count || 0,
+      events: totalEventsResult[0]?.count || 0,
+      applications: totalApplicationsResult[0]?.count || 0,
+    };
+
+    console.log("Current totals:", currentTotals);
+
+    // Get date ranges
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -65,81 +149,63 @@ export async function GET(request: NextRequest) {
       const monthEnd = new Date(monthStart);
       monthEnd.setMonth(monthEnd.getMonth() + 1);
 
-      // Count mentees for this month
-      const menteesCount = await db
-        .select({ count: count() })
-        .from(mentorshipRequests)
-        .where(
-          and(
-            eq(mentorshipRequests.mentorId, user.id),
-            gte(mentorshipRequests.createdAt, monthStart.toISOString()),
-            sql`${mentorshipRequests.createdAt} < ${monthEnd.toISOString()}`,
-            sql`${mentorshipRequests.status} IN ('accepted', 'completed')`
-          )
-        );
+      // Get data for this month
+      const [monthJobs, monthMentorship, monthDonations] = await Promise.all([
+        db
+          .select({ count: count() })
+          .from(jobs)
+          .where(
+            and(
+              eq(jobs.postedById, user.id),
+              gte(jobs.createdAt, monthStart.toISOString()),
+              sql`${jobs.createdAt} < ${monthEnd.toISOString()}`
+            )
+          ),
 
-      // Count jobs posted this month
-      const jobsCount = await db
-        .select({ count: count() })
-        .from(jobs)
-        .where(
-          and(
-            eq(jobs.postedById, user.id),
-            gte(jobs.createdAt, monthStart.toISOString()),
-            sql`${jobs.createdAt} < ${monthEnd.toISOString()}`
-          )
-        );
+        db
+          .select({ count: count() })
+          .from(mentorshipRequests)
+          .where(
+            and(
+              eq(mentorshipRequests.mentorId, user.id),
+              gte(mentorshipRequests.createdAt, monthStart.toISOString()),
+              sql`${mentorshipRequests.createdAt} < ${monthEnd.toISOString()}`,
+              sql`${mentorshipRequests.status} IN ('accepted', 'completed')`
+            )
+          ),
 
-      // Sum donations this month
-      const donationsSum = await db
-        .select({ total: sql<number>`COALESCE(SUM(${donations.amount}), 0)` })
-        .from(donations)
-        .where(
-          and(
-            eq(donations.donorId, user.id),
-            gte(donations.createdAt, monthStart.toISOString()),
-            sql`${donations.createdAt} < ${monthEnd.toISOString()}`
-          )
-        );
+        db
+          .select({ total: sql<number>`COALESCE(SUM(${donations.amount}), 0)` })
+          .from(donations)
+          .where(
+            and(
+              eq(donations.donorId, user.id),
+              gte(donations.createdAt, monthStart.toISOString()),
+              sql`${donations.createdAt} < ${monthEnd.toISOString()}`
+            )
+          ),
+      ]);
 
       monthlyData.push({
         month: monthStart.toLocaleDateString("en-US", { month: "short" }),
-        mentees: menteesCount[0]?.count || 0,
-        jobs: jobsCount[0]?.count || 0,
-        donations: Number(donationsSum[0]?.total) || 0,
+        mentees: monthMentorship[0]?.count || 0,
+        jobs: monthJobs[0]?.count || 0,
+        donations: Number(monthDonations[0]?.total) || 0,
       });
     }
 
-    // Get contribution breakdown
-    const totalMentees = await db
-      .select({ count: count() })
-      .from(mentorshipRequests)
-      .where(
-        and(
-          eq(mentorshipRequests.mentorId, user.id),
-          sql`${mentorshipRequests.status} IN ('accepted', 'completed')`
-        )
-      );
-
-    const totalJobs = await db
-      .select({ count: count() })
-      .from(jobs)
-      .where(eq(jobs.postedById, user.id));
-
-    const totalDonationsSum = await db
-      .select({ total: sql<number>`COALESCE(SUM(${donations.amount}), 0)` })
-      .from(donations)
-      .where(eq(donations.donorId, user.id));
-
-    // Get network growth (connections in last 6 months vs previous 6 months)
+    // Calculate network growth
     const recentConnections = await db
       .select({ count: count() })
       .from(connections)
       .where(
         and(
-          sql`(${connections.requesterId} = ${user.id} OR ${connections.responderId} = ${user.id})`,
+          or(
+            eq(connections.requesterId, user.id),
+            eq(connections.responderId, user.id)
+          ),
           gte(connections.createdAt, sixMonthsAgo.toISOString()),
-          sql`${connections.status} = 'accepted'`
+          eq(connections.status, "accepted")
         )
       );
 
@@ -151,59 +217,100 @@ export async function GET(request: NextRequest) {
       .from(connections)
       .where(
         and(
-          sql`(${connections.requesterId} = ${user.id} OR ${connections.responderId} = ${user.id})`,
+          or(
+            eq(connections.requesterId, user.id),
+            eq(connections.responderId, user.id)
+          ),
           gte(connections.createdAt, twelveMonthsAgo.toISOString()),
           sql`${connections.createdAt} < ${sixMonthsAgo.toISOString()}`,
-          sql`${connections.status} = 'accepted'`
+          eq(connections.status, "accepted")
         )
       );
 
     const recentCount = recentConnections[0]?.count || 0;
-    const previousCount = previousConnections[0]?.count || 1; // Avoid division by zero
-    const growthPercentage = Math.round(
-      ((recentCount - previousCount) / previousCount) * 100
-    );
+    const previousCount = previousConnections[0]?.count || 0;
 
+    let growthPercentage;
+    let networkGrowthText;
+
+    if (previousCount === 0) {
+      // No previous connections - show as new growth
+      if (recentCount > 0) {
+        networkGrowthText = `+${recentCount} new`;
+      } else {
+        networkGrowthText = "No growth";
+      }
+    } else {
+      // Calculate percentage growth
+      growthPercentage = Math.round(
+        ((recentCount - previousCount) / previousCount) * 100
+      );
+      networkGrowthText =
+        growthPercentage >= 0
+          ? `+${growthPercentage}%`
+          : `${growthPercentage}%`;
+    }
+
+    // Create contribution breakdown with real data
     const contributionData = [
       {
         category: "Mentorship",
-        value: (totalMentees[0]?.count || 0) * 10, // Weight mentorship
+        value: currentTotals.mentorship * 10, // Weight mentorship
       },
       {
         category: "Job Postings",
-        value: (totalJobs[0]?.count || 0) * 8, // Weight jobs
+        value: currentTotals.jobs * 8, // Weight jobs
       },
       {
         category: "Donations",
-        value: Math.round((Number(totalDonationsSum[0]?.total) || 0) / 1000), // Convert to thousands
+        value: Math.round(currentTotals.donations / 1000), // Convert to thousands
       },
       {
         category: "Network",
-        value: recentCount * 2, // Weight connections
+        value: currentTotals.connections * 5, // Weight connections
+      },
+      {
+        category: "Referrals",
+        value: currentTotals.referrals * 6, // Weight referrals
       },
     ];
 
+    const analytics = {
+      monthlyImpact: monthlyData,
+      contributionBreakdown: contributionData,
+      networkGrowth: networkGrowthText,
+      totals: {
+        mentees: currentTotals.mentorship,
+        jobs: currentTotals.jobs,
+        donations: currentTotals.donations,
+        connections: currentTotals.connections,
+        referrals: currentTotals.referrals,
+        events: currentTotals.events,
+        applications: currentTotals.applications,
+      },
+      // Additional metrics for dashboard
+      stats: {
+        jobsPosted: currentTotals.jobs,
+        jobApplications: currentTotals.applications,
+        eventsOrganized: currentTotals.events,
+        connections: currentTotals.connections,
+        mentorshipRequests: currentTotals.mentorship,
+        referralsCreated: currentTotals.referrals,
+        totalDonations: currentTotals.donations,
+        donationCount: currentTotals.donationCount,
+      },
+    };
+
+    console.log("Returning analytics:", analytics);
+
     return NextResponse.json({
       success: true,
-      analytics: {
-        monthlyImpact: monthlyData,
-        contributionBreakdown: contributionData,
-        networkGrowth:
-          growthPercentage >= 0
-            ? `+${growthPercentage}%`
-            : `${growthPercentage}%`,
-        totals: {
-          mentees: totalMentees[0]?.count || 0,
-          jobs: totalJobs[0]?.count || 0,
-          donations: Number(totalDonationsSum[0]?.total) || 0,
-          connections: recentCount,
-        },
-      },
+      analytics,
     });
   } catch (error) {
     console.error("Error fetching dashboard analytics:", error);
     return NextResponse.json(
-      { error: "Failed to fetch analytics" },
+      { error: "Failed to fetch analytics", details: error.message },
       { status: 500 }
     );
   }

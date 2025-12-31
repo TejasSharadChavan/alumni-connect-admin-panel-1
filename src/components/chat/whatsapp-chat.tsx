@@ -7,7 +7,14 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, Smile, Paperclip, Check, CheckCheck, Loader2 } from "lucide-react";
+import {
+  Send,
+  Smile,
+  Paperclip,
+  Check,
+  CheckCheck,
+  Loader2,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import EmojiPicker from "emoji-picker-react";
 
@@ -36,7 +43,12 @@ interface WhatsAppChatProps {
   onSendMessage: (content: string) => Promise<void>;
 }
 
-export function WhatsAppChat({ currentUserId, otherUser, messages, onSendMessage }: WhatsAppChatProps) {
+export function WhatsAppChat({
+  currentUserId,
+  otherUser,
+  messages,
+  onSendMessage,
+}: WhatsAppChatProps) {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -151,8 +163,14 @@ export function WhatsAppChat({ currentUserId, otherUser, messages, onSendMessage
                 <div className="bg-muted rounded-lg p-3">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
-                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                    <span
+                      className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    />
+                    <span
+                      className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    />
                   </div>
                 </div>
               </motion.div>

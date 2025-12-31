@@ -20,7 +20,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { RoleLayout } from "@/components/layout/role-layout";
 import {
   DollarSign,
   Search,
@@ -131,8 +130,7 @@ export default function CampaignsManagementPage() {
   };
 
   return (
-    <RoleLayout role="admin">
-      <div className="space-y-6">
+    <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -331,6 +329,5 @@ export default function CampaignsManagementPage() {
         onClose={() => setCreateDialogOpen(false)}
         onSuccess={fetchCampaigns}
       />
-    </RoleLayout>
   );
 }

@@ -1,591 +1,344 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { RoleLayout } from "@/components/layout/role-layout";
-import {
-  CheckCircle2,
-  XCircle,
-  Eye,
-  Clock,
   Shield,
-  AlertTriangle,
+  Search,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
   FileText,
-  Briefcase,
+  MessageSquare,
   Calendar,
+  Briefcase,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 
-interface PendingContent {
+interface ContentItem {
   id: number;
-  type: "post" | "job" | "event";
+  type: "post" | "job" | "event" | "comment";
   title: string;
-  content: string;
   author: string;
-  authorId: number;
-  status: string;
+  status: "pending" | "approved" | "rejected";
   createdAt: string;
+  content: string;
 }
 
 export default function ContentModerationPage() {
   const [loading, setLoading] = useState(true);
-  const [pendingPosts, setPendingPosts] = useState<PendingContent[]>([]);
-  const [pendingJobs, setPendingJobs] = useState<PendingContent[]>([]);
-  const [pendingEvents, setPendingEvents] = useState<PendingContent[]>([]);
-  const [selectedContent, setSelectedContent] = useState<PendingContent | null>(
-    null
-  );
-  const [actionType, setActionType] = useState<
-    "approve" | "reject" | "view" | null
-  >(null);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
+  const [content, setContent] = useState<ContentItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
 
   useEffect(() => {
-    fetchPendingContent();
+    fetchContent();
   }, []);
 
-  const fetchPendingContent = async () => {
+  const fetchContent = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) return;
 
-      // Fetch pending posts
-      const postsRes = await fetch("/api/posts?status=pending", {
+      const response = await fetch("/api/admin/content-stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (postsRes.ok) {
-        const postsData = await postsRes.json();
-        setPendingPosts(
-          (postsData.posts || []).map((p: any) => ({
-            id: p.id,
-            type: "post",
-            title: p.content.substring(0, 50) + "...",
-            content: p.content,
-            author: p.authorName || "Unknown",
-            authorId: p.authorId,
-            status: p.status,
-            createdAt: p.createdAt,
-          }))
-        );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch content");
       }
 
-      // Fetch pending jobs
-      const jobsRes = await fetch("/api/jobs?status=pending", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (jobsRes.ok) {
-        const jobsData = await jobsRes.json();
-        setPendingJobs(
-          (jobsData.jobs || []).map((j: any) => ({
-            id: j.id,
-            type: "job",
-            title: j.title,
-            content: j.description,
-            author: j.poster?.name || j.postedByName || "Unknown",
-            authorId: j.poster?.id || j.postedById || 0,
-            status: j.status,
-            createdAt: j.createdAt,
-          }))
-        );
-      }
-
-      // Fetch pending events
-      const eventsRes = await fetch("/api/events?status=pending", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (eventsRes.ok) {
-        const eventsData = await eventsRes.json();
-        setPendingEvents(
-          (eventsData.events || []).map((e: any) => ({
-            id: e.id,
-            type: "event",
-            title: e.title,
-            content: e.description,
-            author: e.organizer?.name || e.organizerName || "Unknown",
-            authorId: e.organizer?.id || e.organizerId || 0,
-            status: e.status,
-            createdAt: e.createdAt,
-          }))
-        );
-      }
+      const data = await response.json();
+      setContent(data.content || []);
     } catch (error) {
-      console.error("Error fetching pending content:", error);
-      toast.error("Failed to load pending content");
+      console.error("Error fetching content:", error);
+      toast.error("Failed to load content");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async () => {
-    if (!selectedContent) return;
-    setActionLoading(true);
-
+  const handleApprove = async (contentId: number) => {
     try {
       const token = localStorage.getItem("auth_token");
-      const endpoint = `/api/admin/approve-content`;
+      if (!token) return;
 
-      const response = await fetch(endpoint, {
-        method: "POST",
+      const response = await fetch("/api/admin/content-stats", {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          type: selectedContent.type + "s", // Convert "job" to "jobs", "event" to "events", "post" to "posts"
-          id: selectedContent.id,
+          contentId,
+          contentType: content.find((c) => c.id === contentId)?.type,
+          action: "approve",
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to approve content");
+      if (!response.ok) {
+        throw new Error("Failed to approve content");
+      }
 
-      toast.success(`${selectedContent.type} approved successfully!`);
-      setSelectedContent(null);
-      setActionType(null);
-      fetchPendingContent();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to approve content");
-    } finally {
-      setActionLoading(false);
+      setContent((prev) =>
+        prev.map((item) =>
+          item.id === contentId
+            ? { ...item, status: "approved" as const }
+            : item
+        )
+      );
+      toast.success("Content approved successfully");
+    } catch (error) {
+      console.error("Error approving content:", error);
+      toast.error("Failed to approve content");
     }
   };
 
-  const handleReject = async () => {
-    if (!selectedContent || !rejectionReason.trim()) {
-      toast.error("Please provide a rejection reason");
-      return;
-    }
-
-    setActionLoading(true);
+  const handleReject = async (contentId: number) => {
     try {
       const token = localStorage.getItem("auth_token");
-      const endpoint = `/api/admin/reject-content`;
+      if (!token) return;
 
-      const response = await fetch(endpoint, {
-        method: "POST",
+      const response = await fetch("/api/admin/content-stats", {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          type: selectedContent.type + "s", // Convert "job" to "jobs", "event" to "events", "post" to "posts"
-          id: selectedContent.id,
-          reason: rejectionReason,
+          contentId,
+          contentType: content.find((c) => c.id === contentId)?.type,
+          action: "reject",
+          reason: "Does not meet community guidelines",
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to reject content");
+      if (!response.ok) {
+        throw new Error("Failed to reject content");
+      }
 
-      toast.success(`${selectedContent.type} rejected`);
-      setSelectedContent(null);
-      setActionType(null);
-      setRejectionReason("");
-      fetchPendingContent();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to reject content");
-    } finally {
-      setActionLoading(false);
+      setContent((prev) =>
+        prev.map((item) =>
+          item.id === contentId
+            ? { ...item, status: "rejected" as const }
+            : item
+        )
+      );
+      toast.success("Content rejected");
+    } catch (error) {
+      console.error("Error rejecting content:", error);
+      toast.error("Failed to reject content");
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "bg-green-500";
+      case "pending":
+        return "bg-yellow-500";
+      case "rejected":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "post":
-        return FileText;
+        return <FileText className="h-4 w-4" />;
       case "job":
-        return Briefcase;
+        return <Briefcase className="h-4 w-4" />;
       case "event":
-        return Calendar;
+        return <Calendar className="h-4 w-4" />;
+      case "comment":
+        return <MessageSquare className="h-4 w-4" />;
       default:
-        return FileText;
+        return <FileText className="h-4 w-4" />;
     }
   };
 
-  const ContentTable = ({
-    items,
-    type,
-  }: {
-    items: PendingContent[];
-    type: string;
-  }) => (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Author</TableHead>
-            <TableHead>Submitted</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={4}
-                className="text-center py-8 text-muted-foreground"
-              >
-                No pending {type}
-              </TableCell>
-            </TableRow>
-          ) : (
-            items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.title}</TableCell>
-                <TableCell>{item.author}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {new Date(item.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedContent(item);
-                        setActionType("view");
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={() => {
-                        setSelectedContent(item);
-                        setActionType("approve");
-                      }}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        setSelectedContent(item);
-                        setActionType("reject");
-                      }}
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  const filteredContent = content.filter((item) => {
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.author.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || item.status === statusFilter;
+    const matchesType = typeFilter === "all" || item.type === typeFilter;
+    return matchesSearch && matchesStatus && matchesType;
+  });
 
   const stats = {
-    total: pendingPosts.length + pendingJobs.length + pendingEvents.length,
-    posts: pendingPosts.length,
-    jobs: pendingJobs.length,
-    events: pendingEvents.length,
+    total: content.length,
+    pending: content.filter((item) => item.status === "pending").length,
+    approved: content.filter((item) => item.status === "approved").length,
+    rejected: content.filter((item) => item.status === "rejected").length,
   };
 
   return (
-    <RoleLayout role="admin">
-      <div className="space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg bg-primary/10">
-              <Shield className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Content Moderation</h1>
-              <p className="text-muted-foreground">
-                Review and moderate user-generated content
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Pending
-              </CardTitle>
-              <Clock className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Posts</CardTitle>
-              <FileText className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.posts}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Jobs</CardTitle>
-              <Briefcase className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.jobs}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Events</CardTitle>
-              <Calendar className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.events}</div>
-            </CardContent>
-          </Card>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="p-3 rounded-lg bg-primary/10">
+          <Shield className="h-6 w-6 text-primary" />
         </div>
+        <div>
+          <h1 className="text-3xl font-bold">Content Moderation</h1>
+          <p className="text-muted-foreground">
+            Review and moderate user-generated content
+          </p>
+        </div>
+      </div>
 
-        {/* Content Tabs */}
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Pending Content</CardTitle>
-            <CardDescription>
-              Review and approve or reject user submissions
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Content</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="posts">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="posts">Posts ({stats.posts})</TabsTrigger>
-                <TabsTrigger value="jobs">Jobs ({stats.jobs})</TabsTrigger>
-                <TabsTrigger value="events">
-                  Events ({stats.events})
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="posts" className="mt-6">
-                <ContentTable items={pendingPosts} type="posts" />
-              </TabsContent>
-              <TabsContent value="jobs" className="mt-6">
-                <ContentTable items={pendingJobs} type="jobs" />
-              </TabsContent>
-              <TabsContent value="events" className="mt-6">
-                <ContentTable items={pendingEvents} type="events" />
-              </TabsContent>
-            </Tabs>
+            <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
 
-        {/* View Dialog */}
-        <Dialog
-          open={actionType === "view"}
-          onOpenChange={() => {
-            setActionType(null);
-            setSelectedContent(null);
-          }}
-        >
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedContent && <Badge>{selectedContent.type}</Badge>}
-                Content Details
-              </DialogTitle>
-            </DialogHeader>
-            {selectedContent && (
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">Title</Label>
-                  <p className="font-medium">{selectedContent.title}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Author
-                  </Label>
-                  <p>{selectedContent.author}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Content
-                  </Label>
-                  <p className="text-sm mt-2 whitespace-pre-wrap">
-                    {selectedContent.content}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">
-                    Submitted
-                  </Label>
-                  <p className="text-sm">
-                    {new Date(selectedContent.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            )}
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActionType(null);
-                  setSelectedContent(null);
-                }}
-              >
-                Close
-              </Button>
-              <Button
-                className="bg-green-600 hover:bg-green-700"
-                onClick={() => setActionType("approve")}
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Approve
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setActionType("reject")}
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Reject
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Pending Review
+            </CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.pending}</div>
+          </CardContent>
+        </Card>
 
-        {/* Approve Dialog */}
-        <Dialog
-          open={actionType === "approve"}
-          onOpenChange={() => {
-            setActionType(null);
-            setSelectedContent(null);
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Approve Content</DialogTitle>
-              <DialogDescription>
-                This content will be published and visible to all users.
-              </DialogDescription>
-            </DialogHeader>
-            {selectedContent && (
-              <div className="py-4">
-                <p className="font-medium">{selectedContent.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  by {selectedContent.author}
-                </p>
-              </div>
-            )}
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActionType(null);
-                  setSelectedContent(null);
-                }}
-                disabled={actionLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleApprove}
-                disabled={actionLoading}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {actionLoading ? "Approving..." : "Approve"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.approved}</div>
+          </CardContent>
+        </Card>
 
-        {/* Reject Dialog */}
-        <Dialog
-          open={actionType === "reject"}
-          onOpenChange={() => {
-            setActionType(null);
-            setSelectedContent(null);
-            setRejectionReason("");
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reject Content</DialogTitle>
-              <DialogDescription>
-                Provide a reason for rejecting this content. The author will be
-                notified.
-              </DialogDescription>
-            </DialogHeader>
-            {selectedContent && (
-              <div className="space-y-4">
-                <div className="p-3 rounded-lg bg-destructive/10">
-                  <p className="font-medium">{selectedContent.title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    by {selectedContent.author}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reason">Rejection Reason *</Label>
-                  <Textarea
-                    id="reason"
-                    placeholder="Explain why this content is being rejected..."
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    rows={4}
-                    disabled={actionLoading}
-                  />
-                </div>
-              </div>
-            )}
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActionType(null);
-                  setSelectedContent(null);
-                  setRejectionReason("");
-                }}
-                disabled={actionLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleReject}
-                disabled={actionLoading || !rejectionReason.trim()}
-              >
-                {actionLoading ? "Rejecting..." : "Reject Content"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+            <XCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.rejected}</div>
+          </CardContent>
+        </Card>
       </div>
-    </RoleLayout>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Content Review</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search content..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="pending">Pending</TabsTrigger>
+                <TabsTrigger value="approved">Approved</TabsTrigger>
+                <TabsTrigger value="rejected">Rejected</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Tabs value={typeFilter} onValueChange={setTypeFilter}>
+              <TabsList>
+                <TabsTrigger value="all">All Types</TabsTrigger>
+                <TabsTrigger value="post">Posts</TabsTrigger>
+                <TabsTrigger value="job">Jobs</TabsTrigger>
+                <TabsTrigger value="event">Events</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          <div className="space-y-4">
+            {filteredContent.map((item) => (
+              <Card key={item.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="p-2 rounded-lg bg-muted">
+                      {getTypeIcon(item.type)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold">{item.title}</h3>
+                        <Badge variant="outline" className="capitalize">
+                          {item.type}
+                        </Badge>
+                        <div
+                          className={`w-2 h-2 rounded-full ${getStatusColor(item.status)}`}
+                        />
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {item.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        By {item.author} •{" "}
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm line-clamp-2">{item.content}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                    {item.status === "pending" && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleApprove(item.id)}
+                          className="text-green-600 hover:text-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReject(item.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

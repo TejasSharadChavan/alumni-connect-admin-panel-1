@@ -47,11 +47,15 @@ export async function GET(
     }
 
     const { id } = await params;
+    console.log("API: Received job ID:", id);
     const jobId = parseInt(id);
 
     if (isNaN(jobId)) {
+      console.error("API: Invalid job ID:", id);
       return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
     }
+
+    console.log("API: Parsed job ID:", jobId);
 
     // Get job details with poster information
     const jobResults = await db
@@ -78,15 +82,23 @@ export async function GET(
       .limit(1);
 
     if (jobResults.length === 0) {
+      console.error("API: Job not found in database for ID:", jobId);
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     const job = jobResults[0];
+    console.log("API: Found job:", job.title);
 
-    return NextResponse.json({
+    const response = {
       success: true,
-      job,
-    });
+      job: {
+        ...job,
+        postedByName: job.postedByName || job.postedByEmail || "Unknown",
+      },
+    };
+
+    console.log("API: Returning response with success:", response.success);
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching job details:", error);
     return NextResponse.json(

@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { RoleLayout } from "@/components/layout/role-layout";
 import { NewChatDialog } from "@/components/chat/new-chat-dialog";
 import {
   MessageSquare,
@@ -315,490 +314,481 @@ export default function StudentMessagesPage() {
 
   if (loading) {
     return (
-      <RoleLayout role="student">
-        <div className="space-y-6">
-          <Skeleton className="h-20 w-full" />
-          <div className="grid grid-cols-12 gap-6">
-            <Skeleton className="col-span-4 h-[600px]" />
-            <Skeleton className="col-span-8 h-[600px]" />
-          </div>
+      <div className="space-y-6">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid grid-cols-12 gap-6">
+          <Skeleton className="col-span-4 h-[600px]" />
+          <Skeleton className="col-span-8 h-[600px]" />
         </div>
-      </RoleLayout>
+      </div>
     );
   }
 
   return (
-    <RoleLayout role="student">
-      <div className="space-y-6 pb-20">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Messages</h1>
-              <p className="text-muted-foreground mt-2">
-                Connect with your network
-              </p>
-            </div>
-            <NewChatDialog onChatCreated={fetchChats} />
+    <div className="space-y-6 pb-20">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Messages</h1>
+            <p className="text-muted-foreground mt-2">
+              Connect with your network
+            </p>
           </div>
-        </motion.div>
+          <NewChatDialog onChatCreated={fetchChats} />
+        </div>
+      </motion.div>
 
-        {/* Messages Interface */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Chat List */}
-          <Card className="col-span-12 md:col-span-4 border-2">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Conversations
-              </CardTitle>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search chats..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[600px]">
-                {filteredChats.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      {searchQuery ? "No chats found" : "No conversations yet"}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Start a conversation with someone from your network
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y">
-                    {filteredChats.map((chat) => (
-                      <motion.div
-                        key={chat.id}
-                        whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                        onClick={() => setSelectedChat(chat)}
-                        className={`p-4 cursor-pointer transition-colors ${
-                          selectedChat?.id === chat.id ? "bg-muted" : ""
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="relative">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage
-                                src={chat.otherUser?.profileImageUrl}
-                              />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">
-                                {getInitials(
-                                  chat.otherUser?.name || chat.name || "?"
-                                )}
-                              </AvatarFallback>
-                            </Avatar>
-                            {isOnline(chat.otherUser?.id) && (
-                              <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500" />
+      {/* Messages Interface */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Chat List */}
+        <Card className="col-span-12 md:col-span-4 border-2">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Conversations
+            </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search chats..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[600px]">
+              {filteredChats.length === 0 ? (
+                <div className="p-8 text-center">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    {searchQuery ? "No chats found" : "No conversations yet"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Start a conversation with someone from your network
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredChats.map((chat) => (
+                    <motion.div
+                      key={chat.id}
+                      whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+                      onClick={() => setSelectedChat(chat)}
+                      className={`p-4 cursor-pointer transition-colors ${
+                        selectedChat?.id === chat.id ? "bg-muted" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="relative">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage
+                              src={chat.otherUser?.profileImageUrl}
+                            />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">
+                              {getInitials(
+                                chat.otherUser?.name || chat.name || "?"
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isOnline(chat.otherUser?.id) && (
+                            <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-sm truncate">
+                              {chat.otherUser?.name || chat.name}
+                            </p>
+                            {chat.lastMessageTime && (
+                              <span className="text-xs text-muted-foreground">
+                                {formatMessageTime(chat.lastMessageTime)}
+                              </span>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="font-semibold text-sm truncate">
-                                {chat.otherUser?.name || chat.name}
+                          {chat.otherUser && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs capitalize mt-1"
+                            >
+                              {chat.otherUser.role}
+                            </Badge>
+                          )}
+                          <div className="flex items-center justify-between mt-1">
+                            {chat.lastMessage && (
+                              <p className="text-xs text-muted-foreground truncate flex-1">
+                                {chat.lastMessage}
                               </p>
-                              {chat.lastMessageTime && (
-                                <span className="text-xs text-muted-foreground">
-                                  {formatMessageTime(chat.lastMessageTime)}
-                                </span>
-                              )}
-                            </div>
-                            {chat.otherUser && (
+                            )}
+                            {chat.unreadCount > 0 && (
                               <Badge
-                                variant="outline"
-                                className="text-xs capitalize mt-1"
+                                variant="default"
+                                className="ml-2 bg-green-500"
                               >
-                                {chat.otherUser.role}
+                                {chat.unreadCount}
                               </Badge>
                             )}
-                            <div className="flex items-center justify-between mt-1">
-                              {chat.lastMessage && (
-                                <p className="text-xs text-muted-foreground truncate flex-1">
-                                  {chat.lastMessage}
-                                </p>
-                              )}
-                              {chat.unreadCount > 0 && (
-                                <Badge
-                                  variant="default"
-                                  className="ml-2 bg-green-500"
-                                >
-                                  {chat.unreadCount}
-                                </Badge>
-                              )}
-                            </div>
                           </div>
                         </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Chat Window */}
-          <Card className="col-span-12 md:col-span-8 border-2">
-            {selectedChat ? (
-              <>
-                <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage
-                            src={selectedChat.otherUser?.profileImageUrl}
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">
-                            {getInitials(
-                              selectedChat.otherUser?.name ||
-                                selectedChat.name ||
-                                "?"
-                            )}
-                          </AvatarFallback>
-                        </Avatar>
-                        {isOnline(selectedChat.otherUser?.id) && (
-                          <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500" />
-                        )}
                       </div>
-                      <div>
-                        <CardTitle className="text-lg">
-                          {selectedChat.otherUser?.name || selectedChat.name}
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground">
-                          {isOnline(selectedChat.otherUser?.id) ? (
-                            <span className="text-green-600 font-medium">
-                              Online
-                            </span>
-                          ) : (
-                            "Last seen recently"
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Chat Window */}
+        <Card className="col-span-12 md:col-span-8 border-2">
+          {selectedChat ? (
+            <>
+              <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={selectedChat.otherUser?.profileImageUrl}
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">
+                          {getInitials(
+                            selectedChat.otherUser?.name ||
+                              selectedChat.name ||
+                              "?"
                           )}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isOnline(selectedChat.otherUser?.id) && (
+                        <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500" />
+                      )}
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">
+                        {selectedChat.otherUser?.name || selectedChat.name}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        {isOnline(selectedChat.otherUser?.id) ? (
+                          <span className="text-green-600 font-medium">
+                            Online
+                          </span>
+                        ) : (
+                          "Last seen recently"
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon">
+                      <Phone className="h-5 w-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      <Video className="h-5 w-5" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>View Profile</DropdownMenuItem>
+                        <DropdownMenuItem>Mute Notifications</DropdownMenuItem>
+                        <DropdownMenuItem>Clear Chat</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">
+                          Block User
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 flex flex-col bg-[url('/chat-bg.png')] bg-repeat">
+                {/* Messages */}
+                <ScrollArea className="h-[480px] p-4">
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No messages yet</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Start the conversation!
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon">
-                        <Phone className="h-5 w-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Video className="h-5 w-5" />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-5 w-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem>
-                            Mute Notifications
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>Clear Chat</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            Block User
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0 flex flex-col bg-[url('/chat-bg.png')] bg-repeat">
-                  {/* Messages */}
-                  <ScrollArea className="h-[480px] p-4">
-                    {messages.length === 0 ? (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-muted-foreground">
-                            No messages yet
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            Start the conversation!
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {messages.map((message, index) => {
-                          const isCurrentUser =
-                            message.senderId !== selectedChat.otherUser?.id;
-                          const showDate =
-                            index === 0 ||
-                            new Date(
-                              messages[index - 1].createdAt
-                            ).toDateString() !==
-                              new Date(message.createdAt).toDateString();
+                  ) : (
+                    <div className="space-y-3">
+                      {messages.map((message, index) => {
+                        const isCurrentUser =
+                          message.senderId !== selectedChat.otherUser?.id;
+                        const showDate =
+                          index === 0 ||
+                          new Date(
+                            messages[index - 1].createdAt
+                          ).toDateString() !==
+                            new Date(message.createdAt).toDateString();
 
-                          return (
-                            <div key={message.id}>
-                              {showDate && (
-                                <div className="flex justify-center my-4">
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-background/80 backdrop-blur"
-                                  >
-                                    {new Date(
-                                      message.createdAt
-                                    ).toLocaleDateString("en-US", {
-                                      weekday: "long",
-                                      year: "numeric",
-                                      month: "long",
-                                      day: "numeric",
-                                    })}
-                                  </Badge>
-                                </div>
-                              )}
-                              <motion.div
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.2 }}
-                                className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                        return (
+                          <div key={message.id}>
+                            {showDate && (
+                              <div className="flex justify-center my-4">
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-background/80 backdrop-blur"
+                                >
+                                  {new Date(
+                                    message.createdAt
+                                  ).toLocaleDateString("en-US", {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
+                                </Badge>
+                              </div>
+                            )}
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              transition={{ duration: 0.2 }}
+                              className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                            >
+                              <div
+                                className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${
+                                  isCurrentUser
+                                    ? "bg-blue-500 text-white rounded-br-none"
+                                    : "bg-background border rounded-bl-none"
+                                }`}
                               >
+                                {(message as any).imageUrl ? (
+                                  <div className="space-y-2">
+                                    <div className="relative">
+                                      <img
+                                        src={(message as any).imageUrl}
+                                        alt="Shared image"
+                                        className="max-w-full max-h-96 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                        onClick={() => {
+                                          const url = (message as any).imageUrl;
+                                          console.log("Opening image:", url);
+                                          window.open(url, "_blank");
+                                        }}
+                                        onLoad={() => {
+                                          console.log(
+                                            "Image loaded successfully:",
+                                            (message as any).imageUrl
+                                          );
+                                        }}
+                                        onError={(e) => {
+                                          console.error(
+                                            "Failed to load image:",
+                                            (message as any).imageUrl
+                                          );
+                                          const img =
+                                            e.target as HTMLImageElement;
+                                          img.style.display = "none";
+                                          const errorDiv =
+                                            document.createElement("div");
+                                          errorDiv.className =
+                                            "text-xs text-red-500 p-2 bg-red-50 rounded";
+                                          errorDiv.textContent =
+                                            "Failed to load image";
+                                          img.parentElement?.appendChild(
+                                            errorDiv
+                                          );
+                                        }}
+                                      />
+                                    </div>
+                                    {message.content &&
+                                      message.content !== "📷 Image" && (
+                                        <p className="text-sm break-words">
+                                          {message.content}
+                                        </p>
+                                      )}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm break-words">
+                                    {message.content}
+                                  </p>
+                                )}
                                 <div
-                                  className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${
+                                  className={`flex items-center gap-1 justify-end mt-1 ${
                                     isCurrentUser
-                                      ? "bg-blue-500 text-white rounded-br-none"
-                                      : "bg-background border rounded-bl-none"
+                                      ? "text-white/70"
+                                      : "text-muted-foreground"
                                   }`}
                                 >
-                                  {(message as any).imageUrl ? (
-                                    <div className="space-y-2">
-                                      <div className="relative">
-                                        <img
-                                          src={(message as any).imageUrl}
-                                          alt="Shared image"
-                                          className="max-w-full max-h-96 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                          onClick={() => {
-                                            const url = (message as any)
-                                              .imageUrl;
-                                            console.log("Opening image:", url);
-                                            window.open(url, "_blank");
-                                          }}
-                                          onLoad={() => {
-                                            console.log(
-                                              "Image loaded successfully:",
-                                              (message as any).imageUrl
-                                            );
-                                          }}
-                                          onError={(e) => {
-                                            console.error(
-                                              "Failed to load image:",
-                                              (message as any).imageUrl
-                                            );
-                                            const img =
-                                              e.target as HTMLImageElement;
-                                            img.style.display = "none";
-                                            const errorDiv =
-                                              document.createElement("div");
-                                            errorDiv.className =
-                                              "text-xs text-red-500 p-2 bg-red-50 rounded";
-                                            errorDiv.textContent =
-                                              "Failed to load image";
-                                            img.parentElement?.appendChild(
-                                              errorDiv
-                                            );
-                                          }}
-                                        />
-                                      </div>
-                                      {message.content &&
-                                        message.content !== "📷 Image" && (
-                                          <p className="text-sm break-words">
-                                            {message.content}
-                                          </p>
-                                        )}
-                                    </div>
-                                  ) : (
-                                    <p className="text-sm break-words">
-                                      {message.content}
-                                    </p>
+                                  <span className="text-xs">
+                                    {formatMessageTime(message.createdAt)}
+                                  </span>
+                                  {isCurrentUser && (
+                                    <CheckCheck className="h-3 w-3" />
                                   )}
-                                  <div
-                                    className={`flex items-center gap-1 justify-end mt-1 ${
-                                      isCurrentUser
-                                        ? "text-white/70"
-                                        : "text-muted-foreground"
-                                    }`}
-                                  >
-                                    <span className="text-xs">
-                                      {formatMessageTime(message.createdAt)}
-                                    </span>
-                                    {isCurrentUser && (
-                                      <CheckCheck className="h-3 w-3" />
-                                    )}
-                                  </div>
                                 </div>
-                              </motion.div>
-                            </div>
-                          );
-                        })}
-                        <div ref={messagesEndRef} />
-                      </div>
-                    )}
-
-                    {/* Typing Indicator */}
-                    <AnimatePresence>
-                      {isTyping && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="flex justify-start mt-2"
-                        >
-                          <div className="bg-background border rounded-2xl rounded-bl-none px-4 py-3 shadow-sm">
-                            <div className="flex gap-1">
-                              <motion.div
-                                animate={{ y: [0, -8, 0] }}
-                                transition={{
-                                  duration: 0.6,
-                                  repeat: Infinity,
-                                  delay: 0,
-                                }}
-                                className="w-2 h-2 bg-muted-foreground rounded-full"
-                              />
-                              <motion.div
-                                animate={{ y: [0, -8, 0] }}
-                                transition={{
-                                  duration: 0.6,
-                                  repeat: Infinity,
-                                  delay: 0.2,
-                                }}
-                                className="w-2 h-2 bg-muted-foreground rounded-full"
-                              />
-                              <motion.div
-                                animate={{ y: [0, -8, 0] }}
-                                transition={{
-                                  duration: 0.6,
-                                  repeat: Infinity,
-                                  delay: 0.4,
-                                }}
-                                className="w-2 h-2 bg-muted-foreground rounded-full"
-                              />
-                            </div>
+                              </div>
+                            </motion.div>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </ScrollArea>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
 
-                  {/* Message Input */}
-                  <div className="border-t p-4 bg-background/95 backdrop-blur">
-                    {imagePreview && (
-                      <div className="mb-3 relative inline-block">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="max-w-xs max-h-32 rounded-lg border"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-6 w-6"
-                          onClick={removeImage}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-
-                    <form onSubmit={handleSendMessage} className="flex gap-2">
-                      <div className="flex gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                          className="relative"
-                        >
-                          <Smile className="h-5 w-5" />
-                        </Button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/png,image/jpg,image/jpeg,image/gif,image/webp"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={uploading}
-                        >
-                          <ImageIcon className="h-5 w-5" />
-                        </Button>
-                      </div>
-                      <div className="flex-1 relative">
-                        <Input
-                          placeholder={
-                            selectedImage
-                              ? "Add a caption..."
-                              : "Type a message..."
-                          }
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          disabled={sendingMessage || uploading}
-                          className="pr-12 rounded-full"
-                        />
-                        {showEmojiPicker && (
-                          <div className="absolute bottom-full mb-2 right-0 z-50">
-                            <EmojiPicker onEmojiClick={handleEmojiClick} />
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        type="submit"
-                        disabled={
-                          (!newMessage.trim() && !selectedImage) ||
-                          sendingMessage ||
-                          uploading
-                        }
-                        size="icon"
-                        className="rounded-full"
+                  {/* Typing Indicator */}
+                  <AnimatePresence>
+                    {isTyping && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="flex justify-start mt-2"
                       >
-                        {sendingMessage || uploading ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
+                        <div className="bg-background border rounded-2xl rounded-bl-none px-4 py-3 shadow-sm">
+                          <div className="flex gap-1">
+                            <motion.div
+                              animate={{ y: [0, -8, 0] }}
+                              transition={{
+                                duration: 0.6,
+                                repeat: Infinity,
+                                delay: 0,
+                              }}
+                              className="w-2 h-2 bg-muted-foreground rounded-full"
+                            />
+                            <motion.div
+                              animate={{ y: [0, -8, 0] }}
+                              transition={{
+                                duration: 0.6,
+                                repeat: Infinity,
+                                delay: 0.2,
+                              }}
+                              className="w-2 h-2 bg-muted-foreground rounded-full"
+                            />
+                            <motion.div
+                              animate={{ y: [0, -8, 0] }}
+                              transition={{
+                                duration: 0.6,
+                                repeat: Infinity,
+                                delay: 0.4,
+                              }}
+                              className="w-2 h-2 bg-muted-foreground rounded-full"
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </ScrollArea>
+
+                {/* Message Input */}
+                <div className="border-t p-4 bg-background/95 backdrop-blur">
+                  {imagePreview && (
+                    <div className="mb-3 relative inline-block">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="max-w-xs max-h-32 rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={removeImage}
+                      >
+                        <X className="h-3 w-3" />
                       </Button>
-                    </form>
-                  </div>
-                </CardContent>
-              </>
-            ) : (
-              <CardContent className="h-[680px] flex items-center justify-center bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20">
-                <div className="text-center">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center mx-auto mb-6">
-                    <MessageSquare className="h-12 w-12 text-primary" />
-                  </div>
-                  <p className="text-2xl font-semibold mb-2">
-                    Select a conversation
-                  </p>
-                  <p className="text-muted-foreground max-w-sm">
-                    Choose a chat from the list to start messaging or create a
-                    new conversation
-                  </p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                        className="relative"
+                      >
+                        <Smile className="h-5 w-5" />
+                      </Button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpg,image/jpeg,image/gif,image/webp"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                      >
+                        <ImageIcon className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <div className="flex-1 relative">
+                      <Input
+                        placeholder={
+                          selectedImage
+                            ? "Add a caption..."
+                            : "Type a message..."
+                        }
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        disabled={sendingMessage || uploading}
+                        className="pr-12 rounded-full"
+                      />
+                      {showEmojiPicker && (
+                        <div className="absolute bottom-full mb-2 right-0 z-50">
+                          <EmojiPicker onEmojiClick={handleEmojiClick} />
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={
+                        (!newMessage.trim() && !selectedImage) ||
+                        sendingMessage ||
+                        uploading
+                      }
+                      size="icon"
+                      className="rounded-full"
+                    >
+                      {sendingMessage || uploading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </form>
                 </div>
               </CardContent>
-            )}
-          </Card>
-        </div>
+            </>
+          ) : (
+            <CardContent className="h-[680px] flex items-center justify-center bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20">
+              <div className="text-center">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center mx-auto mb-6">
+                  <MessageSquare className="h-12 w-12 text-primary" />
+                </div>
+                <p className="text-2xl font-semibold mb-2">
+                  Select a conversation
+                </p>
+                <p className="text-muted-foreground max-w-sm">
+                  Choose a chat from the list to start messaging or create a new
+                  conversation
+                </p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
       </div>
-    </RoleLayout>
+    </div>
   );
 }
